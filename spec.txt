@@ -1,0 +1,142 @@
+# tpt-io-standards Specification
+
+## 1. Purpose
+A pure-Rust, feature-gated workspace for parsing, validating, and serializing industry-standard data formats. This crate exists to prevent Tier 2 domain repositories (medical, construction, electronics, etc.) from embedding heavy, duplicated I/O logic. It provides zero-copy or low-allocation parsers where possible, with strict schema validation and comprehensive error reporting. Every parser is implemented from scratch in pure Rust with no C/C++ FFI dependencies, ensuring cross-platform consistency, memory safety, and WASM compatibility.
+
+## 2. Scope & Boundaries
+- IN SCOPE: Reading/writing domain-specific file formats, schema validation, coordinate system transformations during import, unit conversion on ingestion, metadata extraction, and cross-format data mapping.
+- OUT OF SCOPE: Business logic, simulation solving, rendering, or data visualization. This crate only moves data from disk/network into strongly-typed Rust structures.
+- DEPENDS ON: `tpt-math-units`, `tpt-math-geometry`, `tpt-math-numeric`, standard library (`std` required for most I/O, though core traits are `no_std` compatible).
+
+## 3. Crate Inventory
+
+### Core Infrastructure
+
+#### `tpt-io-core`
+Shared foundation traits and utilities used by all domain-specific parsers. Defines the `Reader`, `Writer`, `Validator`, and `Schema` traits that establish a consistent API across all format implementations. Provides structured error types with byte offset tracking, expected-vs-actual token reporting, and links to format specification sections. Includes byte-stream utilities for encoding detection (UTF-8/16, ASCII), progress reporting hooks for large file parsing, and checksum verification (CRC32, MD5, SHA256). All core traits are `no_std` compatible with optional `alloc` support.
+
+### Medical & Healthcare
+
+#### `tpt-io-dicom`
+DICOM (Digital Imaging and Communications in Medicine) parser implementing PS3.5, PS3.6, PS3.7, and PS3.10 standards. Supports both explicit and implicit VR (Value Representation) transfer syntaxes, pixel data extraction with JPEG 2000 and RLE decompression, and UID registry for SOP classes. Includes a comprehensive tag dictionary for standard DICOM tags, anonymization utilities for patient privacy, and study/series/instance hierarchy navigation. Provides integration with `tpt-sci-image` types for in-memory image representation and supports streaming pixel data for large volumetric datasets (CT, MRI).
+
+#### `tpt-io-fhir`
+HL7 FHIR (Fast Healthcare Interoperability Resources) R4 and R5 deserializer for JSON and XML representations. Implements strict resource validation against FHIR profiles with NZ HIPC 2020 compliance hooks for New Zealand healthcare data standards. Includes reference resolution for cross-resource links, bundle traversal with pagination support, and a FHIRPath expression evaluator for querying resources. Provides utilities for converting between FHIR resources and internal domain types (e.g., Patient → `tpt-medical-patient`), and supports batch operations for bulk data import/export.
+
+#### `tpt-io-nifti`
+NIfTI-1 and NIfTI-2 format parser for neuroimaging data (fMRI, structural MRI, DTI). Extracts affine transformation matrices for coordinate system mapping, header metadata (voxel dimensions, data type, orientation), and multi-dimensional array data. Supports both `.nii` (single file) and `.hdr`/`.img` (dual file) formats, with gzip decompression for `.nii.gz` files. Provides integration with `tpt-sci-image` for volumetric data representation and includes utilities for coordinate system conversion (RAS ↔ LPS, voxel ↔ world coordinates).
+
+### Construction & Architecture
+
+#### `tpt-io-ifc`
+IFC (Industry Foundation Classes) 4.0 and 4.3 parser for Building Information Modeling (BIM) data. Implements STEP-Physical File (SPF) format parsing with entity instance resolution, relationship graph construction (IfcRelContainedInSpatialStructure, IfcRelAssociatesMaterial), and property set traversal. Extracts geometric representations including B-Reps (boundary representations), CSG (Constructive Solid Geometry), and tessellated meshes. Includes IFC schema version detection, migration utilities between IFC versions, and spatial structure navigation (Site → Building → Storey → Space). Provides integration with `tpt-eng-geometry` and `tpt-eng-cad` for geometric processing.
+
+#### `tpt-io-citygml`
+CityGML 2.0 and 3.0 XML parser for urban and regional 3D models. Extracts LOD (Level of Detail) 0-4 representations for buildings, vegetation, water bodies, and transportation infrastructure. Includes semantic surface classification (wall, roof, ground, window, door) and thematic attributes (building function, year of construction, energy performance). Provides coordinate reference system handling with transformation utilities, and supports CityJSON as an alternative JSON encoding. Integrates with `tpt-eng-geometry` for mesh processing and `tpt-io-geo` for geographic coordinate handling.
+
+### Electronics & Electrical
+
+#### `tpt-io-spice`
+SPICE netlist parser supporting multiple dialects: HSPICE, LTSpice, Ngspice, and PSpice. Parses circuit descriptions including passive components (R, L, C), active devices (D, Q, M), independent/dependent sources (V, I, E, F, G, H), and transmission lines (T). Includes `.model` card parsing for semiconductor device parameters (diode, BJT, MOSFET, JFET), `.subckt` hierarchical expansion with formal/actual parameter substitution, and analysis command extraction (`.tran`, `.ac`, `.op`, `.dc`, `.noise`). Provides syntax validation with helpful error messages, component value parsing with unit suffixes (k=1e3, u=1e-6, p=1e-12), and temperature-dependent parameter handling. Integrates with `tpt-em-circuit` for circuit simulation.
+
+#### `tpt-io-gerber`
+Gerber X2 and X3 format parser for PCB (Printed Circuit Board) layer definitions. Extracts aperture definitions, flash/draw commands, and layer polarity information. Supports extended codes for net list attribution, component designation, and design rule metadata. Includes DRC (Design Rule Check) primitive extraction for trace width, spacing, and annular ring verification. Provides integration with `tpt-eng-pcb` for PCB stackup analysis and `tpt-eng-geometry` for geometric processing. Supports Excellon drill file format for through-hole and via definitions.
+
+#### `tpt-io-edif`
+EDIF (Electronic Design Interchange Format) parser for hierarchical circuit representation. Extracts library definitions, cell declarations, interface ports, and netlist connectivity. Supports both EDIF 2 0 0 and EDIF 4 0 0 versions with property extraction for component parameters. Includes hierarchical flattening utilities for converting nested designs to flat netlists, and provides integration with `tpt-em-circuit` for simulation setup. Supports both schematic and layout representations with geometric data extraction.
+
+### Earth Science & GIS
+
+#### `tpt-io-geo`
+Geospatial data format parser supporting GeoJSON (RFC 7946), Shapefile (.shp/.shx/.dbf), and GeoTIFF metadata extraction. Implements coordinate reference system (CRS) handling via PROJ strings or EPSG codes with transformation utilities between common datums (WGS84, NAD83, NZGD2000). Includes spatial indexing using R-trees for efficient query acceleration (point-in-polygon, nearest neighbor, range queries). Provides integration with `tpt-eng-geometry` for geometric operations and `tpt-math-geometry` for coordinate transformations. Supports streaming parsers for large datasets and includes utilities for coordinate system validation and reprojection.
+
+#### `tpt-io-netcdf`
+NetCDF-3 classic and NetCDF-4 (HDF5-based) format parser for climate, ocean, and atmospheric science data. Extracts dimension definitions, variable metadata (units, long_name, valid_range), and global attributes. Supports chunked reading for large multi-dimensional arrays (time × depth × latitude × longitude) without loading entire datasets into memory. Includes coordinate variable detection and automatic coordinate mapping, and provides integration with `tpt-sci-grid` for structured grid representation. Supports compression (deflate, shuffle) and chunking metadata for performance optimization.
+
+#### `tpt-io-welllog`
+LAS (Log ASCII Standard) 2.0 and 3.0 parser for well log data from oil, gas, and geothermal industries. Extracts curve definitions (mnemonic, unit, description), depth-indexed data, and well header information (UWI, location, dates). Supports DLIS (Digital Log Interchange Standard) format for raw measurement data with frame-based organization. Includes depth alignment utilities for multi-run log correlation, and provides integration with `tpt-eng-geotech` for geotechnical analysis. Supports both ASCII and binary LAS formats with automatic encoding detection.
+
+### Process Engineering
+
+#### `tpt-io-capeopen`
+CAPE-OPEN 1.1 and 2.0 interface definitions for process simulation interoperability. Provides Rust FFI-safe wrappers for COM interfaces (ICapeThermoMaterial, ICapeThermoCalculation, ICapeThermoPropertyPackage). Includes thermodynamic property package serialization for component lists, phase identification, and property calculation requests. Supports unit operation port mapping (inlet/outlet streams) and stream connection validation for flowsheet topology. Provides integration with `tpt-thermo` for thermodynamic calculations and `tpt-eng-unit-ops` for unit operation modeling. Includes utilities for converting between CAPE-OPEN and internal data structures.
+
+#### `tpt-io-sbml`
+SBML (Systems Biology Markup Language) Level 2 and Level 3 parser for computational biology models. Extracts species, compartments, reactions, and rate laws with MathML expression parsing for kinetic laws. Includes rule definitions (assignment, rate, algebraic rules), event handling, and function definitions. Supports SBML extensions (packages) for flux balance analysis (FBC), qualitative models (Qual), and spatial modeling (Spatial). Provides integration with `tpt-sci-reaction-network` for reaction network simulation and `tpt-sci-ode` for ODE-based dynamic simulation. Includes model validation against SBML schema and consistency checking for mass balance and charge balance.
+
+### Umbrella
+
+#### `tpt-io`
+Feature-gated umbrella crate that re-exports all domain-specific parsers. Each domain crate is an optional Cargo feature (e.g., `features = ["dicom", "ifc", "spice"]`), allowing downstream users to pull in only the formats they need. Compiling without any features yields an empty, zero-cost crate that only re-exports `tpt-io-core`. The feature tree is flat (no transitive feature dependencies) to avoid Cargo feature unification surprises. Provides a unified error type `IoError` that wraps domain-specific errors with context about which format failed. Includes convenience functions for format detection based on file extension or magic bytes.
+
+## 4. Design Principles
+
+### Feature Gating
+Every domain crate is an optional feature in the umbrella crate. This allows downstream users to pull in only the formats they need, keeping compile times and binary sizes minimal. The feature tree is flat (no transitive feature dependencies) to avoid Cargo feature unification surprises. Example:
+```toml
+[dependencies]
+tpt-io = { version = "0.1", features = ["dicom", "ifc"] }
+
+Zero Legacy & Pure Rust
+No C/C++ FFI wrappers (e.g., no libgdal, dcmtk, or netcdf-c bindings). All parsers are implemented from scratch in pure Rust, ensuring:
+Cross-platform consistency (no platform-specific C library versions)
+Memory safety without unsafe blocks (except where absolutely necessary for performance-critical byte manipulation)
+WASM compatibility for browser-based applications
+Easier maintenance and debugging
+Error Ergonomics
+All parse errors must include:
+Byte offset: Exact location in the input stream where the error occurred
+Expected vs. actual: What the parser expected vs. what it encountered
+Standard reference: Link to the relevant section of the format specification (e.g., "DICOM PS3.5 §6.2")
+Context: Surrounding bytes or tokens for debugging
+Errors are structured as enums with variants for each failure mode (e.g., DicomError::InvalidTag { offset: usize, expected: u16, actual: u16 }), enabling pattern matching and programmatic error handling.
+Validation Strategy
+Parsing is split into two phases:
+Syntactic validation: Is the file structurally valid? (e.g., correct tags, valid XML structure)
+Semantic validation: Does the content make sense? (e.g., are coordinates within valid ranges, do references resolve?)
+Semantic validation is optional and can be disabled for performance when parsing trusted inputs. Example:
+
+let reader = DicomReader::new()
+    .with_syntactic_validation(true)
+    .with_semantic_validation(false);  // Skip for performance
+
+Performance Considerations
+Zero-copy parsing: Where possible, parsers return &str or &[u8] slices into the input buffer rather than allocating new String or Vec<u8> instances.
+Streaming support: Large files (e.g., multi-GB NetCDF or DICOM pixel data) can be parsed incrementally without loading the entire file into memory.
+Parallel parsing: Independent sections (e.g., IFC entity instances, FHIR resources in a bundle) can be parsed in parallel using Rayon.
+Memory mapping: For very large files, use memory-mapped I/O (memmap2 crate) to avoid copying data into user space.
+Extensibility
+Users must be able to extend parsers for custom formats or dialects without modifying the crate:
+
+pub trait FormatExtension {
+    fn parse_custom_tag(&self, tag: &RawTag) -> Result<CustomValue, ParseError>;
+}
+
+This allows researchers and domain experts to add support for proprietary extensions or experimental formats.
+5. Build Order
+tpt-io-core (foundation traits, error types, utilities)
+Domain crates in parallel (can be built independently):
+tpt-io-dicom, tpt-io-fhir, tpt-io-nifti (medical)
+tpt-io-ifc, tpt-io-citygml (construction)
+tpt-io-spice, tpt-io-gerber, tpt-io-edif (electronics)
+tpt-io-geo, tpt-io-netcdf, tpt-io-welllog (earth)
+tpt-io-capeopen, tpt-io-sbml (process)
+tpt-io (umbrella with feature gates)
+6. Testing Strategy
+Round-trip tests: Parse a file → serialize it back → parse again → verify equality
+Fuzz testing: Use cargo-fuzz to generate malformed inputs and ensure parsers fail gracefully without panicking
+Golden files: Maintain a corpus of real-world files from each format (with appropriate licensing) for regression testing
+Property-based testing: Use proptest to generate valid random inputs and verify parser invariants
+Cross-format validation: Parse the same data in multiple formats (e.g., FHIR JSON vs. FHIR XML) and verify consistency
+Performance benchmarks: Track parse time and memory usage on standard test files to detect regressions
+7. Tier 2 Consumption Model
+Each Tier 2 repository depends on tpt-io with only the features it needs:
+tpt-medical: features = ["dicom", "fhir", "nifti"]
+tpt-construction: features = ["ifc", "citygml"]
+tpt-electronics: features = ["spice", "gerber", "edif"]
+tpt-earth: features = ["geo", "netcdf", "welllog"]
+tpt-process: features = ["capeopen", "sbml"]
+tpt-energy: features = ["geo"] (for grid topology)
+tpt-transportation: features = ["geo"] (for route planning)
+tpt-materials: features = ["geo"] (for crystallographic data)
+This ensures minimal compile-time overhead and binary size for each domain.

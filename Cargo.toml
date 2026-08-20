@@ -1,0 +1,52 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/tpt-io-core",
+    "crates/tpt-io-dicom",
+    "crates/tpt-io-fhir",
+    "crates/tpt-io-nifti",
+    "crates/tpt-io-ifc",
+    "crates/tpt-io-citygml",
+    "crates/tpt-io-spice",
+    "crates/tpt-io-gerber",
+    "crates/tpt-io-edif",
+    "crates/tpt-io-geo",
+    "crates/tpt-io-netcdf",
+    "crates/tpt-io-welllog",
+    "crates/tpt-io-capeopen",
+    "crates/tpt-io-sbml",
+    "crates/tpt-io",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/REPLACE_ME_ORG/tpt-io-standards"
+authors = ["tpt-io-standards contributors"]
+readme = "README.md"
+
+[workspace.dependencies]
+tpt-io-core = { path = "crates/tpt-io-core", version = "0.1.0" }
+tpt-io-dicom = { path = "crates/tpt-io-dicom", version = "0.1.0" }
+tpt-io-fhir = { path = "crates/tpt-io-fhir", version = "0.1.0" }
+tpt-io-nifti = { path = "crates/tpt-io-nifti", version = "0.1.0" }
+tpt-io-ifc = { path = "crates/tpt-io-ifc", version = "0.1.0" }
+tpt-io-citygml = { path = "crates/tpt-io-citygml", version = "0.1.0" }
+tpt-io-spice = { path = "crates/tpt-io-spice", version = "0.1.0" }
+tpt-io-gerber = { path = "crates/tpt-io-gerber", version = "0.1.0" }
+tpt-io-edif = { path = "crates/tpt-io-edif", version = "0.1.0" }
+tpt-io-geo = { path = "crates/tpt-io-geo", version = "0.1.0" }
+tpt-io-netcdf = { path = "crates/tpt-io-netcdf", version = "0.1.0" }
+tpt-io-welllog = { path = "crates/tpt-io-welllog", version = "0.1.0" }
+tpt-io-capeopen = { path = "crates/tpt-io-capeopen", version = "0.1.0" }
+tpt-io-sbml = { path = "crates/tpt-io-sbml", version = "0.1.0" }
+
+crc32fast = "1.4"
+md-5 = "0.10"
+sha2 = "0.10"
+thiserror = "2.0"
+
+[profile.release]
+lto = true
