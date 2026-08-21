@@ -5,7 +5,7 @@
 //! a thin interpreter extracts the netlist-relevant pieces into the typed model.
 //! Both stages report [`EdifError`] carrying byte offsets via [`tpt_io_core::ParseError`].
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use tpt_io_core::{ParseError, Result, SpecReference};
@@ -86,8 +86,12 @@ impl<'a> TokParser<'a> {
         };
         match tok.tok {
             Token::LParen => self.parse_list(tok.offset),
-            Token::RParen => Err(ParseError::token(tok.offset, Some(alloc::borrow::Cow::Borrowed("atom or '(")), ")")
-                .with_spec(SpecReference::new("EDIF", "2 0 0 §3.2"))),
+            Token::RParen => Err(ParseError::token(
+                tok.offset,
+                Some(alloc::borrow::Cow::Borrowed("atom or '(")),
+                ")",
+            )
+            .with_spec(SpecReference::new("EDIF", "2 0 0 §3.2"))),
             Token::Symbol(s) => Ok(Sexp::Sym(s.clone())),
             Token::Number(n) => Ok(Sexp::Num(n)),
             Token::Str(s) => Ok(Sexp::Str(s.clone())),
@@ -151,7 +155,7 @@ pub fn parse_edif(input: &[u8]) -> core::result::Result<Edif, EdifError> {
     // The document is the `(edif …)` form.
     let edif = forms
         .iter()
-        .find(|f| f.head().map_or(false, |h| h.eq_ignore_ascii_case("edif")))
+        .find(|f| f.head().is_some_and(|h| h.eq_ignore_ascii_case("edif")))
         .ok_or_else(|| {
             EdifError::Core(
                 ParseError::custom(0, "no top-level (edif …) form found")
@@ -160,11 +164,7 @@ pub fn parse_edif(input: &[u8]) -> core::result::Result<Edif, EdifError> {
         })?;
 
     let tail = edif.as_form("edif").unwrap();
-    let name = tail
-        .first()
-        .and_then(symbol_str)
-        .map(str::to_string)
-        .unwrap_or_default();
+    let name = tail.first().and_then(symbol_str).map(str::to_string).unwrap_or_default();
 
     let version = read_version(tail).unwrap_or((2, 0, 0));
     let libraries = read_libraries(tail)?;
@@ -175,7 +175,7 @@ pub fn parse_edif(input: &[u8]) -> core::result::Result<Edif, EdifError> {
 
 fn read_version(tail: &[Sexp]) -> Option<(u32, u32, u32)> {
     let v = tail.iter().find_map(|f| f.as_form("edifVersion"))?;
-    let a = v.get(0).and_then(num_u32)?;
+    let a = v.first().and_then(num_u32)?;
     let b = v.get(1).and_then(num_u32)?;
     let c = v.get(2).and_then(num_u32)?;
     Some((a, b, c))
@@ -192,7 +192,7 @@ fn read_libraries(tail: &[Sexp]) -> core::result::Result<Vec<Library>, EdifError
 }
 
 fn read_library(body: &[Sexp]) -> core::result::Result<Library, EdifError> {
-    let name = body.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+    let name = body.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
     let mut cells = Vec::new();
     for f in body {
         if let Some(cbody) = f.as_form("cell") {
@@ -203,7 +203,7 @@ fn read_library(body: &[Sexp]) -> core::result::Result<Library, EdifError> {
 }
 
 fn read_cell(body: &[Sexp]) -> core::result::Result<Cell, EdifError> {
-    let name = body.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+    let name = body.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
     let cell_type = body
         .iter()
         .find_map(|f| f.as_form("cellType"))
@@ -220,7 +220,7 @@ fn read_cell(body: &[Sexp]) -> core::result::Result<Cell, EdifError> {
 }
 
 fn read_view(body: &[Sexp]) -> core::result::Result<View, EdifError> {
-    let name = body.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+    let name = body.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
     let mut view_type = ViewType::Other(String::new());
     let mut interface = Vec::new();
     let mut instances = Vec::new();
@@ -284,11 +284,11 @@ fn read_instance(body: &[Sexp]) -> Option<Instance> {
     let mut library_ref = String::new();
     for f in body {
         if let Some(c) = f.as_form("cellRef") {
-            cell_ref = c.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+            cell_ref = c.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
         } else if let Some(v) = f.as_form("viewRef") {
-            view_ref = v.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+            view_ref = v.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
         } else if let Some(l) = f.as_form("libraryRef") {
-            library_ref = l.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+            library_ref = l.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
         }
     }
     Some(Instance { name, cell_ref, view_ref, library_ref })
@@ -301,7 +301,11 @@ fn read_net(body: &[Sexp]) -> Option<Net> {
         if let Some(j) = f.as_form("joined") {
             for pr in j {
                 if let Some(pbody) = pr.as_form("portRef") {
-                    let port = pbody.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+                    let port = pbody
+                        .first()
+                        .and_then(symbol_str)
+                        .map(|s| s.to_string())
+                        .unwrap_or_default();
                     let instance = pbody
                         .iter()
                         .find_map(|x| x.as_form("instanceRef"))
@@ -313,7 +317,7 @@ fn read_net(body: &[Sexp]) -> Option<Net> {
             }
         } else if let Some(pr) = f.as_form("portRef") {
             // A net can also be declared as bare `(portRef …)` members.
-            let port = pr.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+            let port = pr.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
             let instance = pr
                 .iter()
                 .find_map(|x| x.as_form("instanceRef"))
@@ -343,14 +347,14 @@ fn read_property(body: &[Sexp]) -> Option<Property> {
 
 fn read_design(tail: &[Sexp]) -> Option<Design> {
     let d = tail.iter().find_map(|f| f.as_form("design"))?;
-    let name = d.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+    let name = d.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
     let mut cell_ref = String::new();
     let mut library_ref = String::new();
     for f in d {
         if let Some(c) = f.as_form("cellRef") {
-            cell_ref = c.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+            cell_ref = c.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
         } else if let Some(l) = f.as_form("libraryRef") {
-            library_ref = l.first().and_then(symbol_str).and_then(|s| Some(s.to_string())).unwrap_or_default();
+            library_ref = l.first().and_then(symbol_str).map(|s| s.to_string()).unwrap_or_default();
         }
     }
     Some(Design { name, cell_ref, library_ref })
@@ -439,16 +443,14 @@ impl tpt_io_core::Validator<Edif> for EdifValidator {
 
     fn validate_semantic(&self, value: &Edif) -> core::result::Result<(), EdifError> {
         if let Some(design) = &value.design {
-            if value
-                .find_cell(&design.library_ref, &design.cell_ref)
-                .is_none()
-            {
+            if value.find_cell(&design.library_ref, &design.cell_ref).is_none() {
                 return Err(EdifError::Core(
                     ParseError::custom(
                         0,
                         alloc::format!(
                             "design references undefined cell {} in library {}",
-                            design.cell_ref, design.library_ref
+                            design.cell_ref,
+                            design.library_ref
                         ),
                     )
                     .with_spec(SpecReference::new("EDIF", "2 0 0 §4.4")),

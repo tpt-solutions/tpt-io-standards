@@ -8,16 +8,47 @@
 //!
 //! ```
 //! use tpt_io_core::Reader;
+//! use tpt_io_edif::model::{Cell, Direction, Edif, Library, Net, Port, PortRef, View, ViewType};
 //! use tpt_io_edif::parser::EdifReader;
-//! use tpt_io_edif::model::Edif;
+//! use tpt_io_edif::writer::serialize;
 //!
-//! let src = b"(edif top (edifVersion 2 0 0) (edifLevel 0) \
-//!   (library lib (cell c (view v (viewType NETLIST) \
-//!     (interface (port a (direction IN)) (port z (direction OUT))) \
-//!     (contents (net n (joined (portRef a) (portRef z))))))) \
-//!   (design d (cellRef c (libraryRef lib)))";
+//! // Build a tiny document, serialize it to guaranteed-balanced EDIF, then parse.
+//! let doc = Edif {
+//!     name: "top".into(),
+//!     version: (2, 0, 0),
+//!     libraries: vec![Library {
+//!         name: "lib".into(),
+//!         cells: vec![Cell {
+//!             name: "c".into(),
+//!             cell_type: Some("GENERIC".into()),
+//!             views: vec![View {
+//!                 name: "v".into(),
+//!                 view_type: ViewType::Netlist,
+//!                 interface: vec![
+//!                     Port { name: "a".into(), direction: Some(Direction::In) },
+//!                     Port { name: "z".into(), direction: Some(Direction::Out) },
+//!                 ],
+//!                 instances: vec![],
+//!                 nets: vec![Net {
+//!                     name: "n".into(),
+//!                     members: vec![
+//!                         PortRef { port: "a".into(), instance: None },
+//!                         PortRef { port: "z".into(), instance: None },
+//!                     ],
+//!                 }],
+//!                 properties: vec![],
+//!             }],
+//!         }],
+//!     }],
+//!     design: Some(tpt_io_edif::model::Design {
+//!         name: "d".into(),
+//!         cell_ref: "c".into(),
+//!         library_ref: "lib".into(),
+//!     }),
+//! };
+//! let bytes = serialize(&doc);
 //! let reader = EdifReader::new();
-//! let edif: Edif = reader.parse(src).unwrap();
+//! let edif: Edif = reader.parse(&bytes).unwrap();
 //! assert_eq!(edif.version, (2, 0, 0));
 //! let flat = tpt_io_edif::flatten::flatten(&edif).unwrap();
 //! assert_eq!(flat.nets.len(), 1);
@@ -39,7 +70,7 @@ pub mod parser;
 pub mod token;
 pub mod writer;
 
-#[cfg(any(feature = "em-circuit-integration"))]
+#[cfg(feature = "em-circuit-integration")]
 pub mod integration;
 
 pub use error::EdifError;

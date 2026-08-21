@@ -115,7 +115,9 @@ pub fn tokenize(input: &[u8]) -> Result<Vec<Located>> {
                 i += 1;
             }
             if i > 0 && bytes[i.saturating_sub(1)] != b'"' && i >= len {
-                return Err(ParseError::eof(len).with_spec(SpecReference::new("EDIF", "2 0 0 §3.4.1")));
+                return Err(
+                    ParseError::eof(len).with_spec(SpecReference::new("EDIF", "2 0 0 §3.4.1"))
+                );
             }
             continue;
         }
@@ -124,8 +126,15 @@ pub fn tokenize(input: &[u8]) -> Result<Vec<Located>> {
         let start = i;
         while i < len {
             let b = bytes[i];
-            if b == b'(' || b == b')' || b == b'"' || b == b';'
-                || b == b' ' || b == b'\t' || b == b'\r' || b == b'\n' || b == 0x0c
+            if b == b'('
+                || b == b')'
+                || b == b'"'
+                || b == b';'
+                || b == b' '
+                || b == b'\t'
+                || b == b'\r'
+                || b == b'\n'
+                || b == 0x0c
             {
                 break;
             }
@@ -159,10 +168,11 @@ fn parse_number(s: &str) -> Option<f64> {
         Some(r) => (false, r),
         None => t.strip_prefix('-').map_or((false, t), |r| (true, r)),
     };
-    let is_num = body
-        .chars()
-        .enumerate()
-        .all(|(idx, ch)| ch.is_ascii_digit() || ch == '.' || (idx > 0 && (ch == 'e' || ch == 'E' || ch == '+' || ch == '-')));
+    let is_num = body.chars().enumerate().all(|(idx, ch)| {
+        ch.is_ascii_digit()
+            || ch == '.'
+            || (idx > 0 && (ch == 'e' || ch == 'E' || ch == '+' || ch == '-'))
+    });
     if !is_num || body.is_empty() {
         return None;
     }

@@ -6,6 +6,7 @@
 //! `keywordMap`). This powers the `parse → serialize → parse` round-trip test.
 
 use alloc::string::String;
+use alloc::vec;
 use alloc::vec::Vec;
 
 use crate::model::{
@@ -76,7 +77,9 @@ fn view_to_sexp(view: &View) -> Sexp {
     ];
     if !view.interface.is_empty() {
         let ports: Vec<Sexp> = view.interface.iter().map(port_to_sexp).collect();
-        items.push(Sexp::List(alloc::vec![Sexp::Sym("interface".into()); 1].into_iter().chain(ports).collect()));
+        items.push(Sexp::List(
+            alloc::vec![Sexp::Sym("interface".into()); 1].into_iter().chain(ports).collect(),
+        ));
     }
     let mut contents = Vec::new();
     for inst in &view.instances {
@@ -88,7 +91,9 @@ fn view_to_sexp(view: &View) -> Sexp {
     for prop in &view.properties {
         contents.push(prop_to_sexp(prop));
     }
-    items.push(Sexp::List(alloc::vec![Sexp::Sym("contents".into())].into_iter().chain(contents).collect()));
+    items.push(Sexp::List(
+        alloc::vec![Sexp::Sym("contents".into())].into_iter().chain(contents).collect(),
+    ));
     Sexp::List(items)
 }
 
@@ -177,7 +182,9 @@ fn write_sexp(s: &Sexp, indent: usize, out: &mut String) {
                 out.push_str(&alloc::format!("{n}"));
             }
         }
-        Sexp::Str(x) => out.push_str(&alloc::format!("\"{}\"", x.replace('\\', "\\\\").replace('"', "\\\""))),
+        Sexp::Str(x) => {
+            out.push_str(&alloc::format!("\"{}\"", x.replace('\\', "\\\\").replace('"', "\\\"")))
+        }
         Sexp::List(items) => {
             if items.is_empty() {
                 out.push_str("()");
@@ -212,7 +219,6 @@ impl EdifWriter {
 }
 
 impl tpt_io_core::Writer<Edif> for EdifWriter {
-
     type Error = core::convert::Infallible;
 
     fn serialize(&self, value: &Edif) -> core::result::Result<Vec<u8>, core::convert::Infallible> {

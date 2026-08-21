@@ -5,7 +5,7 @@
 //! carries an [`interface`] of [`Port`]s plus [`contents`] made of [`Instance`]s
 //! and [`Net`]s — the pieces needed for netlist extraction and flattening.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 /// The (optional) signal direction of a port.

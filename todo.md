@@ -79,19 +79,20 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [ ] README + docs, `cargo publish --dry-run`
 
 #### `tpt-io-nifti` (NIfTI-1 / NIfTI-2)
-- [ ] Cargo.toml + `sci-image-integration` optional feature
+- [x] Cargo.toml + `sci-image-integration` optional feature
 - [x] `NiftiError` enum
-- [ ] `.nii` single-file parsing
-- [ ] `.hdr`/`.img` dual-file parsing
-- [ ] gzip decompression for `.nii.gz`
-- [ ] Header metadata extraction (voxel dims, data type, orientation)
-- [ ] Affine transformation matrix extraction
-- [ ] Multi-dimensional array data extraction
-- [ ] RAS ↔ LPS coordinate conversion
-- [ ] Voxel ↔ world coordinate conversion
-- [ ] `tpt-sci-image` integration (feature-gated stub)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] `.nii` single-file parsing
+- [x] `.hdr`/`.img` dual-file parsing
+- [x] gzip decompression for `.nii.gz` (behind `gzip` feature, via `flate2`)
+- [x] Header metadata extraction (voxel dims, data type, orientation)
+- [x] Affine transformation matrix extraction (sform with qform fallback)
+- [x] Multi-dimensional array data extraction
+- [x] RAS ↔ LPS coordinate conversion
+- [x] Voxel ↔ world coordinate conversion
+- [x] `tpt-sci-image` integration (feature-gated stub)
+- [x] Round-trip, fuzz (`cargo +nightly fuzz run nifti`), property tests (proptest)
+- [x] README + docs
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 ### Construction & Architecture
 
@@ -161,19 +162,20 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 #### `tpt-io-edif` (EDIF 2 0 0 / 4 0 0)
-- [ ] Cargo.toml + `em-circuit-integration` optional feature
+- [x] Cargo.toml + `em-circuit-integration` optional feature
 - [x] `EdifError` enum
-- [ ] Library definition parsing
-- [ ] Cell declaration parsing
-- [ ] Interface port parsing
-- [ ] Netlist connectivity parsing
-- [ ] Property extraction for component parameters
-- [ ] Hierarchical flattening (nested → flat netlist)
+- [x] Library definition parsing
+- [x] Cell declaration parsing
+- [x] Interface port parsing
+- [x] Netlist connectivity parsing
+- [x] Property extraction for component parameters
+- [x] Hierarchical flattening (nested → flat netlist, union-find port merge)
 - [ ] Schematic representation geometric data extraction
 - [ ] Layout representation geometric data extraction
-- [ ] `tpt-em-circuit` integration (feature-gated stub)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] `tpt-em-circuit` integration (feature-gated stub)
+- [x] Round-trip, fuzz, golden-file, property tests
+- [x] README + docs
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 ### Earth Science & GIS
 

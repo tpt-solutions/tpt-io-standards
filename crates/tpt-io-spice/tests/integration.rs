@@ -66,7 +66,6 @@ fn parse_rejects_passive_without_value() {
     // `R1 in out` parses but fails syntactic validation (no value).
     let bad = "R1 in out\n.end\n";
     let res = SpiceReader::new().parse(bad.as_bytes());
-    eprintln!("DBG res = {res:?}");
     assert!(res.is_err());
 }
 

@@ -356,7 +356,9 @@ pub struct SpiceReader {
 impl SpiceReader {
     /// Create a reader with default validation (syntactic + semantic).
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            validation: ValidationSettings::new(),
+        }
     }
 
     /// Set the validation configuration.

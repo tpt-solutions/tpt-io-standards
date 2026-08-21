@@ -59,15 +59,18 @@ pub struct FlatNetlist {
 
 /// Flatten `edif` starting from its design's top cell.
 pub fn flatten(edif: &Edif) -> core::result::Result<FlatNetlist, EdifError> {
-    let design = edif.design.as_ref().ok_or_else(|| EdifError::Unsupported("no (design …) form to flatten from"))?;
+    let design =
+        edif.design.as_ref().ok_or(EdifError::Unsupported("no (design …) form to flatten from"))?;
     flatten_from(edif, &design.library_ref, &design.cell_ref)
 }
 
 /// Flatten from an explicit (library, cell) top.
-pub fn flatten_from(edif: &Edif, library: &str, cell: &str) -> core::result::Result<FlatNetlist, EdifError> {
-    let top = edif
-        .find_cell(library, cell)
-        .ok_or_else(|| EdifError::Unsupported("top cell not found"))?;
+pub fn flatten_from(
+    edif: &Edif,
+    library: &str,
+    cell: &str,
+) -> core::result::Result<FlatNetlist, EdifError> {
+    let top = edif.find_cell(library, cell).ok_or(EdifError::Unsupported("top cell not found"))?;
     let external_ports = top
         .netlist_view()
         .map(|v| v.interface.iter().map(|p| p.name.clone()).collect())
@@ -153,63 +156,74 @@ fn join(path: &str, child: &str) -> String {
     }
 }
 
-fn expand_view(edif: &Edif, library: &str, cell: &str, path: &str, depth: u32) -> core::result::Result<Expanded, ()> {
+fn expand_view(
+    edif: &Edif,
+    library: &str,
+    cell: &str,
+    path: &str,
+    depth: u32,
+) -> core::result::Result<Expanded, ()> {
     if depth > 256 {
         return Err(());
     }
     let cell_ref = edif.find_cell(library, cell).ok_or(())?;
-    let view: &View = match cell_ref.netlist_view() {
-        Some(v) => v,
-        None => {
-            // Primitive leaf: no NETLIST to expand.
-            return Ok(Expanded {
-                leaves: alloc::vec![LeafInstance {
-                    path: path.to_string(),
-                    library: library.to_string(),
-                    cell: cell.to_string(),
-                }],
-                nets: alloc::vec![],
-            });
-        }
-    };
+    let view: Option<&View> = cell_ref.netlist_view();
 
     let mut leaves = Vec::new();
     let mut nets: Vec<FlatNet> = Vec::new();
 
-    for inst in &view.instances {
-        let sub = expand_view(edif, &inst.library_ref, &inst.cell_ref, &join(path, &inst.name), depth + 1)?;
-        for l in sub.leaves {
-            leaves.push(l);
+    if let Some(v) = view {
+        for inst in &v.instances {
+            let sub = expand_view(
+                edif,
+                &inst.library_ref,
+                &inst.cell_ref,
+                &join(path, &inst.name),
+                depth + 1,
+            )?;
+            for l in sub.leaves {
+                leaves.push(l);
+            }
+            for net in sub.nets {
+                // Remap: sub's external ports (path=="") become this instance's port node;
+                // everything else is prefixed with the instance name.
+                let members: Vec<FlatRef> = net
+                    .members
+                    .into_iter()
+                    .map(|r| {
+                        if r.path.is_empty() {
+                            FlatRef { path: inst.name.clone(), port: r.port }
+                        } else {
+                            FlatRef { path: join(&inst.name, &r.path), port: r.port }
+                        }
+                    })
+                    .collect();
+                nets.push(FlatNet { name: net.name, members });
+            }
         }
-        for net in sub.nets {
-            // Remap: sub's external ports (path=="") become this instance's port node;
-            // everything else is prefixed with the instance name.
+
+        // This cell's own nets: external ports (no instance) get path="".
+        for net in &v.nets {
             let members: Vec<FlatRef> = net
                 .members
-                .into_iter()
-                .map(|r| {
-                    if r.path.is_empty() {
-                        FlatRef { path: inst.name.clone(), port: r.port }
-                    } else {
-                        FlatRef { path: join(&inst.name, &r.path), port: r.port }
-                    }
+                .iter()
+                .map(|pr: &PortRef| match &pr.instance {
+                    None => FlatRef { path: String::new(), port: pr.port.clone() },
+                    Some(name) => FlatRef { path: name.clone(), port: pr.port.clone() },
                 })
                 .collect();
-            nets.push(FlatNet { name: net.name, members });
+            nets.push(FlatNet { name: net.name.clone(), members });
         }
     }
 
-    // This cell's own nets: external ports (no instance) get path="".
-    for net in &view.nets {
-        let members: Vec<FlatRef> = net
-            .members
-            .iter()
-            .map(|pr: &PortRef| match &pr.instance {
-                None => FlatRef { path: String::new(), port: pr.port.clone() },
-                Some(name) => FlatRef { path: name.clone(), port: pr.port.clone() },
-            })
-            .collect();
-        nets.push(FlatNet { name: net.name.clone(), members });
+    // A cell with no instances to expand is a primitive leaf and is recorded as
+    // such (its interface ports are external terminals at `path`).
+    if view.map_or(true, |v| v.instances.is_empty()) {
+        leaves.push(LeafInstance {
+            path: path.to_string(),
+            library: library.to_string(),
+            cell: cell.to_string(),
+        });
     }
 
     Ok(Expanded { leaves, nets })

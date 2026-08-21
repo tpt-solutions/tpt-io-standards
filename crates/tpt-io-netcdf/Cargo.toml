@@ -1,6 +1,7 @@
 [package]
 name = "tpt-io-netcdf"
-description = "NetCDF-3 classic and NetCDF-4 (HDF5) parser for climate/ocean/atmospheric data."
+description = "NetCDF-3 classic parser for climate/ocean/atmospheric data (header, dims, vars, attrs)."
+
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -24,3 +25,4 @@ alloc = ["tpt-io-core/alloc"]
 sci-grid-integration = []
 
 [dev-dependencies]
+proptest = "1"
