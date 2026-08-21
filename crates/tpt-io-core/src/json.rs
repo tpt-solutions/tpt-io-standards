@@ -13,7 +13,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
-use tpt_io_core::{ParseError, Result, SpecReference};
+use crate::{ParseError, Result, SpecReference};
 
 /// A parsed JSON value.
 #[derive(Debug, Clone, PartialEq)]
@@ -53,6 +53,22 @@ impl Json {
     pub fn as_f64(&self) -> Option<f64> {
         match self {
             Json::Num(n) => Some(*n),
+            _ => None,
+        }
+    }
+
+    /// Convenience: this value as a `bool`, if it is a `Bool`.
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            Json::Bool(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    /// Convenience: this value as an array slice, if it is an `Array`.
+    pub fn as_array(&self) -> Option<&[Json]> {
+        match self {
+            Json::Array(a) => Some(a),
             _ => None,
         }
     }

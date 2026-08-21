@@ -1,0 +1,25 @@
+[package]
+name = "tpt-io-dicom-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.tpt-io-dicom]
+path = ".."
+
+[[bin]]
+name = "parse_dataset"
+path = "fuzz_targets/parse_dataset.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "parse_part10_file"
+path = "fuzz_targets/parse_part10_file.rs"
+test = false
+doc = false
+bench = false

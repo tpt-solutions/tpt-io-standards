@@ -66,7 +66,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 #### `tpt-io-fhir` (HL7 FHIR R4/R5)
 - [ ] Cargo.toml + `medical-patient-integration` optional feature (for future `tpt-medical-patient`)
 - [x] `FhirError` enum
-- [ ] JSON resource deserialization
+- [x] JSON resource deserialization
 - [ ] XML resource deserialization
 - [ ] FHIR profile validation (strict)
 - [ ] NZ HIPC 2020 compliance validation hooks

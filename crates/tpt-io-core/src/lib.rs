@@ -16,11 +16,15 @@ pub mod checksum;
 pub mod encoding;
 #[cfg(feature = "alloc")]
 pub mod error;
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub mod json;
 pub mod traits;
 
 pub use encoding::Encoding;
 #[cfg(feature = "alloc")]
 pub use error::{ErrorContext, ErrorKind, ParseError, Result, SpecReference, TokenMismatch};
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub use json::{parse_json, Json};
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub use traits::Writer;
 #[cfg(feature = "alloc")]

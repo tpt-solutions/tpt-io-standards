@@ -6,8 +6,8 @@ use alloc::vec::Vec;
 use tpt_io_core::{ParseError, SpecReference};
 
 use crate::error::GeoError;
-use crate::json::{parse_json, Json};
 use crate::model::{Bbox, Feature, FeatureCollection, GeoJson, Geometry, Position};
+use tpt_io_core::json::{parse_json, Json};
 
 fn geo_err(msg: impl ToString) -> GeoError {
     GeoError::Core(ParseError::custom(0, msg).with_spec(SpecReference::new("GeoJSON", "RFC 7946")))

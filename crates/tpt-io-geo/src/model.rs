@@ -6,7 +6,7 @@
 
 use alloc::vec::Vec;
 
-use crate::json::Json;
+use tpt_io_core::json::Json;
 
 /// A single position: `[longitude, latitude]` or `[longitude, latitude, elevation]`
 /// per RFC 7946 §3.1.1.
