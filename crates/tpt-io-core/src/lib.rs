@@ -14,9 +14,15 @@ extern crate alloc;
 
 pub mod checksum;
 pub mod encoding;
+#[cfg(feature = "alloc")]
 pub mod error;
 pub mod traits;
 
 pub use encoding::Encoding;
-pub use error::{ErrorContext, ParseError, SpecReference, TokenMismatch};
-pub use traits::{Reader, Schema, Validator, Writer};
+#[cfg(feature = "alloc")]
+pub use error::{ErrorContext, ErrorKind, ParseError, Result, SpecReference, TokenMismatch};
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub use traits::Writer;
+#[cfg(feature = "alloc")]
+pub use traits::{FormatExtension, Schema};
+pub use traits::{NoProgress, Progress, ProgressFn, Reader, ValidationSettings, Validator};

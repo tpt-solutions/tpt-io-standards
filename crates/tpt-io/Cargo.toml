@@ -1,6 +1,51 @@
 [package]
 name = "tpt-io"
-version = "0.1.0"
-edition = "2024"
+description = "Umbrella crate re-exporting every tpt-io format parser behind opt-in features"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["parser", "io", "format", "umbrella"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+tpt-io-dicom = { workspace = true, optional = true }
+tpt-io-fhir = { workspace = true, optional = true }
+tpt-io-nifti = { workspace = true, optional = true }
+tpt-io-ifc = { workspace = true, optional = true }
+tpt-io-citygml = { workspace = true, optional = true }
+tpt-io-spice = { workspace = true, optional = true }
+tpt-io-gerber = { workspace = true, optional = true }
+tpt-io-edif = { workspace = true, optional = true }
+tpt-io-geo = { workspace = true, optional = true }
+tpt-io-netcdf = { workspace = true, optional = true }
+tpt-io-welllog = { workspace = true, optional = true }
+tpt-io-capeopen = { workspace = true, optional = true }
+tpt-io-sbml = { workspace = true, optional = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+dicom = ["tpt-io-dicom", "tpt-io-dicom/std"]
+fhir = ["tpt-io-fhir", "tpt-io-fhir/std"]
+nifti = ["tpt-io-nifti", "tpt-io-nifti/std"]
+ifc = ["tpt-io-ifc", "tpt-io-ifc/std"]
+citygml = ["tpt-io-citygml", "tpt-io-citygml/std"]
+spice = ["tpt-io-spice", "tpt-io-spice/std"]
+gerber = ["tpt-io-gerber", "tpt-io-gerber/std"]
+edif = ["tpt-io-edif", "tpt-io-edif/std"]
+geo = ["tpt-io-geo", "tpt-io-geo/std"]
+netcdf = ["tpt-io-netcdf", "tpt-io-netcdf/std"]
+welllog = ["tpt-io-welllog", "tpt-io-welllog/std"]
+capeopen = ["tpt-io-capeopen", "tpt-io-capeopen/std"]
+sbml = ["tpt-io-sbml", "tpt-io-sbml/std"]
+
+# Flat feature tree: each domain feature is independent (no transitive deps).

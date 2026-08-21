@@ -1,6 +1,26 @@
 [package]
 name = "tpt-io-fhir"
-version = "0.1.0"
-edition = "2024"
+description = "HL7 FHIR R4/R5 deserializer for JSON and XML representations with profile validation."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["fhir", "hl7", "health", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_fhir"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+# Integration with future `tpt-medical-patient` (not yet published).
+medical-patient-integration = []
+
+[dev-dependencies]

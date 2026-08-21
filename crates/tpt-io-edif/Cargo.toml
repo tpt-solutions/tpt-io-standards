@@ -1,6 +1,26 @@
 [package]
 name = "tpt-io-edif"
-version = "0.1.0"
-edition = "2024"
+description = "EDIF 2.0.0 / 4.0.0 parser for hierarchical circuit representation."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["edif", "electronics", "netlist", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_edif"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+# Integration with future `tpt-em-circuit` (not yet published).
+em-circuit-integration = []
+
+[dev-dependencies]

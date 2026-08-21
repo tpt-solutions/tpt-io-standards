@@ -1,6 +1,28 @@
 [package]
 name = "tpt-io-geo"
-version = "0.1.0"
-edition = "2024"
+description = "Geospatial parser: GeoJSON (RFC 7946), Shapefile, GeoTIFF metadata, CRS handling."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["geo", "gis", "geospatial", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_geo"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+# Integration with future `tpt-eng-geometry` (not yet published).
+eng-geometry-integration = []
+# Integration with future `tpt-math-geometry` (not yet published).
+math-geometry-integration = []
+
+[dev-dependencies]

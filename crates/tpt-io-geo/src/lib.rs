@@ -1,14 +1,22 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Geo parser for the `tpt-io` workspace.
+//!
+//! Scaffold status: the error type and module layout follow the `tpt-io-core`
+//! pattern. Format-specific parsers are filled in incrementally per `spec.txt`
+//! and the workspace `todo.md` checklist.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#![cfg_attr(not(feature = "std"), no_std)]
+#![forbid(unsafe_code)]
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+#[cfg(any(feature = "alloc", feature = "std"))]
+extern crate alloc;
+
+pub mod error;
+
+pub use error::GeoError;
+
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub use tpt_io_core::ParseError;
+pub use tpt_io_core::{
+    Encoding, FormatExtension, NoProgress, Progress, ProgressFn, Reader, Schema,
+    ValidationSettings, Validator, Writer,
+};

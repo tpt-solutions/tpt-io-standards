@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  # Lint, build, and test across the meaningful feature configurations.
+  #
+  # - default features: every crate (domain crates pull in `std` + `alloc`)
+  # - all features: every domain feature enabled (umbrella pulls them all in)
+  # - minimal (no std/alloc): only the crates that genuinely support a
+  #   no-`alloc` `no_std` build — `tpt-io-core` and the zero-cost `tpt-io`
+  #   umbrella (no domain features). Domain crates intentionally require
+  #   `alloc`, so they are excluded from this lane by design.
+  test:
+    name: lint + build + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+
+      - name: fmt
+        run: cargo fmt --all -- --check
+
+      - name: clippy (default)
+        run: cargo clippy --workspace --all-targets
+
+      - name: clippy (all-features)
+        run: cargo clippy --workspace --all-targets --all-features
+
+      - name: build + test (default)
+        run: cargo test --workspace
+
+      - name: build + test (all-features)
+        run: cargo test --workspace --all-features
+
+      - name: minimal zero-cost (no std/alloc)
+        run: |
+          cargo build -p tpt-io-core --no-default-features
+          cargo build -p tpt-io --no-default-features
+
+  # Verify the MSRV declared in [workspace.package] actually compiles.
+  msrv:
+    name: msrv (1.75)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.75.0
+      - uses: Swatinem/rust-cache@v2
+      - name: build (default features)
+        run: cargo build --workspace
+      - name: build (all features)
+        run: cargo build --workspace --all-features

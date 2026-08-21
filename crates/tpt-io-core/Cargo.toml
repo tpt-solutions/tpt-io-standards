@@ -21,7 +21,7 @@ sha2 = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
-std = []
+std = ["alloc"]
 alloc = []
 checksums = ["dep:crc32fast", "dep:md-5", "dep:sha2"]
 

@@ -11,29 +11,29 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 
 - [x] Root `Cargo.toml` workspace with `[workspace.package]` shared metadata (license, edition, rust-version, repository)
 - [x] `crates/` scaffolded for all 15 crates (`cargo new --lib`)
-- [ ] `LICENSE-MIT` and `LICENSE-APACHE` at repo root
-- [ ] Root `README.md` (workspace overview, crate table, feature-flag usage example from spec §4)
-- [ ] `.gitignore` (`/target`, etc.)
-- [ ] `git init` + first commit
-- [ ] `.github/workflows/ci.yml` — build/test/clippy/fmt across `--no-default-features`, default, `--all-features`
-- [ ] `rustfmt.toml` / `clippy.toml` if any workspace-wide lint config is wanted
-- [ ] Decide & document MSRV policy (currently pinned to 1.75 in workspace.package)
+- [x] `LICENSE-MIT` and `LICENSE-APACHE` at repo root
+- [x] Root `README.md` (workspace overview, crate table, feature-flag usage example from spec §4)
+- [x] `.gitignore` (`/target`, etc.)
+- [x] `git init` + first commit
+- [x] `.github/workflows/ci.yml` — build/test/clippy/fmt across `--no-default-features`, default, `--all-features`
+- [x] `rustfmt.toml` / `clippy.toml` if any workspace-wide lint config is wanted
+- [x] Decide & document MSRV policy (currently pinned to 1.75 in workspace.package)
 
 ## 1. `tpt-io-core` (foundation — do this first, sets the pattern for all others)
 
-- [~] `Cargo.toml`: metadata, `no_std` + `alloc` + `std` (default) + `checksums` features
-- [~] `src/lib.rs` module layout (`error`, `traits`, `encoding`, `checksum`)
-- [ ] `ParseError` struct: byte offset, expected-vs-actual token, `SpecReference` (format + section string), surrounding-bytes `ErrorContext`
-- [ ] `Reader` / `Writer` traits (generic over input/output, `no_std`-safe signatures)
-- [ ] `Validator` trait — syntactic vs. semantic validation split (spec §4 Validation Strategy), `with_syntactic_validation` / `with_semantic_validation` builder pattern
-- [ ] `Schema` trait
-- [ ] `encoding` module: UTF-8/UTF-16(LE/BE)/ASCII detection from a byte slice (BOM + heuristic)
-- [ ] `checksum` module: CRC32, MD5, SHA256 wrappers behind `checksums` feature
-- [ ] Progress-reporting hook trait/callback for large-file streaming parsers
-- [ ] `FormatExtension` extensibility trait (spec §4 Extensibility example)
-- [ ] Unit tests for error formatting, encoding detection, checksums
-- [ ] Doc comments + crate-level docs pass (`cargo doc --no-deps` clean)
-- [ ] `cargo publish --dry-run -p tpt-io-core` clean
+- [x] `Cargo.toml`: metadata, `no_std` + `alloc` + `std` (default) + `checksums` features
+- [x] `src/lib.rs` module layout (`error`, `traits`, `encoding`, `checksum`)
+- [x] `ParseError` struct: byte offset, expected-vs-actual token, `SpecReference` (format + section string), surrounding-bytes `ErrorContext`
+- [x] `Reader` / `Writer` traits (generic over input/output, `no_std`-safe signatures)
+- [x] `Validator` trait — syntactic vs. semantic validation split (spec §4 Validation Strategy), `with_syntactic_validation` / `with_semantic_validation` builder pattern
+- [x] `Schema` trait
+- [x] `encoding` module: UTF-8/UTF-16(LE/BE)/ASCII detection from a byte slice (BOM + heuristic)
+- [x] `checksum` module: CRC32, MD5, SHA256 wrappers behind `checksums` feature
+- [x] Progress-reporting hook trait/callback for large-file streaming parsers
+- [x] `FormatExtension` extensibility trait (spec §4 Extensibility example)
+- [x] Unit tests for error formatting, encoding detection, checksums
+- [x] Doc comments + crate-level docs pass (`cargo doc --no-deps` clean)
+- [x] `cargo publish --dry-run -p tpt-io-core` clean
 
 ## 2. Domain crates
 
@@ -43,8 +43,8 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 ### Medical & Healthcare
 
 #### `tpt-io-dicom` (PS3.5, PS3.6, PS3.7, PS3.10)
-- [ ] Cargo.toml metadata + `sci-image-integration` optional feature (for future `tpt-sci-image`, not yet published — keep optional/off by default)
-- [ ] `DicomError` enum built on `tpt_io_core::ParseError` shape
+- [x] Cargo.toml metadata + `sci-image-integration` optional feature (for future `tpt-sci-image`, not yet published — keep optional/off by default)
+- [x] `DicomError` enum built on `tpt_io_core::ParseError` shape
 - [ ] Explicit VR transfer syntax parsing
 - [ ] Implicit VR transfer syntax parsing
 - [ ] Tag dictionary (standard DICOM tags)
@@ -65,7 +65,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-fhir` (HL7 FHIR R4/R5)
 - [ ] Cargo.toml + `medical-patient-integration` optional feature (for future `tpt-medical-patient`)
-- [ ] `FhirError` enum
+- [x] `FhirError` enum
 - [ ] JSON resource deserialization
 - [ ] XML resource deserialization
 - [ ] FHIR profile validation (strict)
@@ -80,7 +80,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-nifti` (NIfTI-1 / NIfTI-2)
 - [ ] Cargo.toml + `sci-image-integration` optional feature
-- [ ] `NiftiError` enum
+- [x] `NiftiError` enum
 - [ ] `.nii` single-file parsing
 - [ ] `.hdr`/`.img` dual-file parsing
 - [ ] gzip decompression for `.nii.gz`
@@ -97,7 +97,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-ifc` (IFC 4.0 / 4.3)
 - [ ] Cargo.toml + `eng-geometry-integration`, `eng-cad-integration` optional features
-- [ ] `IfcError` enum
+- [x] `IfcError` enum
 - [ ] STEP-Physical File (SPF) tokenizer/parser
 - [ ] Entity instance resolution
 - [ ] Relationship graph construction (`IfcRelContainedInSpatialStructure`, `IfcRelAssociatesMaterial`, …)
@@ -115,7 +115,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-citygml` (CityGML 2.0 / 3.0)
 - [ ] Cargo.toml + `eng-geometry-integration` optional feature; depends on `tpt-io-geo` for CRS handling
-- [ ] `CityGmlError` enum
+- [x] `CityGmlError` enum
 - [ ] XML parsing for CityGML 2.0
 - [ ] XML parsing for CityGML 3.0
 - [ ] LOD 0–4 extraction (buildings, vegetation, water, transportation)
@@ -131,16 +131,16 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-spice` (HSPICE, LTSpice, Ngspice, PSpice dialects)
 - [ ] Cargo.toml + `em-circuit-integration` optional feature
-- [ ] `SpiceError` enum
-- [ ] Dialect detection/handling (HSPICE/LTSpice/Ngspice/PSpice)
-- [ ] Passive component parsing (R, L, C)
-- [ ] Active device parsing (D, Q, M)
-- [ ] Source parsing (V, I, E, F, G, H)
-- [ ] Transmission line parsing (T)
-- [ ] `.model` card parsing (diode, BJT, MOSFET, JFET params)
+- [x] `SpiceError` enum
+- [x] Dialect detection/handling (HSPICE/LTSpice/Ngspice/PSpice)
+- [x] Passive component parsing (R, L, C)
+- [x] Active device parsing (D, Q, M)
+- [x] Source parsing (V, I, E, F, G, H)
+- [x] Transmission line parsing (T)
+- [x] `.model` card parsing (diode, BJT, MOSFET, JFET params)
 - [ ] `.subckt` hierarchical expansion with parameter substitution
-- [ ] Analysis command extraction (`.tran`, `.ac`, `.op`, `.dc`, `.noise`)
-- [ ] Component value parsing with unit suffixes (k/u/p/etc.)
+- [x] Analysis command extraction (`.tran`, `.ac`, `.op`, `.dc`, `.noise`)
+- [x] Component value parsing with unit suffixes (k/u/p/etc.)
 - [ ] Temperature-dependent parameter handling
 - [ ] `tpt-em-circuit` integration (feature-gated stub)
 - [ ] Round-trip, fuzz, golden-file, property tests
@@ -148,7 +148,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-gerber` (Gerber X2/X3 + Excellon)
 - [ ] Cargo.toml + `eng-pcb-integration`, `eng-geometry-integration` optional features
-- [ ] `GerberError` enum
+- [x] `GerberError` enum
 - [ ] Aperture definition parsing
 - [ ] Flash/draw command parsing
 - [ ] Layer polarity handling
@@ -161,7 +161,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-edif` (EDIF 2 0 0 / 4 0 0)
 - [ ] Cargo.toml + `em-circuit-integration` optional feature
-- [ ] `EdifError` enum
+- [x] `EdifError` enum
 - [ ] Library definition parsing
 - [ ] Cell declaration parsing
 - [ ] Interface port parsing
@@ -178,7 +178,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-geo` (GeoJSON, Shapefile, GeoTIFF metadata)
 - [ ] Cargo.toml + `eng-geometry-integration`, `math-geometry-integration` optional features
-- [ ] `GeoError` enum
+- [x] `GeoError` enum
 - [ ] GeoJSON (RFC 7946) parsing
 - [ ] Shapefile (.shp/.shx/.dbf) parsing
 - [ ] GeoTIFF metadata extraction
@@ -195,7 +195,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-netcdf` (NetCDF-3 classic + NetCDF-4/HDF5)
 - [ ] Cargo.toml + `sci-grid-integration` optional feature
-- [ ] `NetCdfError` enum
+- [x] `NetCdfError` enum
 - [ ] NetCDF-3 classic format parsing
 - [ ] NetCDF-4 (HDF5-based) format parsing
 - [ ] Dimension definition extraction
@@ -211,13 +211,13 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-welllog` (LAS 2.0/3.0 + DLIS)
 - [ ] Cargo.toml + `eng-geotech-integration` optional feature
-- [ ] `WellLogError` enum
-- [ ] LAS 2.0 ASCII parsing
-- [ ] LAS 3.0 ASCII parsing
+- [x] `WellLogError` enum
+- [x] LAS 2.0 ASCII parsing
+- [x] LAS 3.0 ASCII parsing
 - [ ] LAS binary format parsing + automatic encoding detection
-- [ ] Curve definition extraction (mnemonic, unit, description)
-- [ ] Depth-indexed data extraction
-- [ ] Well header extraction (UWI, location, dates)
+- [x] Curve definition extraction (mnemonic, unit, description)
+- [x] Depth-indexed data extraction
+- [x] Well header extraction (UWI, location, dates)
 - [ ] DLIS format parsing (frame-based organization)
 - [ ] Depth alignment utilities for multi-run correlation
 - [ ] `tpt-eng-geotech` integration (feature-gated stub)
@@ -228,7 +228,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-capeopen` (CAPE-OPEN 1.1 / 2.0)
 - [ ] Cargo.toml + `thermo-integration`, `eng-unit-ops-integration` optional features + Windows-only `com` feature (off by default)
-- [ ] `CapeOpenError` enum
+- [x] `CapeOpenError` enum
 - [ ] Pure-Rust data model for thermodynamic property packages (component lists, phase ID, property calc requests) — no COM required
 - [ ] Unit operation port mapping (inlet/outlet streams)
 - [ ] Stream connection validation for flowsheet topology
@@ -240,7 +240,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 #### `tpt-io-sbml` (SBML Level 2 / 3)
 - [ ] Cargo.toml + `sci-reaction-network-integration`, `sci-ode-integration` optional features
-- [ ] `SbmlError` enum
+- [x] `SbmlError` enum
 - [ ] Species / compartment / reaction extraction
 - [ ] Rate law extraction with MathML expression parsing
 - [ ] Rule definitions (assignment, rate, algebraic)
@@ -257,14 +257,14 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 
 ## 3. `tpt-io` (umbrella — last, depends on all domain crates)
 
-- [ ] Cargo.toml: all 13 domain crates as optional deps, flat feature tree (no transitive feature deps)
-- [ ] Verify empty-feature build is a true zero-cost re-export of `tpt-io-core` only
-- [ ] `IoError` unified wrapper enum (wraps each domain error with format context)
-- [ ] Format detection by file extension
-- [ ] Format detection by magic bytes
-- [ ] Feature-matrix CI: build with each single feature enabled, plus `--all-features` and `--no-default-features`
-- [ ] README documenting the `features = [...]` usage pattern from spec §4
-- [ ] `cargo publish --dry-run` clean
+- [x] Cargo.toml: all 13 domain crates as optional deps, flat feature tree (no transitive feature deps)
+- [x] Verify empty-feature build is a true zero-cost re-export of `tpt-io-core` only
+- [x] `IoError` unified wrapper enum (wraps each domain error with format context)
+- [x] Format detection by file extension
+- [x] Format detection by magic bytes
+- [x] Feature-matrix CI: build with each single feature enabled, plus `--all-features` and `--no-default-features`
+- [x] README documenting the `features = [...]` usage pattern from spec §4
+- [x] `cargo publish --dry-run` clean
 
 ## 4. Cross-cutting / release readiness
 

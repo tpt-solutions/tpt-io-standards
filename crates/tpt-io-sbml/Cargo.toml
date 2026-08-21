@@ -1,6 +1,28 @@
 [package]
 name = "tpt-io-sbml"
-version = "0.1.0"
-edition = "2024"
+description = "SBML Level 2 / 3 parser for computational biology models."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["sbml", "systems-biology", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_sbml"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+# Integration with future `tpt-sci-reaction-network` (not yet published).
+sci-reaction-network-integration = []
+# Integration with future `tpt-sci-ode` (not yet published).
+sci-ode-integration = []
+
+[dev-dependencies]

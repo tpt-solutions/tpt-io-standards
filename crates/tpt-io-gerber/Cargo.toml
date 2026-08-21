@@ -1,6 +1,28 @@
 [package]
 name = "tpt-io-gerber"
-version = "0.1.0"
-edition = "2024"
+description = "Gerber X2/X3 + Excellon parser for PCB layer definitions and drill files."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["gerber", "pcb", "electronics", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_gerber"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+# Integration with future `tpt-eng-pcb` (not yet published).
+eng-pcb-integration = []
+# Integration with future `tpt-eng-geometry` (not yet published).
+eng-geometry-integration = []
+
+[dev-dependencies]

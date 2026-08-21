@@ -1,14 +1,39 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! SPICE netlist parser for the `tpt-io` workspace (HSPICE / LTSpice /
+//! Ngspice / PSpice dialects).
+//!
+//! [`parser::parse_str`] and the [`parser::SpiceReader`] type parse element
+//! cards (`R`/`L`/`C`/`V`/`I`/`D`/`Q`/`M`/`E`/`F`/`G`/`H`/`T`/`X`/`B`),
+//! `.model` definitions, `.subckt`/`.ends` blocks, and analysis commands
+//! (`.tran`/`.ac`/`.op`/`.dc`/`.noise`). Component values with SI suffixes
+//! (`k`, `u`, `n`, `p`, `meg`, …) are scaled to their numeric form. Validation
+//! lives in [`parser::SpiceValidator`].
+//!
+//! ```no_run
+//! use tpt_io_core::Reader;
+//! use tpt_io_spice::parser::SpiceReader;
+//!
+//! let netlist = b"RC filter\nR1 in out 1k\n.end\n";
+//! let reader = SpiceReader::new();
+//! // let net = reader.parse(netlist).unwrap();
+//! ```
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#![cfg_attr(not(feature = "std"), no_std)]
+#![forbid(unsafe_code)]
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+#[cfg(any(feature = "alloc", feature = "std"))]
+extern crate alloc;
+
+pub mod error;
+pub mod model;
+pub mod parser;
+
+pub use error::SpiceError;
+pub use model::{Analysis, Element, ElementKind, Model, SpiceNetlist, Subckt, Value};
+pub use parser::{parse_str, parse_value, SpiceReader, SpiceValidator};
+
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub use tpt_io_core::ParseError;
+pub use tpt_io_core::{
+    Encoding, FormatExtension, NoProgress, Progress, ProgressFn, Reader, Schema,
+    ValidationSettings, Validator, Writer,
+};

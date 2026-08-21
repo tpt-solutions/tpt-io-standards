@@ -1,6 +1,26 @@
 [package]
 name = "tpt-io-netcdf"
-version = "0.1.0"
-edition = "2024"
+description = "NetCDF-3 classic and NetCDF-4 (HDF5) parser for climate/ocean/atmospheric data."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["netcdf", "hdf5", "earth", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_netcdf"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+# Integration with future `tpt-sci-grid` (not yet published).
+sci-grid-integration = []
+
+[dev-dependencies]

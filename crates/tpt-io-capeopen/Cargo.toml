@@ -1,6 +1,30 @@
 [package]
 name = "tpt-io-capeopen"
-version = "0.1.0"
-edition = "2024"
+description = "CAPE-OPEN 1.1 / 2.0 interface definitions for process simulation interoperability."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["cape-open", "process", "thermo", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_capeopen"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+# Integration with future `tpt-thermo` (not yet published).
+thermo-integration = []
+# Integration with future `tpt-eng-unit-ops` (not yet published).
+eng-unit-ops-integration = []
+# Windows-only FFI COM wrappers via the `windows` crate (off by default).
+com = []
+
+[dev-dependencies]

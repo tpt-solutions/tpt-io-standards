@@ -1,6 +1,26 @@
 [package]
 name = "tpt-io-citygml"
-version = "0.1.0"
-edition = "2024"
+description = "CityGML 2.0 / 3.0 XML parser for urban and regional 3D models."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["citygml", "gis", "urban", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_citygml"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+# Integration with future `tpt-eng-geometry` (not yet published).
+eng-geometry-integration = []
+
+[dev-dependencies]

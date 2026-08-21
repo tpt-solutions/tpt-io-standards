@@ -1,6 +1,26 @@
 [package]
 name = "tpt-io-welllog"
-version = "0.1.0"
-edition = "2024"
+description = "LAS 2.0/3.0 + DLIS parser for well-log data."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["welllog", "las", "dlis", "geoscience", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_welllog"
 
 [dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+# Integration with future `tpt-eng-geotech` (not yet published).
+eng-geotech-integration = []
+
+[dev-dependencies]
