@@ -191,7 +191,7 @@ impl<'a> Parser<'a> {
     fn read_ident(&mut self) -> Result<Tok, IfcError> {
         let mut s = String::new();
         while let Some(c) = self.peek() {
-            if c.is_ascii_alphanumeric() || c == b'_' {
+            if c.is_ascii_alphanumeric() || c == b'_' || c == b'-' {
                 s.push(c as char);
                 self.i += 1;
             } else {
