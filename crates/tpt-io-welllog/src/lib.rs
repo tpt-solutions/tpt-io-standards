@@ -23,13 +23,21 @@
 #[cfg(any(feature = "alloc", feature = "std"))]
 extern crate alloc;
 
+pub mod align;
+pub mod binary;
+pub mod dlis;
 pub mod error;
+pub mod integration;
 pub mod model;
 pub mod parser;
 
 pub use error::WellLogError;
 pub use model::{Curve, Parameter, WellInfo, WellLog};
 pub use parser::{LasReader, WellLogValidator};
+
+pub use align::align_to;
+pub use binary::{decode_input, parse_binary_log, read_packed_f64};
+pub use dlis::{parse_dlis, DlisFile, DlisReader, DlisValidator};
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub use tpt_io_core::ParseError;

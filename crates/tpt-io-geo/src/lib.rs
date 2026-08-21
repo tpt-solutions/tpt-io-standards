@@ -11,8 +11,13 @@
 extern crate alloc;
 
 pub mod error;
+pub mod geojson;
+pub mod json;
+pub mod model;
 
 pub use error::GeoError;
+pub use geojson::{parse_geojson, GeoJsonReader, GeoJsonValidator};
+pub use model::{Bbox, Feature, FeatureCollection, GeoJson, Geometry, Position};
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub use tpt_io_core::ParseError;

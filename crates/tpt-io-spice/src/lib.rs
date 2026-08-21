@@ -29,13 +29,13 @@ pub mod model;
 pub mod parser;
 pub mod writer;
 
-#[cfg(any(feature = "em-circuit-integration"))]
+#[cfg(feature = "em-circuit-integration")]
 pub mod integration;
 
 pub use error::SpiceError;
+pub use expand::{expand_netlist, expand_subckt_instance};
 pub use model::{Analysis, Element, ElementKind, Model, SpiceNetlist, Subckt, Value};
 pub use parser::{parse_element, parse_str, parse_value, SpiceReader, SpiceValidator};
-pub use expand::{expand_netlist, expand_subckt_instance};
 pub use writer::serialize;
 
 #[cfg(any(feature = "alloc", feature = "std"))]

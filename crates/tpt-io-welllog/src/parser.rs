@@ -10,7 +10,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
-use tpt_io_core::{Encoding, Reader, ValidationSettings, Validator, Writer};
+use tpt_io_core::{Reader, ValidationSettings, Validator, Writer};
 
 use crate::error::WellLogError;
 use crate::model::{Curve, Parameter, WellInfo, WellLog};
@@ -193,10 +193,8 @@ impl Reader<WellLog> for LasReader {
     type Error = WellLogError;
 
     fn parse(&self, input: &[u8]) -> Result<WellLog, WellLogError> {
-        let text = Encoding::detect(input)
-            .as_str(input)
-            .ok_or(WellLogError::Unsupported("non-UTF-8 LAS input (UTF-16 is not supported)"))?;
-        let log = parse_str(text)?;
+        let text = crate::binary::decode_input(input)?;
+        let log = parse_str(&text)?;
         self.validation.run(&WellLogValidator, &log)?;
         Ok(log)
     }

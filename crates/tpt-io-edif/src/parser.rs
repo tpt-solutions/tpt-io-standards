@@ -12,7 +12,8 @@ use tpt_io_core::{ParseError, Result, SpecReference};
 
 use crate::error::EdifError;
 use crate::model::{
-    Cell, Design, Direction, Edif, Instance, Library, Net, Port, PortRef, Property, View, ViewType,
+    Cell, Design, Direction, Edif, Figure, Instance, Library, Net, Point, Port, PortRef, Property,
+    Shape, View, ViewGeometry, ViewType,
 };
 use crate::token::{tokenize, Located, Token};
 
@@ -226,6 +227,7 @@ fn read_view(body: &[Sexp]) -> core::result::Result<View, EdifError> {
     let mut instances = Vec::new();
     let mut nets = Vec::new();
     let mut properties = Vec::new();
+    let mut figures = Vec::new();
 
     for f in body {
         if let Some(t) = f.as_form("viewType") {
@@ -250,6 +252,10 @@ fn read_view(body: &[Sexp]) -> core::result::Result<View, EdifError> {
                     if let Some(net) = read_net(nbody) {
                         nets.push(net);
                     }
+                } else if let Some(fbody) = c.as_form("figure") {
+                    if let Some(fig) = read_figure(fbody) {
+                        figures.push(fig);
+                    }
                 } else if let Some(pbody) = c.as_form("property") {
                     if let Some(p) = read_property(pbody) {
                         properties.push(p);
@@ -263,7 +269,15 @@ fn read_view(body: &[Sexp]) -> core::result::Result<View, EdifError> {
         }
     }
 
-    Ok(View { name, view_type, interface, instances, nets, properties })
+    // Geometry is only meaningful for SCHEMATIC / LAYOUT views.
+    let geometry =
+        if matches!(view_type, ViewType::Schematic | ViewType::Layout) && !figures.is_empty() {
+            Some(ViewGeometry { figures })
+        } else {
+            None
+        };
+
+    Ok(View { name, view_type, interface, instances, nets, properties, geometry })
 }
 
 fn read_port(body: &[Sexp]) -> Option<Port> {
@@ -343,6 +357,182 @@ fn read_property(body: &[Sexp]) -> Option<Property> {
         })
         .unwrap_or_default();
     Some(Property { key, value })
+}
+
+fn read_figure(body: &[Sexp]) -> Option<Figure> {
+    let name = effective_name(body)?;
+    let mut shapes = Vec::new();
+    let mut port_insts = Vec::new();
+    for f in body {
+        if f.as_form("shape").is_some() {
+            if let Some(sh) = read_shape(f) {
+                shapes.push(sh);
+            }
+        } else if f.as_form("portInst").is_some() {
+            let pin = form_items(f)
+                .iter()
+                .find_map(|x| x.as_form("portRef"))
+                .and_then(|pr| pr.first().and_then(symbol_str))
+                .or_else(|| {
+                    form_items(f)
+                        .iter()
+                        .find_map(|x| x.as_form("instanceRef"))
+                        .and_then(|ir| ir.first().and_then(symbol_str))
+                })
+                .map(String::from);
+            if let Some(n) = pin {
+                port_insts.push(n);
+            }
+        }
+    }
+    Some(Figure { name, shapes, port_insts })
+}
+
+/// Return the child items of a list form (empty slice for non-lists).
+fn form_items(s: &Sexp) -> &[Sexp] {
+    match s {
+        Sexp::List(items) => items,
+        _ => &[],
+    }
+}
+
+/// Recursively find the first sub-form whose head matches `head`.
+///
+/// Unlike [`Sexp::as_form`], this searches nested lists (shapes nest their
+/// primitives inside keyword forms such as `(pathWidth …)` / `(points …)`).
+// Lifetime is required (two input references); clippy's `needless_lifetimes`
+// false-positives here because elision is ambiguous between `&Sexp`/`&str`.
+#[allow(clippy::needless_lifetimes)]
+fn find_form<'a>(s: &'a Sexp, head: &str) -> Option<&'a [Sexp]> {
+    if let Some(t) = s.as_form(head) {
+        return Some(t);
+    }
+    if let Sexp::List(items) = s {
+        for it in items {
+            if let Some(f) = find_form(it, head) {
+                return Some(f);
+            }
+        }
+    }
+    None
+}
+
+/// Read an integer-coordinate point from a `(pt x y)` form.
+fn read_point(s: &Sexp) -> Option<Point> {
+    let t = s.as_form("pt")?;
+    let x = t.first().and_then(num_i64)?;
+    let y = t.get(1).and_then(num_i64)?;
+    Some(Point { x, y })
+}
+
+/// Recursively find the first `(pt …)` in a sub-tree.
+fn find_first_point(s: &Sexp) -> Option<Point> {
+    if let Some(p) = read_point(s) {
+        return Some(p);
+    }
+    if let Sexp::List(items) = s {
+        for it in items {
+            if let Some(p) = find_first_point(it) {
+                return Some(p);
+            }
+        }
+    }
+    None
+}
+
+/// Collect all `(pt …)` points from a shape primitive, handling both an
+/// explicit `(points (pt …)*)` wrapper and bare `(pt …)` children.
+fn collect_points(prim: &Sexp) -> Vec<Point> {
+    if let Some(pts) = find_form(prim, "points") {
+        return pts.iter().filter_map(read_point).collect();
+    }
+    match prim {
+        Sexp::List(items) => items.iter().filter_map(read_point).collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// Interpret a `shape` form (or a bare primitive) into a typed [`Shape`].
+fn read_shape(form: &Sexp) -> Option<Shape> {
+    let prim = match form {
+        Sexp::List(items) => items.iter().find(|s| matches!(s, Sexp::List(_)))?,
+        _ => return None,
+    };
+    let kind = prim.head()?.to_ascii_uppercase();
+    match kind.as_str() {
+        "BOX" => {
+            let pts = collect_points(prim);
+            if pts.len() >= 2 {
+                Some(Shape::Box { min: pts[0], max: pts[1] })
+            } else {
+                None
+            }
+        }
+        "PATH" => {
+            let width = find_form(prim, "pathWidth").and_then(|w| w.first().and_then(num_i64));
+            Some(Shape::Path { width, points: collect_points(prim) })
+        }
+        "LINE" => Some(Shape::Line { points: collect_points(prim) }),
+        "POLYGON" => Some(Shape::Polygon { points: collect_points(prim) }),
+        "DISC" => {
+            let radius =
+                find_form(prim, "radius").and_then(|r| r.first().and_then(num_i64)).unwrap_or(0);
+            let center = find_first_point(prim).unwrap_or(Point { x: 0, y: 0 });
+            Some(Shape::Disc { center, radius })
+        }
+        "ARC" => {
+            let center = find_form(prim, "center")
+                .and_then(|c| c.first())
+                .and_then(find_first_point)
+                .unwrap_or(Point { x: 0, y: 0 });
+            let radius =
+                find_form(prim, "radius").and_then(|r| r.first().and_then(num_i64)).unwrap_or(0);
+            let start = find_form(prim, "startAngle")
+                .and_then(|a| a.first().and_then(num_i64))
+                .unwrap_or(0);
+            let end =
+                find_form(prim, "endAngle").and_then(|a| a.first().and_then(num_i64)).unwrap_or(0);
+            Some(Shape::Arc { center, radius, start, end })
+        }
+        "LABEL" => {
+            let text = find_form(prim, "labelDisplay")
+                .and_then(|ld| ld.iter().find_map(|x| x.as_form("text")))
+                .and_then(|t| t.first())
+                .and_then(string_str)
+                .map(String::from)
+                .or_else(|| {
+                    find_form(prim, "text")
+                        .and_then(|t| t.first())
+                        .and_then(string_str)
+                        .map(String::from)
+                })
+                .unwrap_or_default();
+            let at = find_first_point(prim).unwrap_or(Point { x: 0, y: 0 });
+            Some(Shape::Label { text, at })
+        }
+        other => Some(Shape::Other { kind: other.to_string(), points: collect_points(prim) }),
+    }
+}
+
+fn num_i64(s: &Sexp) -> Option<i64> {
+    match s {
+        Sexp::Num(n) => {
+            let r = *n;
+            if r.fract() == 0.0 && r.abs() < 9.2e18 {
+                Some(r as i64)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
+fn string_str(s: &Sexp) -> Option<&str> {
+    match s {
+        Sexp::Str(s) => Some(s),
+        _ => None,
+    }
 }
 
 fn read_design(tail: &[Sexp]) -> Option<Design> {
@@ -458,5 +648,67 @@ impl tpt_io_core::Validator<Edif> for EdifValidator {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{Shape, ViewType};
+
+    const SCHEMA: &str = "\
+(edif mylib
+  (library lib1
+    (cell C1
+      (view schematic (viewType SCHEMATIC)
+        (interface (port P1 (direction IN)))
+        (contents
+          (figure F1
+            (shape (box (pt 0 0) (pt 100 100)))
+            (shape (label (labelDisplay (text \"Vdd\")) (origin (pt 10 20))))
+            (portInst (portRef P1))
+          )
+        )
+      )
+      (view net (viewType NETLIST)
+        (interface (port P1))
+        (contents (net N1 (joined (portRef P1))))
+      )
+    )
+  )
+)
+";
+
+    #[test]
+    fn extracts_schematic_geometry() {
+        let edif = parse_edif(SCHEMA.as_bytes()).unwrap();
+        let cell = edif.find_cell("lib1", "C1").unwrap();
+        let view = cell.views.iter().find(|v| v.view_type == ViewType::Schematic).unwrap();
+        let geo = view.geometry.as_ref().unwrap();
+        assert_eq!(geo.figures.len(), 1);
+        let fig = &geo.figures[0];
+        assert_eq!(fig.name, "F1");
+        assert_eq!(fig.port_insts, vec!["P1"]);
+        assert_eq!(fig.shapes.len(), 2);
+        assert!(matches!(
+            fig.shapes[0],
+            Shape::Box { min: Point { x: 0, y: 0 }, max: Point { x: 100, y: 100 } }
+        ));
+        match &fig.shapes[1] {
+            Shape::Label { text, at } => {
+                assert_eq!(text, "Vdd");
+                assert_eq!(*at, Point { x: 10, y: 20 });
+            }
+            other => panic!("expected label, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn netlist_view_has_no_geometry() {
+        let edif = parse_edif(SCHEMA.as_bytes()).unwrap();
+        let cell = edif.find_cell("lib1", "C1").unwrap();
+        let view = cell.views.iter().find(|v| v.view_type == ViewType::Netlist).unwrap();
+        assert!(view.geometry.is_none());
+        assert_eq!(view.nets.len(), 1);
     }
 }

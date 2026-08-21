@@ -35,21 +35,21 @@ impl NetCdf {
     }
 
     /// Extract a variable's raw data block from the file bytes.
-    pub fn var_data<'a>(&self, file: &'a [u8], v: &Var) -> core::result::Result<&'a [u8], NetCdfError> {
+    pub fn var_data<'a>(
+        &self,
+        file: &'a [u8],
+        v: &Var,
+    ) -> core::result::Result<&'a [u8], NetCdfError> {
         let len = self.var_data_len(v);
         let start = v.begin as usize;
         let end = start + len;
-        file.get(start..end)
-            .ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(end)))
+        file.get(start..end).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(end)))
     }
 
     /// Variables whose name matches a dimension name are "coordinate
     /// variables" (they map an index axis to world coordinates). Return them.
     pub fn coordinate_variables(&self) -> Vec<&Var> {
-        self.vars
-            .iter()
-            .filter(|v| self.dims.iter().any(|d| d.name == v.name))
-            .collect()
+        self.vars.iter().filter(|v| self.dims.iter().any(|d| d.name == v.name)).collect()
     }
 
     /// Read a single scalar from a variable at `index` as `f64`.
@@ -74,4 +74,3 @@ impl NetCdf {
 pub fn attr_from_f64(_name: &str, _vals: &[f64]) -> Attr {
     Attr { name: String::new(), nc_type: NcType::Double, value: Vec::new() }
 }
-

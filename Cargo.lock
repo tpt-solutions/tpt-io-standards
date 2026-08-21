@@ -465,6 +465,7 @@ dependencies = [
 name = "tpt-io-netcdf"
 version = "0.1.0"
 dependencies = [
+ "proptest",
  "tpt-io-core",
 ]
 
@@ -496,6 +497,7 @@ dependencies = [
 name = "tpt-io-welllog"
 version = "0.1.0"
 dependencies = [
+ "proptest",
  "tpt-io-core",
 ]
 

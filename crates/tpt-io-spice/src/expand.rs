@@ -54,14 +54,11 @@ pub fn expand_subckt_instance(
     inst: &Element,
     subckts: &[Subckt],
 ) -> Result<Vec<Element>, SpiceError> {
-    let name = inst
-        .subckt
-        .as_ref()
-        .ok_or(SpiceError::MissingField("subckt name"))?;
+    let name = inst.subckt.as_ref().ok_or(SpiceError::MissingField("subckt name"))?;
     let sub = subckts
         .iter()
         .find(|s| s.name.eq_ignore_ascii_case(name))
-        .ok_or_else(|| SpiceError::Unsupported("unknown subcircuit in expansion"))?;
+        .ok_or(SpiceError::Unsupported("unknown subcircuit in expansion"))?;
 
     // Parameter map: instance overrides body defaults.
     let mut params: BTreeMap<String, String> = BTreeMap::new();

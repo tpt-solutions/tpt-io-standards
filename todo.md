@@ -139,10 +139,10 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] Source parsing (V, I, E, F, G, H)
 - [x] Transmission line parsing (T)
 - [x] `.model` card parsing (diode, BJT, MOSFET, JFET params)
-- [ ] `.subckt` hierarchical expansion with parameter substitution
+- [x] `.subckt` hierarchical expansion with parameter substitution
 - [x] Analysis command extraction (`.tran`, `.ac`, `.op`, `.dc`, `.noise`)
 - [x] Component value parsing with unit suffixes (k/u/p/etc.)
-- [ ] Temperature-dependent parameter handling
+- [x] Temperature-dependent parameter handling
 - [ ] `tpt-em-circuit` integration (feature-gated stub)
 - [ ] Round-trip, fuzz, golden-file, property tests
 - [ ] README + docs, `cargo publish --dry-run`
@@ -170,8 +170,8 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] Netlist connectivity parsing
 - [x] Property extraction for component parameters
 - [x] Hierarchical flattening (nested → flat netlist, union-find port merge)
-- [ ] Schematic representation geometric data extraction
-- [ ] Layout representation geometric data extraction
+- [x] Schematic representation geometric data extraction
+- [x] Layout representation geometric data extraction
 - [x] `tpt-em-circuit` integration (feature-gated stub)
 - [x] Round-trip, fuzz, golden-file, property tests
 - [x] README + docs
@@ -182,7 +182,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 #### `tpt-io-geo` (GeoJSON, Shapefile, GeoTIFF metadata)
 - [ ] Cargo.toml + `eng-geometry-integration`, `math-geometry-integration` optional features
 - [x] `GeoError` enum
-- [ ] GeoJSON (RFC 7946) parsing
+- [x] GeoJSON (RFC 7946) parsing
 - [ ] Shapefile (.shp/.shx/.dbf) parsing
 - [ ] GeoTIFF metadata extraction
 - [ ] CRS handling via PROJ strings
@@ -197,32 +197,33 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [ ] Note: `tpt-io-citygml` depends on this crate — publish before/alongside it
 
 #### `tpt-io-netcdf` (NetCDF-3 classic + NetCDF-4/HDF5)
-- [ ] Cargo.toml + `sci-grid-integration` optional feature
+- [x] Cargo.toml + `sci-grid-integration` optional feature
 - [x] `NetCdfError` enum
-- [ ] NetCDF-3 classic format parsing
+- [x] NetCDF-3 classic format parsing
 - [ ] NetCDF-4 (HDF5-based) format parsing
-- [ ] Dimension definition extraction
-- [ ] Variable metadata extraction (units, long_name, valid_range)
-- [ ] Global attribute extraction
+- [x] Dimension definition extraction
+- [x] Variable metadata extraction (units, long_name, valid_range)
+- [x] Global attribute extraction
 - [ ] Chunked reading for large multi-dim arrays (time × depth × lat × lon)
-- [ ] Coordinate variable detection + automatic coordinate mapping
+- [x] Coordinate variable detection + automatic coordinate mapping
 - [ ] Deflate/shuffle compression support
 - [ ] Chunking metadata for performance
-- [ ] `tpt-sci-grid` integration (feature-gated stub)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] `tpt-sci-grid` integration (feature-gated stub)
+- [~] Round-trip, fuzz, golden-file, property tests (round-trip + property done; fuzz + golden pending)
+- [x] README + docs
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 #### `tpt-io-welllog` (LAS 2.0/3.0 + DLIS)
 - [ ] Cargo.toml + `eng-geotech-integration` optional feature
 - [x] `WellLogError` enum
 - [x] LAS 2.0 ASCII parsing
 - [x] LAS 3.0 ASCII parsing
-- [ ] LAS binary format parsing + automatic encoding detection
+- [x] LAS binary format parsing + automatic encoding detection
 - [x] Curve definition extraction (mnemonic, unit, description)
 - [x] Depth-indexed data extraction
 - [x] Well header extraction (UWI, location, dates)
-- [ ] DLIS format parsing (frame-based organization)
-- [ ] Depth alignment utilities for multi-run correlation
+- [x] DLIS format parsing (frame-based organization)
+- [x] Depth alignment utilities for multi-run correlation
 - [ ] `tpt-eng-geotech` integration (feature-gated stub)
 - [ ] Round-trip, fuzz, golden-file, property tests
 - [ ] README + docs, `cargo publish --dry-run`

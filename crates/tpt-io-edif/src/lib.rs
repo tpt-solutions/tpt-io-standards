@@ -37,6 +37,7 @@
 //!                     ],
 //!                 }],
 //!                 properties: vec![],
+//!                 geometry: None,
 //!             }],
 //!         }],
 //!     }],

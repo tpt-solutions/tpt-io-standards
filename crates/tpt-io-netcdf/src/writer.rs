@@ -8,7 +8,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use crate::error::NetCdfError;
-use crate::header::{parse, Attr, NcType, NetCdf, TAG_ATTRIBUTE, TAG_DIMENSION, TAG_VARIABLE};
+use crate::header::{parse, Attr, NetCdf, TAG_ATTRIBUTE, TAG_DIMENSION, TAG_VARIABLE};
 
 fn wr_u32(buf: &mut Vec<u8>, v: u32) {
     buf.extend_from_slice(&v.to_be_bytes());
@@ -99,7 +99,10 @@ impl NetCdfWriter {
 impl tpt_io_core::Writer<NetCdf> for NetCdfWriter {
     type Error = core::convert::Infallible;
 
-    fn serialize(&self, value: &NetCdf) -> core::result::Result<Vec<u8>, core::convert::Infallible> {
+    fn serialize(
+        &self,
+        value: &NetCdf,
+    ) -> core::result::Result<Vec<u8>, core::convert::Infallible> {
         Ok(serialize_header(value))
     }
 }

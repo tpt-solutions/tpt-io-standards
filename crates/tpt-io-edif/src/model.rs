@@ -102,6 +102,70 @@ pub struct Instance {
     pub library_ref: String,
 }
 
+/// A 2-D integer point (EDIF stores geometry in integer database units).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Point {
+    /// X coordinate.
+    pub x: i64,
+    /// Y coordinate.
+    pub y: i64,
+}
+
+/// A single geometric primitive extracted from a `shape` form.
+///
+/// Coordinates are kept in integer database units; conversion to physical
+/// units depends on the cell's `(scale)` / `(display)` and is left to the
+/// caller.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Shape {
+    /// Axis-aligned rectangle between two corners.
+    Box { min: Point, max: Point },
+    /// Polyline of fixed width (often a routed wire).
+    Path { width: Option<i64>, points: Vec<Point> },
+    /// Open polyline.
+    Line { points: Vec<Point> },
+    /// Closed polygon.
+    Polygon { points: Vec<Point> },
+    /// Filled circle.
+    Disc { center: Point, radius: i64 },
+    /// Circular arc.
+    Arc {
+        /// Arc centre.
+        center: Point,
+        /// Arc radius.
+        radius: i64,
+        /// Start angle (degrees, 0–360).
+        start: i64,
+        /// End angle (degrees, 0–360).
+        end: i64,
+    },
+    /// Text annotation anchored at a point.
+    Label { text: String, at: Point },
+    /// Any other shape primitive, captured by keyword with its points.
+    Other { kind: String, points: Vec<Point> },
+}
+
+/// A `figure` (symbol or layout geometry) inside a view's contents.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Figure {
+    /// Figure name (post-`rename`).
+    pub name: String,
+    /// Geometric primitives composing the figure.
+    pub shapes: Vec<Shape>,
+    /// Port instances (`portInst`) bound within the figure.
+    pub port_insts: Vec<String>,
+}
+
+/// Extracted geometry for a SCHEMATIC or LAYOUT view.
+///
+/// Only populated when the view type is `Schematic` or `Layout`; netlist/symbol
+/// views yield `None`.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ViewGeometry {
+    /// Figures declared in the view contents.
+    pub figures: Vec<Figure>,
+}
+
 /// A parsed cell view.
 #[derive(Debug, Clone, PartialEq)]
 pub struct View {
@@ -117,6 +181,8 @@ pub struct View {
     pub nets: Vec<Net>,
     /// Arbitrary properties attached to the view (`(property key (owner ...) value)`).
     pub properties: Vec<Property>,
+    /// Extracted geometry, present only for SCHEMATIC / LAYOUT views.
+    pub geometry: Option<ViewGeometry>,
 }
 
 /// A key/value property.

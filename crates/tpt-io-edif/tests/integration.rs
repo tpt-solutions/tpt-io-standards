@@ -26,6 +26,7 @@ fn sample_edif() -> Edif {
             instances: vec![],
             nets: vec![],
             properties: vec![],
+            geometry: None,
         }],
     };
     let sub = Cell {
@@ -61,6 +62,7 @@ fn sample_edif() -> Edif {
                 },
             ],
             properties: vec![],
+            geometry: None,
         }],
     };
     let top = Cell {
@@ -96,6 +98,7 @@ fn sample_edif() -> Edif {
                 },
             ],
             properties: vec![],
+            geometry: None,
         }],
     };
 

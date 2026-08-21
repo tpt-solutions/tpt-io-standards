@@ -137,18 +137,19 @@ struct Cur<'a> {
 }
 
 impl<'a> Cur<'a> {
-    fn u8(&mut self) -> Result<u8, NetCdfError> {
-        let b = *self.data.get(self.pos).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
-        self.pos += 1;
-        Ok(b)
-    }
     fn u32(&mut self) -> Result<u32, NetCdfError> {
-        let s = self.data.get(self.pos..self.pos + 4).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
+        let s = self
+            .data
+            .get(self.pos..self.pos + 4)
+            .ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
         self.pos += 4;
         Ok(u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
     }
     fn u64(&mut self) -> Result<u64, NetCdfError> {
-        let s = self.data.get(self.pos..self.pos + 8).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
+        let s = self
+            .data
+            .get(self.pos..self.pos + 8)
+            .ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
         self.pos += 8;
         Ok(u64::from_be_bytes([s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]]))
     }
@@ -158,7 +159,10 @@ impl<'a> Cur<'a> {
     /// Read a length-prefixed, 4-byte-padded string.
     fn string(&mut self) -> Result<String, NetCdfError> {
         let n = self.u32()? as usize;
-        let s = self.data.get(self.pos..self.pos + n).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
+        let s = self
+            .data
+            .get(self.pos..self.pos + n)
+            .ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
         self.pos += n;
         // Pad to a 4-byte boundary.
         let padded = (n + 3) & !3;
@@ -167,7 +171,10 @@ impl<'a> Cur<'a> {
     }
     /// Read `len` bytes (padded to 4) as an attribute value.
     fn value_bytes(&mut self, len: usize) -> Result<Vec<u8>, NetCdfError> {
-        let s = self.data.get(self.pos..self.pos + len).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
+        let s = self
+            .data
+            .get(self.pos..self.pos + len)
+            .ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
         self.pos += len;
         let padded = (len + 3) & !3;
         self.pos += padded - len;
@@ -222,11 +229,7 @@ pub fn parse(data: &[u8]) -> core::result::Result<NetCdf, NetCdfError> {
     let mut c = Cur { data, pos: 4, wide };
 
     let numrecs_raw = c.u32()?;
-    let numrecs = if numrecs_raw == 0xFFFF_FFFF {
-        None
-    } else {
-        Some(numrecs_raw)
-    };
+    let numrecs = if numrecs_raw == 0xFFFF_FFFF { None } else { Some(numrecs_raw) };
 
     let mut dims = Vec::new();
     let mut global_attrs = Vec::new();
@@ -260,7 +263,7 @@ pub fn parse(data: &[u8]) -> core::result::Result<NetCdf, NetCdfError> {
                     vars.push(parse_var(&mut c)?);
                 }
             }
-            other => {
+            _other => {
                 return Err(NetCdfError::Unsupported("unexpected header tag"));
             }
         }
