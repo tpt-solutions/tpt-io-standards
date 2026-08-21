@@ -90,16 +90,59 @@ fn parse_model(tokens: &[&str]) -> Result<Model, SpiceError> {
     Ok(Model { name, device, params })
 }
 
-fn parse_subckt(tokens: &[&str]) -> (String, Vec<String>) {
+fn parse_subckt(tokens: &[&str]) -> Subckt {
     if tokens.len() < 2 {
-        return (String::new(), Vec::new());
+        return Subckt::default();
     }
     let name = tokens[1].to_string();
-    let ports = tokens[2..].iter().map(|s| s.to_string()).collect();
-    (name, ports)
+    // `.subckt name (p1,p2) port1 port2 ...` — a parenthesised group holds the
+    // formal parameters; everything after it (or after the name, if no group)
+    // are the ports. A group may be a single token `(p1,p2)` or span multiple
+    // tokens `(p1` … `p2)`.
+    let mut params: Vec<String> = Vec::new();
+    let mut ports: Vec<String> = Vec::new();
+    let mut in_params = false;
+    for raw in &tokens[2..] {
+        let opens = raw.contains('(');
+        let closes = raw.contains(')');
+        let t = raw.trim_matches(|c| c == '(' || c == ')' || c == ',');
+        if opens && closes {
+            // Self-contained group like `(p1,p2)`.
+            for p in t.split(',') {
+                if !p.is_empty() {
+                    params.push(p.to_string());
+                }
+            }
+            continue;
+        }
+        if opens {
+            in_params = true;
+            if !t.is_empty() {
+                params.push(t.to_string());
+            }
+            continue;
+        }
+        if closes {
+            if !t.is_empty() {
+                params.push(t.to_string());
+            }
+            in_params = false;
+            continue;
+        }
+        if t.is_empty() {
+            in_params = !in_params;
+            continue;
+        }
+        if in_params {
+            params.push(t.to_string());
+        } else {
+            ports.push(t.to_string());
+        }
+    }
+    Subckt { name, params, ports, body: Vec::new() }
 }
 
-fn parse_element(tokens: &[&str]) -> Result<Element, SpiceError> {
+pub fn parse_element(tokens: &[&str]) -> Result<Element, SpiceError> {
     let first = tokens[0];
     let c = first.chars().next().ok_or(SpiceError::MissingField("element name"))?;
     let kind = ElementKind::from_designator(c).ok_or(SpiceError::UnknownElement(c))?;
@@ -117,35 +160,61 @@ fn parse_element(tokens: &[&str]) -> Result<Element, SpiceError> {
         ElementKind::X => 0, // handled below
     };
 
-    let (nodes, tail): (&[&str], &[&str]) = if kind == ElementKind::X {
-        if rest.is_empty() {
-            return Err(SpiceError::MissingField("subckt instance"));
-        }
-        rest.split_at(rest.len() - 1)
-    } else {
-        if rest.len() < node_count {
-            return Err(SpiceError::MissingField("nodes"));
-        }
-        rest.split_at(node_count)
-    };
-
-    let (value, params): (Option<Value>, Vec<String>) =
-        if matches!(kind, ElementKind::R | ElementKind::L | ElementKind::C) {
-            if tail.is_empty() {
-                (None, Vec::new())
-            } else {
-                (Some(parse_value(tail[0])), tail[1..].iter().map(|s| s.to_string()).collect())
+    let (nodes, subckt, value, params): (Vec<String>, Option<String>, Option<Value>, Vec<String>) =
+        if kind == ElementKind::X {
+            if rest.is_empty() {
+                return Err(SpiceError::MissingField("subckt instance"));
             }
+            // `X1 n1 n2 ... subckt [params: k=v ...]` — the subcircuit name is the
+            // last token that does not carry a `key=value` assignment; everything
+            // after it (minus an optional `params:` keyword) are instance params.
+            let eq = rest.iter().position(|t| t.contains('='));
+            let (prefix, raw_params) = match eq {
+                Some(i) => (&rest[..i], &rest[i..]),
+                None => (rest, &[][..]),
+            };
+            let prefix: Vec<&str> = prefix
+                .iter()
+                .filter(|t| !t.eq_ignore_ascii_case("params:"))
+                .copied()
+                .collect();
+            let subckt_name = prefix
+                .last()
+                .ok_or(SpiceError::MissingField("subckt name"))?
+                .to_string();
+            let nodes = prefix[..prefix.len() - 1].iter().map(|s| s.to_string()).collect();
+            let params = raw_params.iter().map(|s| s.to_string()).collect();
+            (nodes, Some(subckt_name), None, params)
         } else {
-            (None, tail.iter().map(|s| s.to_string()).collect())
+            if rest.len() < node_count {
+                return Err(SpiceError::MissingField("nodes"));
+            }
+            let (nodes, tail) = rest.split_at(node_count);
+            let (value, params): (Option<Value>, Vec<String>) = if matches!(
+                kind,
+                ElementKind::R | ElementKind::L | ElementKind::C
+            ) {
+                if tail.is_empty() {
+                    (None, Vec::new())
+                } else {
+                    (
+                        Some(parse_value(tail[0])),
+                        tail[1..].iter().map(|s| s.to_string()).collect(),
+                    )
+                }
+            } else {
+                (None, tail.iter().map(|s| s.to_string()).collect())
+            };
+            (nodes.iter().map(|s| s.to_string()).collect(), None, value, params)
         };
 
     Ok(Element {
         kind,
         name: first.to_string(),
-        nodes: nodes.iter().map(|s| s.to_string()).collect(),
+        nodes,
         value,
         params,
+        subckt,
     })
 }
 
@@ -228,8 +297,8 @@ fn handle(stmt: &str, net: &mut SpiceNetlist, in_subckt: &mut Option<usize>) {
                 }
             }
             ".subckt" => {
-                let (name, ports) = parse_subckt(&tokens);
-                net.subckts.push(Subckt { name, ports, body: Vec::new() });
+                let sub = parse_subckt(&tokens);
+                net.subckts.push(sub);
                 *in_subckt = Some(net.subckts.len() - 1);
             }
             ".ends" => *in_subckt = None,
@@ -238,11 +307,27 @@ fn handle(stmt: &str, net: &mut SpiceNetlist, in_subckt: &mut Option<usize>) {
             ".op" => net.analyses.push(Analysis::Op),
             ".dc" => net.analyses.push(Analysis::Dc(args(&tokens))),
             ".noise" => net.analyses.push(Analysis::Noise(args(&tokens))),
+            ".temp" => {
+                if let Some(t) = tokens.get(1).and_then(|s| s.parse::<f64>().ok()) {
+                    net.temperature = Some(t);
+                }
+            }
+            ".options" => {
+                // `.options temp=25` / `.options TEMP=25`.
+                if let Some(t) = tokens
+                    .iter()
+                    .find_map(|s| s.split_once('='))
+                    .filter(|(k, _)| k.eq_ignore_ascii_case("temp"))
+                    .and_then(|(_, v)| v.trim().parse::<f64>().ok())
+                {
+                    net.temperature = Some(t);
+                }
+            }
             other => {
-                if other == "end" {
+                let name = other.trim_start_matches('.').to_string();
+                if name == "end" {
                     return;
                 }
-                let name = other.trim_start_matches('.').to_string();
                 net.analyses.push(Analysis::Other(name, args(&tokens)));
             }
         }
@@ -291,6 +376,14 @@ impl Reader<SpiceNetlist> for SpiceReader {
         let net = parse_str(text)?;
         self.validation.run(&SpiceValidator, &net)?;
         Ok(net)
+    }
+}
+
+impl tpt_io_core::Writer<SpiceNetlist> for SpiceReader {
+    type Error = SpiceError;
+
+    fn serialize(&self, value: &SpiceNetlist) -> Result<Vec<u8>, SpiceError> {
+        crate::writer::serialize(value)
     }
 }
 

@@ -24,3 +24,4 @@ alloc = ["tpt-io-core/alloc"]
 em-circuit-integration = []
 
 [dev-dependencies]
+proptest = "1"

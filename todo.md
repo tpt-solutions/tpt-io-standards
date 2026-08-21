@@ -147,17 +147,18 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [ ] README + docs, `cargo publish --dry-run`
 
 #### `tpt-io-gerber` (Gerber X2/X3 + Excellon)
-- [ ] Cargo.toml + `eng-pcb-integration`, `eng-geometry-integration` optional features
+- [x] Cargo.toml + `eng-pcb-integration`, `eng-geometry-integration` optional features
 - [x] `GerberError` enum
-- [ ] Aperture definition parsing
-- [ ] Flash/draw command parsing
-- [ ] Layer polarity handling
-- [ ] Extended codes: net list attribution, component designation, design rule metadata
-- [ ] DRC primitive extraction (trace width, spacing, annular ring)
-- [ ] Excellon drill file parsing (through-hole/via)
-- [ ] `tpt-eng-pcb` / `tpt-eng-geometry` integration (feature-gated stubs)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] Aperture definition parsing (circle/rect/obround/polygon/macro, optional hole)
+- [x] Flash/draw/arc/region/move command parsing
+- [x] Layer polarity handling (`%LP…%` X1 + `%TF.FilePolarity…%` X2)
+- [x] Extended codes: net list attribution, component designation, design rule metadata (`%TF`/`%TA`/`%TO`, `N`/`C`/`P`/`DR`)
+- [x] DRC primitive extraction (trace width, annular ring) via `drc::extract_drc`
+- [x] Excellon drill file parsing (through-hole/via) + `G85` slots + round-trip
+- [x] `tpt-eng-pcb` / `tpt-eng-geometry` integration (feature-gated stubs)
+- [x] Round-trip, fuzz (`cargo +nightly fuzz run gerber`), golden-file (`tests/samples`), property tests (proptest)
+- [x] README + docs pass (`cargo test --doc` clean)
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 #### `tpt-io-edif` (EDIF 2 0 0 / 4 0 0)
 - [ ] Cargo.toml + `em-circuit-integration` optional feature

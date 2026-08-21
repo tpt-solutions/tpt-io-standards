@@ -24,12 +24,19 @@
 extern crate alloc;
 
 pub mod error;
+pub mod expand;
 pub mod model;
 pub mod parser;
+pub mod writer;
+
+#[cfg(any(feature = "em-circuit-integration"))]
+pub mod integration;
 
 pub use error::SpiceError;
 pub use model::{Analysis, Element, ElementKind, Model, SpiceNetlist, Subckt, Value};
-pub use parser::{parse_str, parse_value, SpiceReader, SpiceValidator};
+pub use parser::{parse_element, parse_str, parse_value, SpiceReader, SpiceValidator};
+pub use expand::{expand_netlist, expand_subckt_instance};
+pub use writer::serialize;
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub use tpt_io_core::ParseError;

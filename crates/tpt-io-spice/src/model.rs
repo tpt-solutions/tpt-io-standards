@@ -89,6 +89,39 @@ pub struct Element {
     pub value: Option<Value>,
     /// Remaining tokens (model name, parameters, gain, …) in card order.
     pub params: Vec<String>,
+    /// For `X` (subcircuit) instances, the referenced subcircuit name.
+    pub subckt: Option<String>,
+}
+
+impl Element {
+    /// Look up a `key=value` parameter by key, returning its parsed `f64` value.
+    pub fn param_f64(&self, key: &str) -> Option<f64> {
+        self.params.iter().find_map(|p| {
+            let (k, v) = p.split_once('=')?;
+            if k.eq_ignore_ascii_case(key) {
+                v.trim().parse::<f64>().ok()
+            } else {
+                None
+            }
+        })
+    }
+
+    /// Resolve the effective value of a passive `R`/`L`/`C` element at
+    /// `temp_celsius`, applying a linear/quadratic temperature coefficient
+    /// (`TC`/`TC1` and optional `TC2`) around the nominal temperature (`TEMP`,
+    /// default 27 °C). Returns `None` if the element has no numeric value.
+    pub fn value_at_temperature(&self, temp_celsius: f64) -> Option<f64> {
+        let r0 = self.value.as_ref()?.scalar?;
+        let tc1 = self.param_f64("TC").or_else(|| self.param_f64("TC1"));
+        let tc2 = self.param_f64("TC2");
+        if tc1.is_none() && tc2.is_none() {
+            return Some(r0);
+        }
+        let t0 = self.param_f64("TEMP").unwrap_or(27.0);
+        let dt = temp_celsius - t0;
+        let factor = 1.0 + tc1.unwrap_or(0.0) * dt + tc2.unwrap_or(0.0) * dt * dt;
+        Some(r0 * factor)
+    }
 }
 
 /// A `.model` device model definition.
@@ -103,10 +136,13 @@ pub struct Model {
 }
 
 /// A `.subckt` / `.ends` definition.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Subckt {
     /// Subcircuit name.
     pub name: String,
+    /// Formal parameters declared in the header, e.g. `(w,l)` in
+    /// `.subckt inv (w,l) a y vdd vss`.
+    pub params: Vec<String>,
     /// Port nodes.
     pub ports: Vec<String>,
     /// Raw body lines (between `.subckt` and `.ends`), preserved verbatim.
@@ -135,6 +171,8 @@ pub enum Analysis {
 pub struct SpiceNetlist {
     /// Title line (first non-comment line).
     pub title: Option<String>,
+    /// Global simulation temperature (°C), set by a `.temp` statement.
+    pub temperature: Option<f64>,
     /// All element / instance cards.
     pub elements: Vec<Element>,
     /// Model definitions.

@@ -26,3 +26,4 @@ eng-pcb-integration = []
 eng-geometry-integration = []
 
 [dev-dependencies]
+proptest = "1"

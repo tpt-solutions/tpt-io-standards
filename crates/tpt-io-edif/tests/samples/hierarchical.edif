@@ -1,0 +1,20 @@
+(edif top (edifVersion 2 0 0) (edifLevel 0)
+  (library lib
+    (cell prim (view v (viewType NETLIST)
+      (interface (port p (direction IN)) (port q (direction OUT)))
+      (contents
+        (net np (joined (portRef p) (portRef q))))))
+    (cell sub (view v (viewType NETLIST)
+      (interface (port a (direction IN)) (port z (direction OUT)))
+      (contents
+        (instance u1 (viewRef v (cellRef prim (libraryRef lib)))
+        (net n1 (joined (portRef a) (portRef p (instanceRef u1))))
+        (net n2 (joined (portRef q (instanceRef u1)) (portRef z))))))
+    (cell top (view v (viewType NETLIST)
+      (interface (port in (direction IN)) (port out (direction OUT)))
+      (contents
+        (instance s1 (viewRef v (cellRef sub (libraryRef lib)))
+        (net g1 (joined (portRef in) (portRef a (instanceRef s1))))
+        (net g2 (joined (portRef z (instanceRef s1)) (portRef out)))))))
+  (design d (cellRef top (libraryRef lib)))
+)
