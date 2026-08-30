@@ -24,3 +24,4 @@ alloc = ["tpt-io-core/alloc"]
 sci-image-integration = []
 
 [dev-dependencies]
+proptest = "1.4"

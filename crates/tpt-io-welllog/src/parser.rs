@@ -10,36 +10,55 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
-use tpt_io_core::{Encoding, Reader, ValidationSettings, Validator, Writer};
+use tpt_io_core::{Reader, ValidationSettings, Validator, Writer};
 
 use crate::error::WellLogError;
 use crate::model::{Curve, Parameter, WellInfo, WellLog};
 
-/// Parse a LAS document from a string slice.
+/// Intermediate state produced by [`parse_header`] — everything before the
+/// `~A` (ASCII/binary data) section.
+pub(crate) struct ParsedHeader {
+    /// `VERS` from the `~V` section.
+    pub version: f32,
+    /// `WRAP` from the `~V` section.
+    pub wrap: bool,
+    /// Well header metadata.
+    pub well: WellInfo,
+    /// Parameter lines from the `~O` section.
+    pub parameters: Vec<Parameter>,
+    /// Curve definitions from the `~C` section (column 0 is the index curve).
+    pub curves: Vec<Curve>,
+}
+
+#[derive(PartialEq)]
+enum Section {
+    Version,
+    Well,
+    Parameter,
+    Curve,
+    Ascii,
+    Other,
+}
+
+/// Parse the header sections (`~V`/`~W`/`~O`/`~C`) of a LAS document, stopping
+/// at the `~A` data section. Returns the structured [`ParsedHeader`] plus the
+/// trailing text after the `~A` section header line (the raw data rows, or the
+/// `BINARY`/`ASCII` keyword for LAS 3.0).
 ///
-/// Tracks the byte offset of each line so errors can report where they
-/// occurred. Returns a fully owned [`WellLog`].
-pub fn parse_str(input: &str) -> Result<WellLog, WellLogError> {
+/// `input` is expected to already be in `&str` form (encoding detection and
+/// UTF-16 transcoding happen in the callers, [`parse_str`] and
+/// `crate::binary::parse`).
+pub(crate) fn parse_header(input: &str) -> Result<(ParsedHeader, &str), WellLogError> {
     let mut version: Option<f32> = None;
     let mut wrap = false;
     let mut well = WellInfo::default();
     let mut parameters: Vec<Parameter> = Vec::new();
     let mut curves: Vec<Curve> = Vec::new();
-    let mut data: Vec<Vec<f64>> = Vec::new();
 
-    #[derive(PartialEq)]
-    enum Section {
-        Version,
-        Well,
-        Parameter,
-        Curve,
-        Ascii,
-        Other,
-    }
     let mut section = Section::Other;
-
-    // Accumulator for WRAP=YES (tokens may span multiple physical lines).
-    let mut pending: Vec<f64> = Vec::new();
+    // Byte offset where the data (`~A`) section text begins, so the caller can
+    // slice the trailing rows. `None` until the section header is seen.
+    let mut data_start: Option<usize> = None;
 
     let mut cursor = 0usize;
     for raw in input.split('\n') {
@@ -61,9 +80,17 @@ pub fn parse_str(input: &str) -> Result<WellLog, WellLogError> {
                 Some('W') => Section::Well,
                 Some('O') | Some('P') => Section::Parameter,
                 Some('C') => Section::Curve,
-                Some('A') => Section::Ascii,
+                Some('A') => {
+                    data_start = Some(cursor);
+                    Section::Ascii
+                }
                 _ => Section::Other,
             };
+            continue;
+        }
+
+        // Once we are inside the data section we no longer parse header lines.
+        if section == Section::Ascii {
             continue;
         }
 
@@ -112,26 +139,7 @@ pub fn parse_str(input: &str) -> Result<WellLog, WellLogError> {
                 let (m, u, value, d) = parse_structured(line);
                 curves.push(Curve { mnemonic: m, unit: u, api_code: value, description: d });
             }
-            Section::Ascii => {
-                let ncol = curves.len();
-                for tok in line.split(|c: char| c.is_whitespace() || c == ',') {
-                    if tok.is_empty() {
-                        continue;
-                    }
-                    let v = tok.parse::<f64>().map_err(|_| WellLogError::InvalidNumber {
-                        offset: line_offset,
-                        value: tok.to_string(),
-                    })?;
-                    pending.push(v);
-                }
-                if ncol == 0 {
-                    continue;
-                }
-                while pending.len() >= ncol {
-                    data.push(pending.drain(..ncol).collect());
-                }
-            }
-            Section::Other => {}
+            Section::Ascii | Section::Other => {}
         }
     }
 
@@ -140,16 +148,79 @@ pub fn parse_str(input: &str) -> Result<WellLog, WellLogError> {
         return Err(WellLogError::MissingSection("C"));
     }
 
+    let remainder = match data_start {
+        Some(start) => &input[start..],
+        None => "",
+    };
+
+    Ok((ParsedHeader { version, wrap, well, parameters, curves }, remainder))
+}
+
+/// Finish a [`ParsedHeader`] by reading ASCII `~A` data rows from `rest`.
+pub(crate) fn parse_ascii_data(
+    header: ParsedHeader,
+    rest: &str,
+) -> Result<WellLog, WellLogError> {
+    let ParsedHeader { version, wrap, well, parameters, curves } = header;
+    let ncol = curves.len();
+    let mut data: Vec<Vec<f64>> = Vec::new();
+
+    // Accumulator for WRAP=YES (tokens may span multiple physical lines).
+    let mut pending: Vec<f64> = Vec::new();
+
+    let mut cursor = 0usize;
+    for raw in rest.split('\n') {
+        let line_offset = cursor;
+        cursor += raw.len() + 1;
+        let line = raw.trim_end_matches('\r').trim();
+        if line.is_empty() {
+            continue;
+        }
+        // Skip the LAS 3.0 format keyword line (`ASCII`/`BINARY`).
+        if line.len() <= 7 && line.chars().all(|c| c.is_ascii_alphabetic()) {
+            let up = line.to_ascii_uppercase();
+            if up == "ASCII" || up == "BINARY" {
+                continue;
+            }
+        }
+        for tok in line.split(|c: char| c.is_whitespace() || c == ',') {
+            if tok.is_empty() {
+                continue;
+            }
+            let v = tok.parse::<f64>().map_err(|_| WellLogError::InvalidNumber {
+                offset: line_offset,
+                value: tok.to_string(),
+            })?;
+            pending.push(v);
+        }
+        if ncol == 0 {
+            continue;
+        }
+        while pending.len() >= ncol {
+            data.push(pending.drain(..ncol).collect());
+        }
+    }
+
     // A trailing partial row under WRAP=YES is a structural error.
     if !pending.is_empty() {
         return Err(WellLogError::InconsistentColumnCount {
-            expected: curves.len(),
+            expected: ncol,
             found: pending.len(),
             line: data.len() + 1,
         });
     }
 
     Ok(WellLog { version, wrap, well, parameters, curves, data })
+}
+
+/// Parse a LAS document from a string slice.
+///
+/// This is the ASCII path (LAS 2.0 and LAS 3.0 `ASCII` data sections). Tracks
+/// the byte offset of each line so errors can report where they occurred.
+/// Returns a fully owned [`WellLog`].
+pub fn parse_str(input: &str) -> Result<WellLog, WellLogError> {
+    let (header, remainder) = parse_header(input)?;
+    parse_ascii_data(header, remainder)
 }
 
 /// Split a LAS `MNEM.UNIT  VALUE: DESCRIPTION` line into its four parts.
@@ -193,10 +264,7 @@ impl Reader<WellLog> for LasReader {
     type Error = WellLogError;
 
     fn parse(&self, input: &[u8]) -> Result<WellLog, WellLogError> {
-        let text = Encoding::detect(input)
-            .as_str(input)
-            .ok_or(WellLogError::Unsupported("non-UTF-8 LAS input (UTF-16 is not supported)"))?;
-        let log = parse_str(text)?;
+        let log = crate::binary::parse(input)?;
         self.validation.run(&WellLogValidator, &log)?;
         Ok(log)
     }

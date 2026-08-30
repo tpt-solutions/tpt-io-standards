@@ -8,7 +8,7 @@
 #[cfg(feature = "em-circuit-integration")]
 pub mod em_circuit {
     //! Stub conversion into a future `tpt_em_circuit` netlist type.
-    use crate::flatten::{FlatNetlist, LeafInstance};
+    use crate::flatten::FlatNetlist;
     use crate::model::Edif;
 
     /// Placeholder for a future `tpt_em_circuit::Circuit`.
@@ -33,6 +33,6 @@ pub mod em_circuit {
     }
 
     fn count_leaves(flat: &FlatNetlist) -> usize {
-        flat.leaves.iter().filter(|l: &LeafInstance| !l.path.is_empty()).count()
+        flat.leaves.iter().filter(|l| !l.path.is_empty()).count()
     }
 }

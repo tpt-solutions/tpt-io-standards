@@ -1,0 +1,43 @@
+(edif top
+  (edifVersion 2 0 0)
+  (edifLevel 0)
+  (library lib
+    (cell inv
+      (cellType GENERIC)
+      (view symbol (viewType SCHEMATIC)
+        (interface
+          (port a (direction IN))
+          (port z (direction OUT)))
+        (contents
+          (figure
+            (rectangle
+              (rectangleSize (pt (integer 0) (integer 0)) (pt (integer 100) (integer 50))))
+            (property layer "symbol"))
+          (figure
+            (label
+              (labelText "INV")
+              (origin (pt (integer 10) (integer 20)))))
+          (figure
+            (path (pathWidth (integer 2))
+              (pathPoint (pt (integer 0) (integer 25)))
+              (pathPoint (pt (integer 100) (integer 25)))))))
+      (view phys (viewType LAYOUT)
+        (interface
+          (port a (direction IN))
+          (port z (direction OUT)))
+        (contents
+          (figure
+            (rect
+              (rectSize (pt (integer 0) (integer 0)) (pt (integer 200) (integer 100)))
+              (rectAngle (number 0))
+              (rectOrigin (pt (integer 0) (integer 0)))))
+          (figure
+            (polygon
+              (pt (integer 10) (integer 10))
+              (pt (integer 90) (integer 40))
+              (pt (integer 40) (integer 90))))
+          (figure
+            (circle
+              (circleSize (radius (integer 30)))
+              (pt (integer 100) (integer 50))))))))
+  (design d (cellRef inv) (libraryRef lib)))

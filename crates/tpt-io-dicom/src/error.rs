@@ -18,6 +18,37 @@ pub enum DicomError {
     Core(ParseError),
     /// A DICOM-specific feature or construct that is not yet supported.
     Unsupported(&'static str),
+    /// An invalid Value Representation (VR) code was encountered.
+    InvalidVr {
+        /// Byte offset in the input.
+        offset: usize,
+        /// The two bytes that were interpreted as a VR.
+        actual: [u8; 2],
+    },
+    /// An invalid DICOM tag (group, element) was encountered.
+    InvalidTag {
+        /// Byte offset in the input.
+        offset: usize,
+        /// The raw group number read.
+        group: u16,
+        /// The raw element number read.
+        element: u16,
+    },
+    /// A required DICOM tag is missing from the dataset.
+    MissingTag {
+        /// The tag that was expected, as (group, element).
+        expected: (u16, u16),
+    },
+    /// The transfer syntax UID is unknown or unsupported.
+    UnknownTransferSyntax {
+        /// The UID string encountered.
+        uid: alloc::string::String,
+    },
+    /// The pixel data is malformed or truncated.
+    InvalidPixelData {
+        /// Byte offset where the problem was detected.
+        offset: usize,
+    },
 }
 
 impl From<ParseError> for DicomError {
@@ -31,6 +62,21 @@ impl core::fmt::Display for DicomError {
         match self {
             DicomError::Core(e) => write!(f, "{e}"),
             DicomError::Unsupported(feat) => write!(f, "DICOM unsupported feature: {feat}"),
+            DicomError::InvalidVr { offset, actual } => {
+                write!(f, "invalid VR at offset {offset}: {:02x}{:02x}", actual[0], actual[1])
+            }
+            DicomError::InvalidTag { offset, group, element } => {
+                write!(f, "invalid tag at offset {offset}: ({group:04x},{element:04x})")
+            }
+            DicomError::MissingTag { expected } => {
+                write!(f, "missing required tag ({:04x},{:04x})", expected.0, expected.1)
+            }
+            DicomError::UnknownTransferSyntax { uid } => {
+                write!(f, "unknown transfer syntax: {uid}")
+            }
+            DicomError::InvalidPixelData { offset } => {
+                write!(f, "invalid pixel data at offset {offset}")
+            }
         }
     }
 }
@@ -46,5 +92,20 @@ mod tests {
     fn core_error_converts() {
         let e = DicomError::from(ParseError::eof(0));
         assert!(matches!(e, DicomError::Core(_)));
+    }
+
+    #[test]
+    fn display_vr_error() {
+        let e = DicomError::InvalidVr { offset: 42, actual: [0xFF, 0xFF] };
+        let s = alloc::format!("{e}");
+        assert!(s.contains("invalid VR"));
+        assert!(s.contains("42"));
+    }
+
+    #[test]
+    fn display_missing_tag() {
+        let e = DicomError::MissingTag { expected: (0x0008, 0x0016) };
+        let s = alloc::format!("{e}");
+        assert!(s.contains("0008"));
     }
 }

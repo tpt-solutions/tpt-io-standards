@@ -1,0 +1,24 @@
+[package]
+name = "tpt-io-fhir-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-fhir = { path = ".." }
+
+[[bin]]
+name = "fhir_json"
+path = "fuzz_targets/fhir_json.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fhir_xml"
+path = "fuzz_targets/fhir_xml.rs"
+test = false
+doc = false

@@ -226,6 +226,7 @@ fn read_view(body: &[Sexp]) -> core::result::Result<View, EdifError> {
     let mut instances = Vec::new();
     let mut nets = Vec::new();
     let mut properties = Vec::new();
+    let mut geometry = Vec::new();
 
     for f in body {
         if let Some(t) = f.as_form("viewType") {
@@ -254,16 +255,34 @@ fn read_view(body: &[Sexp]) -> core::result::Result<View, EdifError> {
                     if let Some(p) = read_property(pbody) {
                         properties.push(p);
                     }
+                } else if let Some(gbody) = c.as_form("geometry") {
+                    // Figures may be grouped inside a `(geometry …)` container.
+                    for g in gbody {
+                        if let Some(fbody) = g.as_form("figure") {
+                            if let Some(fig) = crate::geometry::read_figure(fbody) {
+                                geometry.push(fig);
+                            }
+                        }
+                    }
+                } else if let Some(fbody) = c.as_form("figure") {
+                    if let Some(fig) = crate::geometry::read_figure(fbody) {
+                        geometry.push(fig);
+                    }
                 }
             }
         } else if let Some(pbody) = f.as_form("property") {
             if let Some(p) = read_property(pbody) {
                 properties.push(p);
             }
+        } else if let Some(fbody) = f.as_form("figure") {
+            // A figure directly on the view (rare, but tolerated).
+            if let Some(fig) = crate::geometry::read_figure(fbody) {
+                geometry.push(fig);
+            }
         }
     }
 
-    Ok(View { name, view_type, interface, instances, nets, properties })
+    Ok(View { name, view_type, interface, instances, nets, properties, geometry })
 }
 
 fn read_port(body: &[Sexp]) -> Option<Port> {
@@ -330,7 +349,7 @@ fn read_net(body: &[Sexp]) -> Option<Net> {
     Some(Net { name, members })
 }
 
-fn read_property(body: &[Sexp]) -> Option<Property> {
+pub(crate) fn read_property(body: &[Sexp]) -> Option<Property> {
     let key = body.first().and_then(symbol_str).map(str::to_string)?;
     // Value is usually the last atom (string/number/symbol).
     let value = body

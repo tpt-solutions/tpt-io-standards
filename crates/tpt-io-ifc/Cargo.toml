@@ -7,7 +7,7 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-keywords = ["ifc", "bim", "construction", "parser"]
+keywords = ["ifc", "bim", "construction", "step", "parser"]
 categories = ["parser-implementations", "science"]
 
 [lib]
@@ -15,14 +15,18 @@ name = "tpt_io_ifc"
 
 [dependencies]
 tpt-io-core = { workspace = true }
+rayon = { version = "1.10", optional = true }
 
 [features]
 default = ["std"]
 std = ["tpt-io-core/std"]
 alloc = ["tpt-io-core/alloc"]
+# Parallel entity-instance parsing via Rayon (spec §4 Performance).
+parallel = ["dep:rayon"]
 # Integration with future `tpt-eng-geometry` (not yet published).
 eng-geometry-integration = []
 # Integration with future `tpt-eng-cad` (not yet published).
 eng-cad-integration = []
 
 [dev-dependencies]
+proptest = "1"

@@ -9,6 +9,7 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
+use crate::geometry::{Figure, Point, Shape};
 use crate::model::{
     Cell, Design, Direction, Edif, Instance, Library, Net, Port, PortRef, Property, View, ViewType,
 };
@@ -91,6 +92,9 @@ fn view_to_sexp(view: &View) -> Sexp {
     for prop in &view.properties {
         contents.push(prop_to_sexp(prop));
     }
+    for fig in &view.geometry {
+        contents.push(figure_to_sexp(fig));
+    }
     items.push(Sexp::List(
         alloc::vec![Sexp::Sym("contents".into())].into_iter().chain(contents).collect(),
     ));
@@ -161,6 +165,68 @@ fn prop_to_sexp(p: &Property) -> Sexp {
         Sexp::Sym(p.key.clone()),
         Sexp::Str(p.value.clone()),
     ])
+}
+
+fn pt_to_sexp(p: &Point) -> Sexp {
+    Sexp::List(vec![
+        Sexp::Sym("pt".into()),
+        Sexp::List(vec![Sexp::Sym("integer".into()), Sexp::Num(p.x)]),
+        Sexp::List(vec![Sexp::Sym("integer".into()), Sexp::Num(p.y)]),
+    ])
+}
+
+fn figure_to_sexp(f: &Figure) -> Sexp {
+    let shape = match &f.shape {
+        Shape::Rectangle { a, b } => Sexp::List(vec![
+            Sexp::Sym("rectangle".into()),
+            Sexp::List(vec![Sexp::Sym("rectangleSize".into()), pt_to_sexp(a), pt_to_sexp(b)]),
+        ]),
+        Shape::Path { width, points } => {
+            let mut items = vec![Sexp::Sym("path".into())];
+            if let Some(w) = width {
+                items.push(Sexp::List(vec![Sexp::Sym("pathWidth".into()), Sexp::Num(*w)]));
+            }
+            for p in points {
+                items.push(Sexp::List(vec![Sexp::Sym("pathPoint".into()), pt_to_sexp(p)]));
+            }
+            Sexp::List(items)
+        }
+        Shape::Circle { center, diameter } => Sexp::List(vec![
+            Sexp::Sym("circle".into()),
+            Sexp::List(vec![
+                Sexp::Sym("circleSize".into()),
+                Sexp::List(vec![Sexp::Sym("diameter".into()), Sexp::Num(*diameter)]),
+            ]),
+            pt_to_sexp(center),
+        ]),
+        Shape::Polygon(points) => {
+            let mut items = vec![Sexp::Sym("polygon".into())];
+            for p in points {
+                items.push(pt_to_sexp(p));
+            }
+            Sexp::List(items)
+        }
+        Shape::Arc { center, radius, start_angle, sweep_angle } => Sexp::List(vec![
+            Sexp::Sym("arc".into()),
+            Sexp::List(vec![Sexp::Sym("arcAngle".into()), Sexp::Num(*sweep_angle)]),
+            Sexp::List(vec![Sexp::Sym("angle".into()), Sexp::Num(*start_angle)]),
+            pt_to_sexp(center),
+            Sexp::List(vec![Sexp::Sym("radius".into()), Sexp::Num(*radius)]),
+        ]),
+        Shape::Line { a, b } => {
+            Sexp::List(vec![Sexp::Sym("line".into()), pt_to_sexp(a), pt_to_sexp(b)])
+        }
+        Shape::Label { text, at } => Sexp::List(vec![
+            Sexp::Sym("label".into()),
+            Sexp::List(vec![Sexp::Sym("labelText".into()), Sexp::Str(text.clone())]),
+            pt_to_sexp(at),
+        ]),
+    };
+    let mut items = vec![Sexp::Sym("figure".into()), shape];
+    for p in &f.properties {
+        items.push(prop_to_sexp(p));
+    }
+    Sexp::List(items)
 }
 
 fn design_to_sexp(d: &Design) -> Sexp {

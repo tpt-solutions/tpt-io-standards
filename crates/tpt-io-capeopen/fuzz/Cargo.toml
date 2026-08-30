@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-capeopen-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-capeopen = { path = ".." }
+
+[[bin]]
+name = "property_package"
+path = "fuzz_targets/property_package.rs"
+test = false
+doc = false

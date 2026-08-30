@@ -1,14 +1,14 @@
 [package]
 name = "tpt-io-capeopen"
-description = "CAPE-OPEN 1.1 / 2.0 interface definitions for process simulation interoperability."
+description = "CAPE-OPEN 1.1 / 2.0 interface definitions plus a pure-Rust thermodynamic property-package and flowsheet data model for process simulation interoperability."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-keywords = ["cape-open", "process", "thermo", "parser"]
-categories = ["parser-implementations", "science"]
+keywords = ["cape-open", "process", "thermo", "flowsheet", "com"]
+categories = ["parser-implementations", "science", "api-bindings"]
 
 [lib]
 name = "tpt_io_capeopen"
@@ -16,15 +16,41 @@ name = "tpt_io_capeopen"
 [dependencies]
 tpt-io-core = { workspace = true }
 
+# Windows-only COM bindings backing the `com` feature. Declared under a
+# `cfg(windows)` target so the default (no-COM) build on Linux/macOS never
+# resolves, downloads, or compiles the `windows` crate. The FFI-safe wrapper
+# layer lives in `src/com.rs` and is compiled only with `--features com` on
+# Windows.
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", optional = true, features = [
+    "Win32_Foundation",
+    "Win32_System_Com",
+    "Win32_System_Ole",
+    "Win32_System_Variant",
+] }
+
 [features]
 default = ["std"]
 std = ["tpt-io-core/std"]
 alloc = ["tpt-io-core/alloc"]
-# Integration with future `tpt-thermo` (not yet published).
+# Integration with the future `tpt-thermo` crate (not yet published).
 thermo-integration = []
-# Integration with future `tpt-eng-unit-ops` (not yet published).
+# Integration with the future `tpt-eng-unit-ops` crate (not yet published).
 eng-unit-ops-integration = []
 # Windows-only FFI COM wrappers via the `windows` crate (off by default).
-com = []
+com = ["dep:windows"]
 
 [dev-dependencies]
+proptest = "1"
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
+
+[[test]]
+name = "proptest"
+path = "tests/proptest.rs"
+
+[[test]]
+name = "golden"
+path = "tests/golden.rs"

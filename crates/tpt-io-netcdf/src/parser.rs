@@ -1,7 +1,5 @@
 //! NetCDF reader, validator, and high-level parse entry points.
 
-use alloc::vec::Vec;
-
 use tpt_io_core::{ParseError, Reader, Validator};
 
 use crate::error::NetCdfError;

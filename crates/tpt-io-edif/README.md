@@ -15,6 +15,11 @@ design interchange format (netlists, libraries, cells, and views).
   and produces a single flat netlist via a union-find over port references, so a
   net that meets an instance boundary is correctly merged with the subcell's
   internal connectivity.
+- **Geometry** (`geometry`): extracts schematic and layout geometric figures from
+  SCHEMATIC / LAYOUT views — rectangles (`rectangle`/`rect`), polylines (`path`),
+  arcs, circles, polygons, line segments, and text labels — each as a typed
+  [`Figure`]. Pull all figures of a representation type with
+  [`Edif::geometry_for`].
 - **Round-trip** (`writer`): serializes a typed document back to valid EDIF text.
 - **Integration stub**: `em-circuit-integration` feature provides a conversion
   boundary into the (not-yet-published) `tpt-em-circuit` crate.
@@ -40,5 +45,6 @@ assert_eq!(flat.nets.len(), 1);
 
 Per the workspace `todo.md`, EDIF is implemented for the netlist-relevant subset
 (library/cell/view/interface/instance/net extraction, hierarchical flattening,
-round-trip, fuzz, golden-file, and property tests). `cargo publish --dry-run` is
-blocked until `tpt-io-core` is on crates.io (see §4 publish order).
+schematic & layout geometric extraction, round-trip, fuzz, golden-file, and
+property tests). `cargo publish --dry-run` is blocked until `tpt-io-core` is on
+crates.io (see §4 publish order).

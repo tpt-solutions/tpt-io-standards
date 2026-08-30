@@ -173,15 +173,10 @@ pub fn parse_element(tokens: &[&str]) -> Result<Element, SpiceError> {
                 Some(i) => (&rest[..i], &rest[i..]),
                 None => (rest, &[][..]),
             };
-            let prefix: Vec<&str> = prefix
-                .iter()
-                .filter(|t| !t.eq_ignore_ascii_case("params:"))
-                .copied()
-                .collect();
-            let subckt_name = prefix
-                .last()
-                .ok_or(SpiceError::MissingField("subckt name"))?
-                .to_string();
+            let prefix: Vec<&str> =
+                prefix.iter().filter(|t| !t.eq_ignore_ascii_case("params:")).copied().collect();
+            let subckt_name =
+                prefix.last().ok_or(SpiceError::MissingField("subckt name"))?.to_string();
             let nodes = prefix[..prefix.len() - 1].iter().map(|s| s.to_string()).collect();
             let params = raw_params.iter().map(|s| s.to_string()).collect();
             (nodes, Some(subckt_name), None, params)
@@ -190,32 +185,23 @@ pub fn parse_element(tokens: &[&str]) -> Result<Element, SpiceError> {
                 return Err(SpiceError::MissingField("nodes"));
             }
             let (nodes, tail) = rest.split_at(node_count);
-            let (value, params): (Option<Value>, Vec<String>) = if matches!(
-                kind,
-                ElementKind::R | ElementKind::L | ElementKind::C
-            ) {
-                if tail.is_empty() {
-                    (None, Vec::new())
+            let (value, params): (Option<Value>, Vec<String>) =
+                if matches!(kind, ElementKind::R | ElementKind::L | ElementKind::C) {
+                    if tail.is_empty() {
+                        (None, Vec::new())
+                    } else {
+                        (
+                            Some(parse_value(tail[0])),
+                            tail[1..].iter().map(|s| s.to_string()).collect(),
+                        )
+                    }
                 } else {
-                    (
-                        Some(parse_value(tail[0])),
-                        tail[1..].iter().map(|s| s.to_string()).collect(),
-                    )
-                }
-            } else {
-                (None, tail.iter().map(|s| s.to_string()).collect())
-            };
+                    (None, tail.iter().map(|s| s.to_string()).collect())
+                };
             (nodes.iter().map(|s| s.to_string()).collect(), None, value, params)
         };
 
-    Ok(Element {
-        kind,
-        name: first.to_string(),
-        nodes,
-        value,
-        params,
-        subckt,
-    })
+    Ok(Element { kind, name: first.to_string(), nodes, value, params, subckt })
 }
 
 /// Parse a SPICE netlist from a string slice.
@@ -356,9 +342,7 @@ pub struct SpiceReader {
 impl SpiceReader {
     /// Create a reader with default validation (syntactic + semantic).
     pub fn new() -> Self {
-        Self {
-            validation: ValidationSettings::new(),
-        }
+        Self { validation: ValidationSettings::new() }
     }
 
     /// Set the validation configuration.

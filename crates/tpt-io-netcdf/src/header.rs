@@ -75,8 +75,12 @@ impl NcType {
 pub struct Dim {
     /// Dimension name.
     pub name: String,
-    /// Length (number of elements).
+    /// Length (number of elements). For an unlimited/record dimension this is
+    /// the *current* record count (taken from the file's `numrecs` field).
     pub len: u32,
+    /// Whether this is the unlimited (record) dimension. When `true`, the
+    /// header stored `0xFFFF_FFFF` as the length and `len` holds `numrecs`.
+    pub unlimited: bool,
 }
 
 /// An attribute (name + typed value bytes).
@@ -137,18 +141,19 @@ struct Cur<'a> {
 }
 
 impl<'a> Cur<'a> {
-    fn u8(&mut self) -> Result<u8, NetCdfError> {
-        let b = *self.data.get(self.pos).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
-        self.pos += 1;
-        Ok(b)
-    }
     fn u32(&mut self) -> Result<u32, NetCdfError> {
-        let s = self.data.get(self.pos..self.pos + 4).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
+        let s = self
+            .data
+            .get(self.pos..self.pos + 4)
+            .ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
         self.pos += 4;
         Ok(u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
     }
     fn u64(&mut self) -> Result<u64, NetCdfError> {
-        let s = self.data.get(self.pos..self.pos + 8).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
+        let s = self
+            .data
+            .get(self.pos..self.pos + 8)
+            .ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
         self.pos += 8;
         Ok(u64::from_be_bytes([s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]]))
     }
@@ -158,7 +163,10 @@ impl<'a> Cur<'a> {
     /// Read a length-prefixed, 4-byte-padded string.
     fn string(&mut self) -> Result<String, NetCdfError> {
         let n = self.u32()? as usize;
-        let s = self.data.get(self.pos..self.pos + n).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
+        let s = self
+            .data
+            .get(self.pos..self.pos + n)
+            .ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
         self.pos += n;
         // Pad to a 4-byte boundary.
         let padded = (n + 3) & !3;
@@ -167,7 +175,10 @@ impl<'a> Cur<'a> {
     }
     /// Read `len` bytes (padded to 4) as an attribute value.
     fn value_bytes(&mut self, len: usize) -> Result<Vec<u8>, NetCdfError> {
-        let s = self.data.get(self.pos..self.pos + len).ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
+        let s = self
+            .data
+            .get(self.pos..self.pos + len)
+            .ok_or_else(|| NetCdfError::Core(ParseError::eof(self.pos)))?;
         self.pos += len;
         let padded = (len + 3) & !3;
         self.pos += padded - len;
@@ -211,7 +222,13 @@ fn parse_var(c: &mut Cur) -> Result<Var, NetCdfError> {
 
 /// Parse a NetCDF-3 header (classic or 64-bit) from `data`.
 pub fn parse(data: &[u8]) -> core::result::Result<NetCdf, NetCdfError> {
-    if data.len() < 4 || &data[0..3] != b"CDF" {
+    if data.len() < 3 || &data[0..3] != b"CDF" {
+        // NetCDF-4 files are HDF5 containers; explain the distinction up front.
+        if data.len() >= 8 && &data[0..8] == b"\x89HDF\r\n\x1a\n" {
+            return Err(NetCdfError::Unsupported(
+                "NetCDF-4/HDF5 parsing not yet implemented (see the `netcdf4` module)",
+            ));
+        }
         return Err(NetCdfError::Unsupported("not a NetCDF file (missing CDF magic)"));
     }
     let version = data[3];
@@ -222,11 +239,7 @@ pub fn parse(data: &[u8]) -> core::result::Result<NetCdf, NetCdfError> {
     let mut c = Cur { data, pos: 4, wide };
 
     let numrecs_raw = c.u32()?;
-    let numrecs = if numrecs_raw == 0xFFFF_FFFF {
-        None
-    } else {
-        Some(numrecs_raw)
-    };
+    let numrecs = if numrecs_raw == 0xFFFF_FFFF { None } else { Some(numrecs_raw) };
 
     let mut dims = Vec::new();
     let mut global_attrs = Vec::new();
@@ -244,8 +257,10 @@ pub fn parse(data: &[u8]) -> core::result::Result<NetCdf, NetCdfError> {
                 let nelems = c.u32()? as usize;
                 for _ in 0..nelems {
                     let name = c.string()?;
-                    let len = c.u32()?;
-                    dims.push(Dim { name, len });
+                    let raw = c.u32()?;
+                    let unlimited = raw == 0xFFFF_FFFF;
+                    let len = if unlimited { numrecs.unwrap_or(0) } else { raw };
+                    dims.push(Dim { name, len, unlimited });
                 }
             }
             TAG_ATTRIBUTE => {
@@ -260,7 +275,7 @@ pub fn parse(data: &[u8]) -> core::result::Result<NetCdf, NetCdfError> {
                     vars.push(parse_var(&mut c)?);
                 }
             }
-            other => {
+            _other => {
                 return Err(NetCdfError::Unsupported("unexpected header tag"));
             }
         }

@@ -26,3 +26,4 @@ eng-geometry-integration = []
 math-geometry-integration = []
 
 [dev-dependencies]
+proptest = "1"

@@ -4,8 +4,8 @@
 
 use tpt_io_core::{Reader, Writer};
 use tpt_io_spice::expand::expand_netlist;
+use tpt_io_spice::model::ElementKind;
 use tpt_io_spice::parser::{parse_str, SpiceReader};
-use tpt_io_spice::model::{ElementKind, SpiceNetlist};
 
 const SAMPLE: &str = include_str!("samples/simple.sp");
 

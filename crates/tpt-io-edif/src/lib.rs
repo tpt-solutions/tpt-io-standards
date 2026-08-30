@@ -4,7 +4,9 @@
 //! balanced-parenthesis format) into a typed [`model::Edif`]: libraries, cells,
 //! views, interface ports, instances, and nets. [`flatten::flatten`] produces a
 //! single flat netlist from a hierarchical design via union-find port merging,
-//! and [`writer::serialize`] round-trips a typed document back to EDIF text.
+//! [`geometry`] extracts the schematic and layout geometric figures carried by
+//! SCHEMATIC / LAYOUT views, and [`writer::serialize`] round-trips a typed
+//! document back to EDIF text.
 //!
 //! ```
 //! use tpt_io_core::Reader;
@@ -37,6 +39,7 @@
 //!                     ],
 //!                 }],
 //!                 properties: vec![],
+//!                 geometry: vec![],
 //!             }],
 //!         }],
 //!     }],
@@ -65,6 +68,7 @@ extern crate alloc;
 
 pub mod error;
 pub mod flatten;
+pub mod geometry;
 pub mod model;
 pub mod parser;
 pub mod token;
@@ -75,6 +79,7 @@ pub mod integration;
 
 pub use error::EdifError;
 pub use flatten::{flatten, flatten_from, FlatNet, FlatNetlist, FlatRef, LeafInstance};
+pub use geometry::{Figure, Point, Shape};
 pub use model::{
     Cell, Design, Direction, Edif, Instance, Library, Net, Port, PortRef, Property, View, ViewType,
 };

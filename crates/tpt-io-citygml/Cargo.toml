@@ -15,12 +15,20 @@ name = "tpt_io_citygml"
 
 [dependencies]
 tpt-io-core = { workspace = true }
+tpt-io-geo = { workspace = true }
+quick-xml = "0.37"
+serde = { version = "1", features = ["derive"], optional = true }
 
 [features]
 default = ["std"]
-std = ["tpt-io-core/std"]
-alloc = ["tpt-io-core/alloc"]
+std = ["tpt-io-core/std", "tpt-io-geo/std"]
+alloc = ["tpt-io-core/alloc", "tpt-io-geo/alloc"]
 # Integration with future `tpt-eng-geometry` (not yet published).
 eng-geometry-integration = []
+# CRS handling and transformation utilities via `tpt-io-geo`.
+geo-integration = []
+# CityJSON alternative encoding support.
+cityjson = ["serde", "std"]
 
 [dev-dependencies]
+proptest = "1"

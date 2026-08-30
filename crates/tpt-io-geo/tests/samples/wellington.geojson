@@ -1,0 +1,30 @@
+{
+  "type": "FeatureCollection",
+  "name": "wellington-buildings",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4326" } },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "bldg-1",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[174.776, -41.286], [174.777, -41.286], [174.777, -41.287], [174.776, -41.287], [174.776, -41.286]]]
+      },
+      "properties": { "name": "Beehive", "storeys": 10 }
+    },
+    {
+      "type": "Feature",
+      "id": "bldg-2",
+      "geometry": { "type": "Point", "coordinates": [174.780, -41.290] },
+      "properties": { "name": "Civic Square", "kind": "open-space" }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[174.776, -41.286], [174.780, -41.290]]
+      },
+      "properties": { "name": "route", "length_m": 550 }
+    }
+  ]
+}
