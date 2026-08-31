@@ -1,9 +1,13 @@
 # tpt-io-standards
 
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
+
 A pure-Rust, feature-gated workspace for parsing, validating, and serializing
 industry-standard data formats. Each format lives in its own crate under
 `crates/`, sharing a common foundation ([`tpt-io-core`]) so that every parser
 offers the same error-reporting, encoding-detection, and validation ergonomics.
+
+Repository: <https://github.com/tpt-solutions/tpt-io-standards>
 
 All parsers are implemented from scratch in pure Rust (no C/C++ FFI such as
 libgdal, dcmtk, or netcdf-c), keeping them cross-platform, memory-safe, and
@@ -21,7 +25,7 @@ errors.
 | `tpt-io-nifti` | NIfTI-1 / NIfTI-2 | Medical |
 | `tpt-io-ifc` | IFC 4.0 / 4.3 (STEP-PF) | Construction |
 | `tpt-io-citygml` | CityGML 2.0 / 3.0 | Construction |
-| `tpt-io-spice` | SPICE (HSPICE/H… dialects) | Electronics |
+| `tpt-io-spice` | SPICE (HSPICE/LTSpice/Ngspice/PSpice dialects) | Electronics |
 | `tpt-io-gerber` | Gerber X2/X3 + Excellon | Electronics |
 | `tpt-io-edif` | EDIF 2.0.0 / 4.0.0 | Electronics |
 | `tpt-io-geo` | GeoJSON / Shapefile / GeoTIFF | Earth & GIS |

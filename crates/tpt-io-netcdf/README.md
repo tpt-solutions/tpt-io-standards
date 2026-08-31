@@ -3,24 +3,8 @@
 A `no_std`-friendly, dependency-light parser for **NetCDF-3 classic / 64-bit
 offset** files (dimensions, variables, global and per-variable attributes),
 plus **NetCDF-4 (HDF5)** format detection and superblock triage. Part of the
-[`tpt-io-standards`](https://github.com/REPLACE_ME_ORG/tpt-io-standards)
+[`tpt-io-standards`](https://github.com/tpt-solutions/tpt-io-standards)
 workspace.
-
-## Status
-
-| Capability | Status |
-| --- | --- |
-| NetCDF-3 classic / 64-bit offset header parsing | ✅ |
-| Dimension extraction (incl. unlimited/record dims) | ✅ |
-| Variable metadata (attrs: `units`, `long_name`, `valid_range` as raw `Attr`s) | ✅ |
-| Global attribute extraction | ✅ |
-| Coordinate-variable detection (`NetCdf::coordinate_variables`) | ✅ |
-| Chunked / hyperslab reading of large multi-dim arrays | ✅ (`NetCdf::read_hyperslab`) |
-| Header round-trip (`writer::round_trip`) | ✅ |
-| `tpt-sci-grid` integration (feature-gated stub) | ✅ (`sci-grid-integration`) |
-| NetCDF-4 (HDF5) detection + superblock parse | ✅ |
-| NetCDF-4 dataset / deflate / shuffle / chunking decode | ✅ |
-| Fuzz target, golden corpus, proptest | ✅ |
 
 ## NetCDF-3 usage
 
@@ -75,10 +59,28 @@ if kind == Some(FileKind::NetCdf4) {
 
 ## Features
 
-- `std` (default) / `alloc` — `no_std` support via `alloc`.
-- `sci-grid-integration` — exposes a stub conversion boundary for the future
-  `tpt-sci-grid` crate (`tpt_io_netcdf::integration::sci_grid::to_grid`).
+| Feature | Default | Effect |
+| --- | --- | --- |
+| `std` | yes | Standard library support |
+| `alloc` | no | `alloc`-based types without `std` |
+| `sci-grid-integration` | no | Stub conversion boundary for future `tpt-sci-grid` crate |
+
+## Testing
+
+```sh
+cargo test -p tpt-io-netcdf
+cargo +nightly fuzz run netcdf
+```
+
+## Status
+
+Per the workspace `todo.md`, `tpt-io-netcdf` implements NetCDF-3 classic/64-bit
+offset parsing, NetCDF-4 (HDF5) detection and dataset reading, chunked hyperslab
+reading, header round-trip, fuzz, golden-file, and property-based tests. `cargo
+publish --dry-run` is blocked until `tpt-io-core` is on crates.io (see §4 publish
+order).
 
 ## License
 
-Licensed under either of MIT or Apache-2.0 at your option.
+Licensed under either of [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE)
+at your option.

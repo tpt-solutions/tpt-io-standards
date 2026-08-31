@@ -182,7 +182,7 @@ fn simple_hash(data: &[u8]) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Element, VR, VRCode};
+    use crate::{Element, VRCode, VR};
 
     #[test]
     fn basic_anonymization_removes_patient_name() {

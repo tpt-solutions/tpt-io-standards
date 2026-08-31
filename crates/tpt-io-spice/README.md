@@ -69,6 +69,22 @@ links today so the feature flag is stable, but the downstream `tpt-em-circuit`
 crate is not yet published. Only the conversion body will need to change when it
 lands.
 
+## Testing
+
+```sh
+cargo test -p tpt-io-spice
+cargo +nightly fuzz run spice
+```
+
+## Status
+
+Per the workspace `todo.md`, `tpt-io-spice` implements SPICE netlist parsing for
+HSPICE / LTSpice / Ngspice / PSpice dialects, passive and active device cards,
+`.model` / `.subckt` / analysis commands, SI-suffix value scaling, temperature
+coefficients, round-trip serialization, fuzz, golden-file, and property-based
+tests. `cargo publish --dry-run` is blocked until `tpt-io-core` is on crates.io
+(see §4 publish order).
+
 ## License
 
 Licensed under either of [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE)

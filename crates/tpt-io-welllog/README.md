@@ -4,29 +4,7 @@ Well-log parser for the `tpt-io` workspace — **LAS 2.0 / 3.0** (ASCII **and**
 binary) and **DLIS** (RP66 V1, frame-based). All parsers are implemented from
 scratch in pure Rust with no C/C++ FFI.
 
-## Features
-
-- **LAS 2.0 / 3.0 ASCII** (`parser`): full section-based grammar
-  (`~V` / `~W` / `~O` / `~C` / `~A`), curve-definition extraction
-  (mnemonic / unit / description), depth-indexed data extraction, well-header
-  extraction (UWI/API, location, dates), `WRAP=YES` multi-line accumulation, and
-  a `Reader`/`Writer` pair for round-tripping plus syntactic/semantic validation.
-- **LAS 3.0 binary** (`binary`): the `~A` section may carry raw binary records;
-  curve data types (`F4`, `F8`, `I1`/`I2`/`I4`, `U1`/`U2`/`U4`, fixed `S<n>`
-  strings) declared in the `~C` API-code column are honoured. Automatic
-  text-encoding detection (UTF-8 / UTF-16 LE / UTF-16 BE, with UTF-16
-  transcoding) means the header is always parseable.
-- **DLIS** (`dlis`): RP66 V1 storage-unit-label → visible-record → logical-
-  record container parsing; Set-object decoding (`FRAME`, `CHANNEL`, `WELL`,
-  `WELLBORE`, `TOOL`, file header) via the standard attribute representation;
-  and frame-data reading for the common explicit/implicit formats
-  (`FSINGL`, `ISINGL`, `FDOUBL`, `IDOUBL`, `ISLONG`, `ISHORT`).
-- **Depth alignment** (`align`): common-grid construction, linear resampling of
-  multiple runs, and depth-shift cross-correlation for multi-run correlation.
-- **Integration stubs**: the `eng-geotech-integration` feature exposes a
-  conversion boundary into the (not-yet-published) `tpt-eng-geotech` crate.
-
-## Example
+## Quick start
 
 ```rust
 use tpt_io_core::Reader;
@@ -51,11 +29,24 @@ for frame in &dlis.frames {
 }
 ```
 
+## Features
+
+| Feature | Default | Effect |
+| --- | --- | --- |
+| `std` | yes | `std`-only conveniences |
+| `alloc` | no | `alloc`-based types without `std` |
+| `eng-geotech-integration` | no | Stub conversion into a future `tpt-eng-geotech` crate |
+
 ## Testing
 
 The crate ships unit tests plus integration tests (`tests/`): round-trip,
 property-based (`proptest`), and golden-file (`tests/samples/`). Fuzz targets
 live under `fuzz/` (run with `cargo +nightly fuzz run welllog`).
+
+```sh
+cargo test -p tpt-io-welllog
+cargo +nightly fuzz run welllog
+```
 
 ## Status
 
@@ -64,3 +55,8 @@ utilities, and the `eng-geotech` integration stub are implemented, with
 round-trip, fuzz, golden-file, and property tests. `cargo publish --dry-run` is
 blocked only until `tpt-io-core` is published to crates.io (see the workspace
 `todo.md` §4 publish order).
+
+## License
+
+Licensed under either of [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE)
+at your option.

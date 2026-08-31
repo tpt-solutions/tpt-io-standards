@@ -295,7 +295,7 @@ Publish order (respects dependency graph — core first, geo before citygml, all
 15. `tpt-io` (umbrella, last)
 
 - [x] Publish order decided and documented above
-- [ ] Confirm `repository` URL in workspace `Cargo.toml` once the GitHub org/repo is finalized (currently a placeholder)
+- [x] Confirm `repository` URL in workspace `Cargo.toml` — updated to `https://github.com/tpt-solutions/tpt-io-standards`; also fixed crate README links
 - [x] `cargo publish --dry-run` verified clean for `tpt-io-core`; all other crates blocked until `tpt-io-core` is on crates.io (local `cargo check` + `cargo test --workspace` + `cargo clippy --workspace` + `cargo fmt --check` all pass)
 - [ ] Tag `v0.1.0` release once all crates are publish-ready
 - [ ] Actual `cargo publish` run per crate in dependency order (manual, not automated)

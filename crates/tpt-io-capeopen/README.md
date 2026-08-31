@@ -24,17 +24,7 @@ The crate has two layers:
 > official CAPE-OPEN type library before production use — see [`src/com.rs`].
 > CI validates `com` on a dedicated Windows runner.
 
-## Features
-
-| Feature | Default | Effect |
-| --- | --- | --- |
-| `std` | yes | `std`-only conveniences (the `Writer`/`Schema` traits, `std::error::Error`). |
-| `alloc` | no | `alloc`-based types without `std`. |
-| `thermo-integration` | no | Stub conversion into a future `tpt-thermo` property model. |
-| `eng-unit-ops-integration` | no | Stub conversion into a future `tpt-eng-unit-ops` model. |
-| `com` | no | Windows-only FFI-safe wrappers for the CAPE-OPEN thermo COM interfaces (via `windows`). |
-
-## Pure-Rust model (no COM, no Windows)
+## Quick start
 
 ```rust
 use tpt_io_core::{Reader, Writer};
@@ -87,6 +77,16 @@ SAFEARRAY/VARIANT results into owned Rust types from [`model`]. The wrappers own
 the COM reference and `Release` it on drop. **All `unsafe` is confined to
 `src/com.rs`.**
 
+## Features
+
+| Feature | Default | Effect |
+| --- | --- | --- |
+| `std` | yes | `std`-only conveniences (the `Writer`/`Schema` traits, `std::error::Error`). |
+| `alloc` | no | `alloc`-based types without `std`. |
+| `thermo-integration` | no | Stub conversion into a future `tpt-thermo` property model. |
+| `eng-unit-ops-integration` | no | Stub conversion into a future `tpt-eng-unit-ops` model. |
+| `com` | no | Windows-only FFI-safe wrappers for the CAPE-OPEN thermo COM interfaces (via `windows`). |
+
 ## Testing strategy
 
 Per `spec.txt §6`: round-trip (encode → parse → equality), property-based
@@ -100,7 +100,15 @@ cargo test -p tpt-io-capeopen --features thermo-integration,eng-unit-ops-integra
 cargo test -p tpt-io-capeopen --features com
 ```
 
+## Status
+
+Per the workspace `todo.md`, `tpt-io-capeopen` implements the pure-Rust
+thermodynamic property-package data model, unit-operation port modeling,
+flowsheet validation, Windows COM wrappers, round-trip serialization, and
+fuzz/golden-file/property tests. `cargo publish --dry-run` is blocked until
+`tpt-io-core` is on crates.io (see §4 publish order).
+
 ## License
 
-Licensed under either of [MIT](../../LICENSE-MIT) or [Apache-2.0](../../LICENSE-APACHE)
+Licensed under either of [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE)
 at your option.

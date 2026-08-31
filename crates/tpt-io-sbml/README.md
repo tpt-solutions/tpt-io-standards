@@ -1,37 +1,14 @@
 # tpt-io-sbml
 
 SBML (Systems Biology Markup Language) Level 2 / Level 3 parser for the
-[`tpt-io`](https://github.com/REPLACE_ME_ORG/tpt-io-standards) workspace.
+[`tpt-io`](https://github.com/tpt-solutions/tpt-io-standards) workspace.
 
 Parses SBML documents into a strongly-typed model, with MathML expression
 extraction, rule/event/function definitions, the **FBC**, **Qual**, and
 **Spatial** package extensions, and syntactic/semantic validation with
 charge- and element-balance consistency checking.
 
-## Features
-
-- **Core (Level 2 & 3)**: compartments, species, parameters, reactions (with
-  kinetic laws, reactants/products/modifiers), rules (assignment / rate /
-  algebraic), initial assignments, constraints, events (trigger / delay /
-  priority / event assignments), function definitions (lambdas), and unit
-  definitions.
-- **MathML**: Content MathML inside `<math>` elements is parsed into a small AST
-  ([`mathml::MathNode`]) that supports infix rendering
-  ([`MathNode::to_infix_string`]) and reference collection for validation.
-- **FBC** (flux balance analysis): objectives, flux objectives/coefficients,
-  flux bounds, gene products, GPR associations, and per-species chemical
-  formulas / charges.
-- **Qual** (qualitative models): qualitative species, transitions with
-  inputs/outputs and default/function terms.
-- **Spatial**: geometry extraction (coordinate systems, domain types, domains,
-  geometry definitions).
-- **Validation**: structural (levels, duplicate ids, compartment/species/
-  reference resolution, MathML reference scoping) and semantic (charge balance,
-  element/mass balance from FBC formulas, FBC reference integrity) checks via
-  the `tpt-io-core` [`Validator`] trait.
-- **`no_std`**: builds with `no_std + alloc`; `std` is the default feature.
-
-## Example
+## Quick start
 
 ```rust
 use tpt_io_sbml::{Sbml, SbmlParser};
@@ -77,14 +54,16 @@ Validation performs no XSD/schema validation; it is a set of structural and
 consistency checks sufficient to catch most authoring errors (missing
 compartments, dangling references, duplicate ids, unbalanced reactions).
 
-## Feature flags
+[`SbmlParser`]: https://docs.rs/tpt-io-sbml/latest/tpt_io_sbml/parser/struct.SbmlParser.html
 
-| Feature                          | Default | Description                                          |
-|----------------------------------|---------|------------------------------------------------------|
-| `std`                            | yes     | Standard library support.                            |
-| `alloc`                          | yes*    | `alloc`-only builds (`no_std` compatible).           |
-| `sci-reaction-network-integration` | no   | Stub conversion into a future `tpt-sci-reaction-network`. |
-| `sci-ode-integration`            | no      | Stub conversion into a future `tpt-sci-ode`.         |
+## Features
+
+| Feature | Default | Effect |
+| --- | --- | --- |
+| `std` | yes | Standard library support. |
+| `alloc` | yes* | `alloc`-only builds (`no_std` compatible). |
+| `sci-reaction-network-integration` | no | Stub conversion into a future `tpt-sci-reaction-network`. |
+| `sci-ode-integration` | no | Stub conversion into a future `tpt-sci-ode`. |
 
 \* `alloc` is enabled by `std`.
 
@@ -97,11 +76,24 @@ compartments, dangling references, duplicate ids, unbalanced reactions).
   arbitrary bytes; parsing is deterministic).
 - **Fuzz**: `cargo +nightly fuzz run sbml` (target in `fuzz/`).
 
+```sh
+cargo test -p tpt-io-sbml
+cargo +nightly fuzz run sbml
+```
+
 > **Round-trip**: this crate is a *parser*; it does not yet include an SBML
 > serializer, so writer/round-trip tests are not available. Adding a writer
 > would unlock `parse → serialize → parse → equality` coverage.
 
+## Status
+
+Per the workspace `todo.md`, `tpt-io-sbml` implements SBML Level 2/3 document
+parsing, MathML expression extraction, FBC / Qual / Spatial package support,
+structural and semantic validation, fuzz, golden-file, and property-based tests.
+`cargo publish --dry-run` is blocked until `tpt-io-core` is on crates.io
+(see §4 publish order).
+
 ## License
 
-Licensed under either of Apache License, Version 2.0 or MIT license at your
-option.
+Licensed under either of [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE)
+at your option.

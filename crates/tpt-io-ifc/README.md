@@ -85,6 +85,23 @@ The `eng-*` features are integration stubs: they compile and link today so the
 feature flags are stable, but the downstream `tpt-eng-*` crates are not yet
 published. Only the conversion bodies will need to change when they land.
 
+## Testing
+
+```sh
+cargo test -p tpt-io-ifc
+cargo test -p tpt-io-ifc --features parallel
+cargo +nightly fuzz run ifc
+```
+
+## Status
+
+Per the workspace `todo.md`, `tpt-io-ifc` implements full SPF tokenization and
+parsing, entity resolution, relationship graph traversal, property set traversal,
+geometry extraction, schema version detection/migration, spatial navigation, and
+round-trip serialization. Fuzz, golden-file, and property-based tests are
+included. `cargo publish --dry-run` is blocked until `tpt-io-core` is on
+crates.io (see §4 publish order).
+
 ## License
 
 Licensed under either of [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE)
