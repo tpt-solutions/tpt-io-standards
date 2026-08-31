@@ -5,6 +5,8 @@ compile_error!(
     "tpt-io-sbml requires the `alloc` or `std` feature: its error type owns structured parse data."
 );
 
+use alloc::string::{String, ToString};
+
 use tpt_io_core::ParseError;
 
 /// Errors produced while parsing SBML data.
@@ -24,9 +26,9 @@ pub enum SbmlError {
     /// A required attribute was missing from an element.
     MissingAttribute {
         /// Element local name.
-        element: &'static str,
+        element: String,
         /// Missing attribute name.
-        attr: &'static str,
+        attr: String,
     },
     /// A required child element was missing from a parent.
     MissingElement {
@@ -38,9 +40,9 @@ pub enum SbmlError {
     /// An attribute value could not be interpreted as the expected type.
     InvalidValue {
         /// Element local name.
-        element: &'static str,
+        element: String,
         /// Attribute name.
-        attr: &'static str,
+        attr: String,
         /// The offending value.
         value: String,
     },
@@ -70,13 +72,17 @@ impl From<quick_xml::Error> for SbmlError {
 
 impl SbmlError {
     /// Helper to build a [`SbmlError::InvalidValue`].
-    pub(crate) fn invalid_value(element: &'static str, attr: &'static str, value: impl Into<String>) -> Self {
-        SbmlError::InvalidValue { element, attr, value: value.into() }
+    pub(crate) fn invalid_value(element: &str, attr: &str, value: impl Into<String>) -> Self {
+        SbmlError::InvalidValue {
+            element: element.to_string(),
+            attr: attr.to_string(),
+            value: value.into(),
+        }
     }
 
     /// Helper to build a [`SbmlError::MissingAttribute`].
-    pub(crate) fn missing_attr(element: &'static str, attr: &'static str) -> Self {
-        SbmlError::MissingAttribute { element, attr }
+    pub(crate) fn missing_attr(element: &str, attr: &str) -> Self {
+        SbmlError::MissingAttribute { element: element.to_string(), attr: attr.to_string() }
     }
 }
 
@@ -96,7 +102,9 @@ impl core::fmt::Display for SbmlError {
                 write!(f, "invalid value for <{element}>@{attr}: '{value}'")
             }
             SbmlError::DuplicateId(id) => write!(f, "duplicate identifier '{id}'"),
-            SbmlError::UnknownReference(id) => write!(f, "MathML references unknown identifier '{id}'"),
+            SbmlError::UnknownReference(id) => {
+                write!(f, "MathML references unknown identifier '{id}'")
+            }
             SbmlError::MathParse(s) => write!(f, "MathML parse error: {s}"),
             SbmlError::Validation(s) => write!(f, "validation error: {s}"),
         }
@@ -122,9 +130,6 @@ mod tests {
             SbmlError::missing_attr("species", "id").to_string(),
             "<species> is missing required attribute 'id'"
         );
-        assert_eq!(
-            SbmlError::DuplicateId("S1".into()).to_string(),
-            "duplicate identifier 'S1'"
-        );
+        assert_eq!(SbmlError::DuplicateId("S1".into()).to_string(), "duplicate identifier 'S1'");
     }
 }

@@ -2,15 +2,15 @@
 //! the canonical text codec, flowsheet connectivity validation, and the
 //! feature-gated downstream integration stubs.
 
-use tpt_io_core::Reader;
 use tpt_io_capeopen::flowsheet::Flowsheet;
 use tpt_io_capeopen::model::{
-    BaseProperty, CalculationKind, ComponentList, Phase, PropertyCalculationRequest, PropertyPackage,
-    StreamState,
+    BaseProperty, CalculationKind, ComponentList, Phase, PropertyCalculationRequest,
+    PropertyPackage, StreamState,
 };
 use tpt_io_capeopen::parser::{parse_property_package, PropertyPackageReader};
 use tpt_io_capeopen::ports::{Port, PortDirection};
 use tpt_io_capeopen::writer::{encode_property_package, serialize};
+use tpt_io_core::Reader;
 
 fn sample_package() -> PropertyPackage {
     let mut pp = PropertyPackage::new(
@@ -25,7 +25,8 @@ fn sample_package() -> PropertyPackage {
         BaseProperty::MolarVolume,
         BaseProperty::Viscosity,
     ];
-    pp.supported_two_phase = vec![BaseProperty::VaporFraction, BaseProperty::EquilibriumTemperature];
+    pp.supported_two_phase =
+        vec![BaseProperty::VaporFraction, BaseProperty::EquilibriumTemperature];
     pp
 }
 

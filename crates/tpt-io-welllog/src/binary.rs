@@ -33,7 +33,7 @@ pub(crate) fn decode_to_string(bytes: &[u8]) -> Result<(String, Encoding), WellL
         Encoding::Ascii | Encoding::Utf8 => {
             let s = enc
                 .as_str(bytes)
-                .ok_or_else(|| WellLogError::Unsupported("input was not valid UTF-8"))?;
+                .ok_or(WellLogError::Unsupported("input was not valid UTF-8"))?;
             Ok((s.to_string(), enc))
         }
         Encoding::Utf16Le => Ok((utf16_to_string(bytes, false)?, enc)),
@@ -100,13 +100,10 @@ impl BinaryType {
             "U1" | "B" => Some(BinaryType::U1),
             "U2" => Some(BinaryType::U2),
             "U4" => Some(BinaryType::U4),
-            other => {
-                if let Some(n) = other.strip_prefix('S').and_then(|s| s.parse::<usize>().ok()) {
-                    Some(BinaryType::Str(n))
-                } else {
-                    None
-                }
-            }
+            other => other
+                .strip_prefix('S')
+                .and_then(|s| s.parse::<usize>().ok())
+                .map(BinaryType::Str),
         }
     }
 
@@ -153,7 +150,7 @@ pub fn parse(input: &[u8]) -> Result<WellLog, WellLogError> {
         .unwrap_or("");
     let is_binary = keyword.len() <= 7
         && keyword.chars().all(|c| c.is_ascii_alphabetic())
-        && keyword.to_ascii_uppercase() == "BINARY";
+        && keyword.eq_ignore_ascii_case("BINARY");
     if is_binary {
         // UTF-16 binary tails cannot be located by text offset; only ASCII/UTF-8
         // binary tails are supported.
@@ -261,7 +258,7 @@ fn read_value(t: BinaryType, slice: &[u8]) -> Result<f64, WellLogError> {
             if too_short {
                 return Err(short(t, n));
             }
-            f64::from_le_bytes(slice.try_into().unwrap()) as f64
+            f64::from_le_bytes(slice.try_into().unwrap())
         }
         BinaryType::I1 => i8::from_le_bytes([slice[0]]) as f64,
         BinaryType::I2 => {

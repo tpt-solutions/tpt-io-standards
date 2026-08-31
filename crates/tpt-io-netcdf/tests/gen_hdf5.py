@@ -20,7 +20,7 @@ def main():
     os.makedirs(samples, exist_ok=True)
 
     # ---- example4.h5: contiguous datasets, no filters ----
-    with h5py.File(os.path.join(samples, "example4.h5"), "w", libver="latest") as f:
+    with h5py.File(os.path.join(samples, "example4.h5"), "w", libver="v108") as f:
         f.attrs["title"] = "synthetic netcdf4"
         f.attrs["version"] = np.int32(1)
         time = f.create_dataset("time", data=np.array([1.0, 2.0], dtype="f4"))
@@ -38,7 +38,7 @@ def main():
         tds.attrs["units"] = "K"
 
     # ---- chunked4.h5: chunked + shuffle + gzip ----
-    with h5py.File(os.path.join(samples, "chunked4.h5"), "w", libver="latest") as f:
+    with h5py.File(os.path.join(samples, "chunked4.h5"), "w", libver="v108") as f:
         f.attrs["title"] = "chunked netcdf4"
         temp = np.zeros((4, 6), dtype="f4")
         for i in range(4):

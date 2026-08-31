@@ -76,6 +76,6 @@ pub use writer::{encode_property_package, serialize, PropertyPackageWriter};
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub use tpt_io_core::ParseError;
 pub use tpt_io_core::{
-    Encoding, FormatExtension, NoProgress, Progress, ProgressFn, Reader, Schema, ValidationSettings,
-    Validator, Writer,
+    Encoding, FormatExtension, NoProgress, Progress, ProgressFn, Reader, Schema,
+    ValidationSettings, Validator, Writer,
 };

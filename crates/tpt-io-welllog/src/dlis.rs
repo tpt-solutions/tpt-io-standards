@@ -15,6 +15,7 @@
 //! `IDOUBL`, `ISLONG`, `ISHORT`). Multi-frame correlation is handled by the
 //! caller via the typed [`Dlis`] model.
 
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
@@ -342,19 +343,18 @@ fn classify(
             dlis.channel_objects.push(obj);
         }
         49 => {
+            let channels = match obj.attr("CHANNELS") {
+                Some(RepValue::Obname(o)) => core::slice::from_ref(o).to_vec(),
+                _ => Vec::new(),
+            };
+            let index = match obj.attr("INDEX") {
+                Some(RepValue::Obname(o)) => Some(o.clone()),
+                _ => None,
+            };
             let frame = Frame {
                 name: obj.name.clone(),
-                channels: obj
-                    .attr("CHANNELS")
-                    .and_then(|v| match v {
-                        RepValue::Obname(o) => Some(core::slice::from_ref(o).to_vec()),
-                        _ => None,
-                    })
-                    .unwrap_or_default(),
-                index: obj.attr("INDEX").and_then(|v| match v {
-                    RepValue::Obname(o) => Some(o.clone()),
-                    _ => None,
-                }),
+                channels,
+                index,
                 samples: Vec::new(),
             };
             *current_frame = Some(dlis.frames.len());

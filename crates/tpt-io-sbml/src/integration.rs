@@ -56,7 +56,10 @@ pub mod reaction_network {
         let nodes = m
             .species
             .iter()
-            .map(|s| NetworkNode { species: s.id.clone(), compartment: Some(s.compartment.clone()) })
+            .map(|s| NetworkNode {
+                species: s.id.clone(),
+                compartment: Some(s.compartment.clone()),
+            })
             .collect();
         let edges = m
             .reactions
@@ -80,7 +83,7 @@ pub mod reaction_network {
     impl Sbml {
         /// Convert this model into a [`ReactionNetworkStub`].
         pub fn to_reaction_network(&self) -> Result<ReactionNetworkStub, SbmlError> {
-            reaction_network::to_reaction_network(self)
+            to_reaction_network(self)
         }
     }
 }
@@ -88,6 +91,7 @@ pub mod reaction_network {
 #[cfg(feature = "sci-ode-integration")]
 pub mod ode {
     //! Stub conversion into a future `tpt_sci_ode` type.
+    use alloc::format;
     use alloc::string::String;
     use alloc::vec::Vec;
 
@@ -123,10 +127,12 @@ pub mod ode {
                 if let Some(math) = &kl.math {
                     let rhs = math.to_infix_string();
                     for sr in &r.products {
-                        equations.push(Ode { variable: sr.species.clone(), rhs: format!("+({rhs})") });
+                        equations
+                            .push(Ode { variable: sr.species.clone(), rhs: format!("+({rhs})") });
                     }
                     for sr in &r.reactants {
-                        equations.push(Ode { variable: sr.species.clone(), rhs: format!("-({rhs})") });
+                        equations
+                            .push(Ode { variable: sr.species.clone(), rhs: format!("-({rhs})") });
                     }
                 }
             }
@@ -137,7 +143,7 @@ pub mod ode {
     impl Sbml {
         /// Convert this model into an [`OdeSystemStub`].
         pub fn to_ode_system(&self) -> Result<OdeSystemStub, SbmlError> {
-            ode::to_ode_system(self)
+            to_ode_system(self)
         }
     }
 }

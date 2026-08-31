@@ -96,10 +96,7 @@ pub fn parse_property_package(input: &[u8]) -> Result<PropertyPackage, CapeOpenE
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        if let Some(sec) = trimmed
-            .strip_prefix('[')
-            .and_then(|s| s.strip_suffix(']'))
-        {
+        if let Some(sec) = trimmed.strip_prefix('[').and_then(|s| s.strip_suffix(']')) {
             section = sec;
             continue;
         }
@@ -107,11 +104,7 @@ pub fn parse_property_package(input: &[u8]) -> Result<PropertyPackage, CapeOpenE
         let eq = match trimmed.find('=') {
             Some(p) => p,
             None => {
-                return Err(CapeOpenError::Core(ParseError::token(
-                    line_start,
-                    Some("="),
-                    trimmed,
-                )))
+                return Err(CapeOpenError::Core(ParseError::token(line_start, Some("="), trimmed)))
             }
         };
         let key = trimmed[..eq].trim();

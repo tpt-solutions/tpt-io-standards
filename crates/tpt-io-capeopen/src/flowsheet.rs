@@ -51,12 +51,7 @@ impl Flowsheet {
 
     /// Connect a unit operation's port to a stream, declaring the stream if it
     /// does not yet exist.
-    pub fn connect(
-        &mut self,
-        unit: &str,
-        port: &str,
-        stream: &str,
-    ) -> Result<(), CapeOpenError> {
+    pub fn connect(&mut self, unit: &str, port: &str, stream: &str) -> Result<(), CapeOpenError> {
         if stream.is_empty() {
             return Err(CapeOpenError::Flowsheet("cannot connect via an empty stream id".into()));
         }
@@ -79,10 +74,15 @@ impl Flowsheet {
         // Unique unit-operation names.
         for (i, u) in self.unit_operations.iter().enumerate() {
             if u.name.is_empty() {
-                return Err(CapeOpenError::Flowsheet("flowsheet has a unit operation with an empty name".into()));
+                return Err(CapeOpenError::Flowsheet(
+                    "flowsheet has a unit operation with an empty name".into(),
+                ));
             }
             if self.unit_operations[..i].iter().any(|p| p.name == u.name) {
-                return Err(CapeOpenError::Flowsheet(format!("duplicate unit operation '{}'", u.name)));
+                return Err(CapeOpenError::Flowsheet(format!(
+                    "duplicate unit operation '{}'",
+                    u.name
+                )));
             }
             u.validate(false)?;
         }
@@ -90,7 +90,9 @@ impl Flowsheet {
         // Unique stream ids.
         for (i, s) in self.streams.iter().enumerate() {
             if s.id.is_empty() {
-                return Err(CapeOpenError::Flowsheet("flowsheet has a stream with an empty id".into()));
+                return Err(CapeOpenError::Flowsheet(
+                    "flowsheet has a stream with an empty id".into(),
+                ));
             }
             if self.streams[..i].iter().any(|p| p.id == s.id) {
                 return Err(CapeOpenError::Flowsheet(format!("duplicate stream '{}'", s.id)));
@@ -130,8 +132,10 @@ impl Flowsheet {
         // A stream may be produced by at most one outlet and consumed by at most
         // one inlet.
         for s in &self.streams {
-            let producer_count = outlet_producers.iter().filter(|p| p.as_str() == s.id.as_str()).count();
-            let consumer_count = inlet_consumers.iter().filter(|p| p.as_str() == s.id.as_str()).count();
+            let producer_count =
+                outlet_producers.iter().filter(|p| p.as_str() == s.id.as_str()).count();
+            let consumer_count =
+                inlet_consumers.iter().filter(|p| p.as_str() == s.id.as_str()).count();
             if producer_count > 1 {
                 return Err(CapeOpenError::Flowsheet(format!(
                     "stream '{}' is produced by {producer_count} outlets (expected at most 1)",

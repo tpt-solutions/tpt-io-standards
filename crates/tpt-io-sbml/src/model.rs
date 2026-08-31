@@ -222,7 +222,13 @@ pub struct SpeciesReference {
 
 impl Default for SpeciesReference {
     fn default() -> Self {
-        SpeciesReference { id: None, name: None, species: String::new(), stoichiometry: 1.0, constant: true }
+        SpeciesReference {
+            id: None,
+            name: None,
+            species: String::new(),
+            stoichiometry: 1.0,
+            constant: true,
+        }
     }
 }
 

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
+  <model id="branchModel" name="Branch">
+    <listOfUnitDefinitions>
+      <unitDefinition id="substance">
+        <listOfUnits>
+          <unit kind="mole" scale="-3" exponent="1"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments>
+      <compartment id="c" size="1" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="S1" compartment="c" initialConcentration="1" charge="0"/>
+      <species id="S2" compartment="c" initialConcentration="0" charge="0"/>
+    </listOfSpecies>
+    <listOfReactions>
+      <reaction id="R1" reversible="false" fast="false">
+        <listOfReactants>
+          <speciesReference species="S1" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="S2" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>k1</ci>
+              <ci>S1</ci>
+            </apply>
+          </math>
+          <listOfParameters>
+            <parameter id="k1" value="0.5"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <listOfRules>
+      <assignmentRule variable="S2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply><minus/><cn>1</cn><ci>S1</ci></apply>
+        </math>
+      </assignmentRule>
+    </listOfRules>
+    <listOfEvents>
+      <event id="E1" name="flip">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><gt/><ci>S1</ci><cn>0.5</cn></apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn>1</cn>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="S1">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn>0</cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+    </listOfEvents>
+    <listOfFunctionDefinitions>
+      <functionDefinition id="f" name="square">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <lambda>
+            <bvar><ci>x</ci></bvar>
+            <apply><power/><ci>x</ci><cn>2</cn></apply>
+          </lambda>
+        </math>
+      </functionDefinition>
+    </listOfFunctionDefinitions>
+  </model>
+</sbml>

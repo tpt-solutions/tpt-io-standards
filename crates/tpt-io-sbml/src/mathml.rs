@@ -5,9 +5,11 @@
 //! and provides a parser driven by `quick-xml` over the surrounding
 //! [`quick_xml::NsReader`].
 
+use alloc::boxed::Box;
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use quick_xml::events::{BytesCData, BytesStart, BytesText, Event};
+use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::NsReader;
 
 use crate::error::SbmlError;
@@ -60,7 +62,7 @@ pub enum MathNode {
         /// `(value, condition)` pairs.
         pieces: Vec<(MathNode, MathNode)>,
         /// Optional fallback branch.
-        otherwise: Option<MathNode>,
+        otherwise: Option<Box<MathNode>>,
     },
     /// A csymbol (with `definitionURL`) treated here as a named operator.
     Csymbol {
@@ -133,7 +135,11 @@ impl MathNode {
                     "minus" => join(args, " - "),
                     "times" => join(args, " * "),
                     "divide" => join(args, " / "),
-                    "power" => format!("{} ^ {}", args[0].to_infix_string(), args.get(1).map(|a| a.to_infix_string()).unwrap_or_default()),
+                    "power" => format!(
+                        "{} ^ {}",
+                        args[0].to_infix_string(),
+                        args.get(1).map(|a| a.to_infix_string()).unwrap_or_default()
+                    ),
                     "root" => format!("root({})", join(args, ", ")),
                     "abs" => format!("abs({})", join(args, ", ")),
                     "exp" => format!("exp({})", join(args, ", ")),
@@ -149,13 +155,20 @@ impl MathNode {
                     "neq" => join(args, " != "),
                     "and" => join(args, " && "),
                     "or" => join(args, " || "),
-                    "not" => format!("!({})", args.first().map(|a| a.to_infix_string()).unwrap_or_default()),
+                    "not" => format!(
+                        "!({})",
+                        args.first().map(|a| a.to_infix_string()).unwrap_or_default()
+                    ),
                     "piecewise" => format!("piecewise({})", join(args, ", ")),
                     other => format!("{}({})", other, join(args, ", ")),
                 }
             }
-            MathNode::Lambda { bvars, body } => format!("lambda({} : {})", bvars.join(", "), body.to_infix_string()),
-            MathNode::Piece { value, condition } => format!("{} if {}", value.to_infix_string(), condition.to_infix_string()),
+            MathNode::Lambda { bvars, body } => {
+                format!("lambda({} : {})", bvars.join(", "), body.to_infix_string())
+            }
+            MathNode::Piece { value, condition } => {
+                format!("{} if {}", value.to_infix_string(), condition.to_infix_string())
+            }
             MathNode::Otherwise(node) => format!("else {}", node.to_infix_string()),
             MathNode::Piecewise { pieces, otherwise } => {
                 let mut s = String::from("piecewise(");
@@ -175,12 +188,12 @@ impl MathNode {
     }
 }
 
-fn ln(e: &BytesStart) -> &[u8] {
-    e.local_name().as_ref()
+fn ln_str(e: &BytesStart<'_>) -> String {
+    String::from_utf8_lossy(e.local_name().as_ref()).into_owned()
 }
 
-fn ln_str(e: &BytesStart) -> &str {
-    core::str::from_utf8(ln(e)).unwrap_or("")
+fn ename(e: &BytesEnd<'_>) -> String {
+    String::from_utf8_lossy(e.local_name().as_ref()).into_owned()
 }
 
 fn attr_opt(e: &BytesStart, key: &str) -> Option<String> {
@@ -192,10 +205,11 @@ fn attr_opt(e: &BytesStart, key: &str) -> Option<String> {
     None
 }
 
-fn read_text_until(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>, end: &str) -> Result<String, SbmlError> {
+fn read_text_until(reader: &mut NsReader<&[u8]>, end: &str) -> Result<String, SbmlError> {
+    let mut buf = Vec::new();
     let mut text = String::new();
     loop {
-        match reader.read_event_into(buf)? {
+        match reader.read_event_into(&mut buf)? {
             Event::Text(t) => {
                 let s: String = t.unescape()?.into_owned();
                 text.push_str(&s);
@@ -203,26 +217,31 @@ fn read_text_until(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>, end: &str) -
             Event::CData(c) => {
                 text.push_str(&String::from_utf8_lossy(c.as_ref()));
             }
-            Event::End(e) if ln_str(&e) == end => return Ok(text),
-            Event::Eof => return Err(SbmlError::MathParse(format!("unexpected EOF inside <{end}>"))),
+            Event::End(e) if ename(&e) == end => return Ok(text),
+            Event::Eof => {
+                return Err(SbmlError::MathParse(format!("unexpected EOF inside <{end}>")))
+            }
             _ => {}
         }
     }
 }
 
 /// Consume events until the matching end tag `end` (handling arbitrary nesting).
-fn skip_to_end(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>, end: &str) -> Result<(), SbmlError> {
+pub(crate) fn skip_to_end(reader: &mut NsReader<&[u8]>, end: &str) -> Result<(), SbmlError> {
+    let mut buf = Vec::new();
     let mut depth = 1usize;
     loop {
-        match reader.read_event_into(buf)? {
+        match reader.read_event_into(&mut buf)? {
             Event::Start(e) if ln_str(&e) == end => depth += 1,
-            Event::End(e) if ln_str(&e) == end => {
+            Event::End(e) if ename(&e) == end => {
                 depth -= 1;
                 if depth == 0 {
                     return Ok(());
                 }
             }
-            Event::Eof => return Err(SbmlError::MathParse(format!("unexpected EOF inside <{end}>"))),
+            Event::Eof => {
+                return Err(SbmlError::MathParse(format!("unexpected EOF inside <{end}>")))
+            }
             _ => {}
         }
     }
@@ -230,21 +249,22 @@ fn skip_to_end(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>, end: &str) -> Re
 
 /// Parse a single MathML expression node. Returns `None` when the next event is
 /// the end of the enclosing element (so callers can loop until `None`).
-fn parse_node(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<Option<MathNode>, SbmlError> {
+fn parse_node(reader: &mut NsReader<&[u8]>) -> Result<Option<MathNode>, SbmlError> {
+    let mut buf = Vec::new();
     loop {
-        match reader.read_event_into(buf)? {
+        match reader.read_event_into(&mut buf)? {
             Event::Start(e) => {
                 let name = ln_str(&e).to_string();
                 match name.as_str() {
                     "ci" => {
-                        let t = read_text_until(reader, buf, "ci")?;
+                        let t = read_text_until(reader, "ci")?;
                         return Ok(Some(MathNode::Ci(t.trim().to_string())));
                     }
                     "cn" => {
                         let type_ = attr_opt(&e, "type");
                         let kind = attr_opt(&e, "kind");
                         let units = attr_opt(&e, "units");
-                        let value = read_text_until(reader, buf, "cn")?;
+                        let value = read_text_until(reader, "cn")?;
                         return Ok(Some(MathNode::Cn {
                             type_,
                             kind,
@@ -254,22 +274,25 @@ fn parse_node(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<Option<
                     }
                     "csymbol" => {
                         let definition_url = attr_opt(&e, "definitionURL");
-                        let t = read_text_until(reader, buf, "csymbol")?;
+                        let t = read_text_until(reader, "csymbol")?;
                         return Ok(Some(MathNode::Csymbol {
                             definition_url,
                             name: t.trim().to_string(),
                         }));
                     }
-                    "apply" => return Ok(Some(parse_apply(reader, buf)?)),
-                    "lambda" => return Ok(Some(parse_lambda(reader, buf)?)),
-                    "piecewise" => return Ok(Some(parse_piecewise(reader, buf)?)),
-                    "semantics" => return Ok(Some(parse_semantics(reader, buf)?)),
+                    "apply" => return Ok(Some(parse_apply(reader)?)),
+                    "lambda" => return Ok(Some(parse_lambda(reader)?)),
+                    "piecewise" => return Ok(Some(parse_piecewise(reader)?)),
+                    "semantics" => return Ok(Some(parse_semantics(reader)?)),
                     "piece" => {
                         let mut value = None;
                         let mut condition = None;
-                        while let Some(n) = parse_node(reader, buf)? {
+                        while let Some(n) = parse_node(reader)? {
                             match n {
-                                MathNode::Ci(_) | MathNode::Apply { .. } | MathNode::Cn { .. } | MathNode::Csymbol { .. } => {
+                                MathNode::Ci(_)
+                                | MathNode::Apply { .. }
+                                | MathNode::Cn { .. }
+                                | MathNode::Csymbol { .. } => {
                                     if value.is_none() {
                                         value = Some(Box::new(n));
                                     } else {
@@ -279,32 +302,37 @@ fn parse_node(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<Option<
                                 _ => {}
                             }
                         }
-                        let value = value.ok_or_else(|| SbmlError::MathParse("<piece> missing value".into()))?;
-                        let condition =
-                            condition.ok_or_else(|| SbmlError::MathParse("<piece> missing condition".into()))?;
+                        let value = value
+                            .ok_or_else(|| SbmlError::MathParse("<piece> missing value".into()))?;
+                        let condition = condition.ok_or_else(|| {
+                            SbmlError::MathParse("<piece> missing condition".into())
+                        })?;
                         return Ok(Some(MathNode::Piece { value, condition }));
                     }
                     "otherwise" => {
                         let mut body = None;
-                        while let Some(n) = parse_node(reader, buf)? {
+                        while let Some(n) = parse_node(reader)? {
                             body = Some(Box::new(n));
                         }
-                        let body = body.ok_or_else(|| SbmlError::MathParse("<otherwise> missing expression".into()))?;
+                        let body = body.ok_or_else(|| {
+                            SbmlError::MathParse("<otherwise> missing expression".into())
+                        })?;
                         return Ok(Some(MathNode::Otherwise(body)));
                     }
                     "bvar" => {
                         let mut name = None;
-                        while let Some(n) = parse_node(reader, buf)? {
+                        while let Some(n) = parse_node(reader)? {
                             if let MathNode::Ci(c) = n {
                                 name = Some(c);
                             }
                         }
-                        let name = name.ok_or_else(|| SbmlError::MathParse("<bvar> missing <ci>".into()))?;
+                        let name =
+                            name.ok_or_else(|| SbmlError::MathParse("<bvar> missing <ci>".into()))?;
                         return Ok(Some(MathNode::Bvar(name)));
                     }
                     "true" | "false" => return Ok(Some(MathNode::Operator(name))),
                     other => {
-                        skip_to_end(reader, buf, other)?;
+                        skip_to_end(reader, other)?;
                         return Ok(Some(MathNode::Operator(name)));
                     }
                 }
@@ -322,9 +350,9 @@ fn parse_node(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<Option<
     }
 }
 
-fn parse_apply(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<MathNode, SbmlError> {
+fn parse_apply(reader: &mut NsReader<&[u8]>) -> Result<MathNode, SbmlError> {
     let mut nodes = Vec::new();
-    while let Some(n) = parse_node(reader, buf)? {
+    while let Some(n) = parse_node(reader)? {
         nodes.push(n);
     }
     if nodes.is_empty() {
@@ -334,10 +362,10 @@ fn parse_apply(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<MathNo
     Ok(MathNode::Apply { op, args: nodes })
 }
 
-fn parse_lambda(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<MathNode, SbmlError> {
+fn parse_lambda(reader: &mut NsReader<&[u8]>) -> Result<MathNode, SbmlError> {
     let mut bvars = Vec::new();
     let mut body = None;
-    while let Some(n) = parse_node(reader, buf)? {
+    while let Some(n) = parse_node(reader)? {
         match n {
             MathNode::Bvar(name) => bvars.push(name),
             other => body = Some(Box::new(other)),
@@ -347,22 +375,22 @@ fn parse_lambda(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<MathN
     Ok(MathNode::Lambda { bvars, body })
 }
 
-fn parse_piecewise(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<MathNode, SbmlError> {
+fn parse_piecewise(reader: &mut NsReader<&[u8]>) -> Result<MathNode, SbmlError> {
     let mut pieces = Vec::new();
     let mut otherwise = None;
-    while let Some(n) = parse_node(reader, buf)? {
+    while let Some(n) = parse_node(reader)? {
         match n {
             MathNode::Piece { value, condition } => pieces.push((*value, *condition)),
-            MathNode::Otherwise(node) => otherwise = Some(*node),
+            MathNode::Otherwise(node) => otherwise = Some(node),
             _ => {}
         }
     }
     Ok(MathNode::Piecewise { pieces, otherwise })
 }
 
-fn parse_semantics(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<MathNode, SbmlError> {
+fn parse_semantics(reader: &mut NsReader<&[u8]>) -> Result<MathNode, SbmlError> {
     let mut first = None;
-    while let Some(n) = parse_node(reader, buf)? {
+    while let Some(n) = parse_node(reader)? {
         if first.is_none() {
             first = Some(n);
         }
@@ -373,14 +401,15 @@ fn parse_semantics(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<Ma
 /// Parse the contents of a `<math>` element. The caller must have just read the
 /// opening `<math>` [`Event::Start`]; this consumes the root expression and the
 /// closing `</math>`.
-pub(crate) fn parse_math(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Result<MathNode, SbmlError> {
-    let root = match parse_node(reader, buf)? {
+pub(crate) fn parse_math(reader: &mut NsReader<&[u8]>) -> Result<MathNode, SbmlError> {
+    let root = match parse_node(reader)? {
         Some(n) => n,
         None => return Err(SbmlError::MathParse("empty <math> element".into())),
     };
+    let mut buf = Vec::new();
     loop {
-        match reader.read_event_into(buf)? {
-            Event::End(e) if ln_str(&e) == "math" => break,
+        match reader.read_event_into(&mut buf)? {
+            Event::End(e) if ename(&e) == "math" => break,
             Event::Eof => return Err(SbmlError::MathParse("unexpected EOF in <math>".into())),
             _ => {}
         }
@@ -393,11 +422,10 @@ pub(crate) fn parse_math(reader: &mut NsReader<&[u8]>, buf: &mut Vec<u8>) -> Res
 pub fn parse_math_str(input: &str) -> Result<MathNode, SbmlError> {
     use quick_xml::events::Event;
     let mut reader = NsReader::from_str(input);
-    reader.trim_text(true);
     let mut buf = Vec::new();
     loop {
         match reader.read_event_into(&mut buf)? {
-            Event::Start(e) if ln_str(&e) == "math" => return parse_math(&mut reader, &mut buf),
+            Event::Start(e) if ln_str(&e) == "math" => return parse_math(&mut reader),
             Event::Eof => return Err(SbmlError::MathParse("no <math> element found".into())),
             _ => {}
         }

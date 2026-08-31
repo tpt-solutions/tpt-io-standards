@@ -90,10 +90,15 @@ impl ComponentList {
         }
         for (i, c) in self.components.iter().enumerate() {
             if c.id.is_empty() {
-                return Err(CapeOpenError::ComponentList(format!("component at index {i} has an empty id")));
+                return Err(CapeOpenError::ComponentList(format!(
+                    "component at index {i} has an empty id"
+                )));
             }
             if self.components[..i].iter().any(|p| p.id == c.id) {
-                return Err(CapeOpenError::ComponentList(format!("duplicate component id '{}'", c.id)));
+                return Err(CapeOpenError::ComponentList(format!(
+                    "duplicate component id '{}'",
+                    c.id
+                )));
             }
         }
         Ok(())

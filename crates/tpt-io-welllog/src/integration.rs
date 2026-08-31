@@ -55,3 +55,25 @@ pub mod eng_geotech {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::eng_geotech::{to_borehole_log, BoreholeLogStub};
+    use crate::model::WellLog;
+
+    #[test]
+    fn stub_summarizes_log() {
+        let log = WellLog {
+            version: 2.0,
+            wrap: false,
+            well: Default::default(),
+            parameters: Vec::new(),
+            curves: Vec::new(),
+            data: vec![vec![100.0, 1.0], vec![200.0, 2.0]],
+        };
+        let stub: BoreholeLogStub = to_borehole_log(&log);
+        assert_eq!(stub.samples, 2);
+        assert_eq!(stub.top, 100.0);
+        assert_eq!(stub.bottom, 200.0);
+    }
+}

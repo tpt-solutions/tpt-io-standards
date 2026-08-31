@@ -15,7 +15,7 @@ members = [
     "crates/tpt-io-welllog",
     "crates/tpt-io-capeopen",
     "crates/tpt-io-sbml",
-    "crates/tpt-io",
+    "crates/tpt-io", "hdf5_test",
 ]
 
 [workspace.package]

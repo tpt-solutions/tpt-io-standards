@@ -3,8 +3,8 @@
 //! Parses SBML Level 2 and Level 3 documents into a strongly-typed [`model`],
 //! with MathML expression extraction ([`mathml`]), rule/event/function
 //! definitions, the FBC / Qual / Spatial package extensions, and
-//! syntactic/semantic validation with charge-balance consistency checking
-//! ([`validate`]).
+//! syntactic/semantic validation with charge- and element-balance consistency
+//! checking ([`validate`]).
 //!
 //! ```
 //! # #[cfg(feature = "std")]
@@ -28,6 +28,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
+// The parser incrementally builds typed structs via `X::default()` followed by
+// field assignments; this stylistic lint is impractical to satisfy here.
+#![allow(clippy::field_reassign_with_default)]
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 extern crate alloc;
@@ -41,17 +44,24 @@ pub mod validate;
 
 pub use error::SbmlError;
 pub use model::{
-    Compartment, Constraint, Event, EventAssignment, FbcModel, FunctionDefinition, InitialAssignment, KineticLaw, Model,
-    ModifierSpeciesReference, Objective, Parameter, QualModel, QualSpecies, Reaction, Rule, Sbml, Species, SpeciesReference,
-    Trigger, Unit, UnitDefinition,
+    Compartment, Constraint, Event, EventAssignment, FbcModel, FunctionDefinition,
+    InitialAssignment, KineticLaw, Model, ModifierSpeciesReference, Objective, Parameter,
+    QualModel, QualSpecies, Reaction, Rule, Sbml, Species, SpeciesReference, Trigger, Unit,
+    UnitDefinition,
 };
 
 pub use parser::{parse_sbml, SbmlParser};
 
+pub use validate::{
+    check_mass_balance, check_semantic, check_syntactic, validate_sbml, ValidationIssue,
+    ValidationReport,
+};
+
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub use tpt_io_core::ParseError;
 pub use tpt_io_core::{
-    Encoding, FormatExtension, NoProgress, Progress, ProgressFn, Reader, Schema, ValidationSettings, Validator, Writer,
+    Encoding, FormatExtension, NoProgress, Progress, ProgressFn, Reader, Schema,
+    ValidationSettings, Validator, Writer,
 };
 
 #[cfg(feature = "alloc")]

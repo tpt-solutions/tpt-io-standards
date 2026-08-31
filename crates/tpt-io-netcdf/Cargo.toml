@@ -16,6 +16,7 @@ name = "tpt_io_netcdf"
 
 [dependencies]
 tpt-io-core = { workspace = true }
+flate2 = "1.1"
 
 [features]
 default = ["std"]

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1"
+      xmlns:fbc="http://www.sbml.org/sbml/level3/version1/fbc/version2">
+  <model id="fbcModel" fbc:strict="true">
+    <listOfCompartments>
+      <compartment id="c" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="Glc" compartment="c" fbc:chemicalFormula="C6H12O6" fbc:charge="0"/>
+      <species id="Pyr" compartment="c" fbc:chemicalFormula="C3H3O3" fbc:charge="-1"/>
+    </listOfSpecies>
+    <listOfReactions>
+      <reaction id="R_GLC" reversible="false" fbc:lowerFluxBound="lb" fbc:upperFluxBound="ub"
+                fbc:geneProductAssociation="( g1 )">
+        <listOfReactants>
+          <speciesReference species="Glc" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Pyr" stoichiometry="2"/>
+        </listOfProducts>
+      </reaction>
+    </listOfReactions>
+    <listOfObjectives fbc:activeObjective="obj1">
+      <objective fbc:id="obj1" fbc:type="maximize">
+        <listOfFluxObjectives>
+          <fluxObjective fbc:reaction="R_GLC" fbc:coefficient="1"/>
+        </listOfFluxObjectives>
+      </objective>
+    </listOfObjectives>
+    <listOfFluxBounds>
+      <fluxBound fbc:id="lb" fbc:reaction="R_GLC" fbc:operation="greaterEqual" fbc:value="0"/>
+      <fluxBound fbc:id="ub" fbc:reaction="R_GLC" fbc:operation="lessEqual" fbc:value="1000"/>
+    </listOfFluxBounds>
+    <listOfGeneProducts>
+      <geneProduct fbc:id="g1" fbc:label="gene1" fbc:associatedSpecies="Glc"/>
+    </listOfGeneProducts>
+  </model>
+</sbml>

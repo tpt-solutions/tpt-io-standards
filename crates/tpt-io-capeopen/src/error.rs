@@ -7,7 +7,9 @@
 //! topology) and the Windows-only COM interop layer.
 
 #[cfg(not(any(feature = "alloc", feature = "std")))]
-compile_error!("tpt-io-capeopen requires the `alloc` or `std` feature: its error type owns structured data.");
+compile_error!(
+    "tpt-io-capeopen requires the `alloc` or `std` feature: its error type owns structured data."
+);
 
 use tpt_io_core::ParseError;
 

@@ -218,50 +218,50 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [~] `cargo publish --dry-run` — packages cleanly but blocked: `tpt-io-core` not yet on crates.io (same as sibling crates)
 
 #### `tpt-io-welllog` (LAS 2.0/3.0 + DLIS)
-- [ ] Cargo.toml + `eng-geotech-integration` optional feature
+- [x] Cargo.toml + `eng-geotech-integration` optional feature
 - [x] `WellLogError` enum
 - [x] LAS 2.0 ASCII parsing
 - [x] LAS 3.0 ASCII parsing
-- [ ] LAS binary format parsing + automatic encoding detection
+- [x] LAS binary format parsing + automatic encoding detection
 - [x] Curve definition extraction (mnemonic, unit, description)
 - [x] Depth-indexed data extraction
 - [x] Well header extraction (UWI, location, dates)
-- [ ] DLIS format parsing (frame-based organization)
-- [ ] Depth alignment utilities for multi-run correlation
-- [ ] `tpt-eng-geotech` integration (feature-gated stub)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] DLIS format parsing (frame-based organization)
+- [x] Depth alignment utilities for multi-run correlation
+- [x] `tpt-eng-geotech` integration (feature-gated stub)
+- [x] Round-trip, fuzz, golden-file, property tests
+- [~] README + docs, `cargo publish --dry-run` — README + docs done; publish blocked: `tpt-io-core` not yet on crates.io (see §4 publish order)
 
 ### Process Engineering
 
 #### `tpt-io-capeopen` (CAPE-OPEN 1.1 / 2.0)
-- [ ] Cargo.toml + `thermo-integration`, `eng-unit-ops-integration` optional features + Windows-only `com` feature (off by default)
+- [x] Cargo.toml + `thermo-integration`, `eng-unit-ops-integration` optional features + Windows-only `com` feature (off by default)
 - [x] `CapeOpenError` enum
-- [ ] Pure-Rust data model for thermodynamic property packages (component lists, phase ID, property calc requests) — no COM required
-- [ ] Unit operation port mapping (inlet/outlet streams)
-- [ ] Stream connection validation for flowsheet topology
-- [ ] `com` feature: FFI-safe wrappers for `ICapeThermoMaterial`, `ICapeThermoCalculation`, `ICapeThermoPropertyPackage` (Windows-only, via `windows` crate)
-- [ ] CI: verify crate builds with default (no COM) features on Linux/macOS; COM feature validated on a Windows runner
-- [ ] `tpt-thermo` / `tpt-eng-unit-ops` integration (feature-gated stubs)
-- [ ] Round-trip, fuzz (non-COM paths), golden-file, property tests
-- [ ] README + docs (call out COM/Windows caveat prominently), `cargo publish --dry-run`
+- [x] Pure-Rust data model for thermodynamic property packages (component lists, phase ID, property calc requests) — no COM required
+- [x] Unit operation port mapping (inlet/outlet streams)
+- [x] Stream connection validation for flowsheet topology
+- [x] `com` feature: FFI-safe wrappers for `ICapeThermoMaterial`, `ICapeThermoCalculation`, `ICapeThermoPropertyPackage` (Windows-only, via `windows` crate)
+- [x] CI: verify crate builds with default (no COM) features on Linux/macOS; COM feature validated on a Windows runner (`windows-com` job)
+- [x] `tpt-thermo` / `tpt-eng-unit-ops` integration (feature-gated stubs)
+- [x] Round-trip, fuzz (non-COM paths), golden-file, property tests
+- [x] README + docs (call out COM/Windows caveat prominently), `cargo publish --dry-run` (packaging OK; blocked on unpublished `tpt-io-core` dep per §4 publish order)
 
 #### `tpt-io-sbml` (SBML Level 2 / 3)
-- [ ] Cargo.toml + `sci-reaction-network-integration`, `sci-ode-integration` optional features
+- [x] Cargo.toml + `sci-reaction-network-integration`, `sci-ode-integration` optional features
 - [x] `SbmlError` enum
-- [ ] Species / compartment / reaction extraction
-- [ ] Rate law extraction with MathML expression parsing
-- [ ] Rule definitions (assignment, rate, algebraic)
-- [ ] Event handling
-- [ ] Function definitions
-- [ ] FBC (flux balance analysis) package extension
-- [ ] Qual (qualitative models) package extension
-- [ ] Spatial modeling package extension
-- [ ] Model validation against SBML schema
-- [ ] Mass balance / charge balance consistency checking
-- [ ] `tpt-sci-reaction-network` / `tpt-sci-ode` integration (feature-gated stubs)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] Species / compartment / reaction extraction
+- [x] Rate law extraction with MathML expression parsing (`mathml::MathNode`, infix rendering, reference collection)
+- [x] Rule definitions (assignment, rate, algebraic)
+- [x] Event handling (trigger / delay / event assignments)
+- [x] Function definitions (lambda bodies with bvar scope)
+- [x] FBC (flux balance analysis) package extension (objectives, flux objectives/bounds, gene products)
+- [x] Qual (qualitative models) package extension (species, transitions, inputs/outputs)
+- [x] Spatial modeling package extension (geometry element extraction)
+- [x] Model validation against SBML schema (structural checks: level support, duplicate ids, compartment/species/reference resolution, MathML reference scoping — no XSD/schema validation)
+- [x] Mass balance / charge balance consistency checking (charge balance per reaction + FBC reference integrity + element/mass balance from FBC `chemicalFormula` done)
+- [x] `tpt-sci-reaction-network` / `tpt-sci-ode` integration (feature-gated stubs, `integration.rs`)
+- [~] Round-trip, fuzz, golden-file, property tests (fuzz target + golden `tests/samples` corpus + property tests added; writer/round-trip still pending a serializer)
+- [~] README + docs, `cargo publish --dry-run` (README + `cargo doc` clean; packaging verifies, but blocked on unpublished `tpt-io-core` path dep per §4 publish order — same as sibling crates)
 
 ## 3. `tpt-io` (umbrella — last, depends on all domain crates)
 
