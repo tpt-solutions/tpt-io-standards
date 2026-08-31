@@ -71,7 +71,10 @@ impl<'a> SpatialNavigator<'a> {
         let mut roots = Vec::new();
         for inst in &self.file.instances {
             if inst.type_name == "IFCPROJECT" {
-                roots.push(self.build_node(inst, &["IFCSITE", "IFCBUILDING", "IFCBUILDINGSTOREY", "IFCSPACE"])?);
+                roots.push(self.build_node(
+                    inst,
+                    &["IFCSITE", "IFCBUILDING", "IFCBUILDINGSTOREY", "IFCSPACE"],
+                )?);
             }
         }
         Ok(roots)
@@ -79,7 +82,8 @@ impl<'a> SpatialNavigator<'a> {
 
     /// Return the spatial hierarchy rooted at a specific site.
     pub fn site_tree(&self, site_id: usize) -> Result<SpatialNode, IfcError> {
-        let site = self.file.instance(site_id).ok_or_else(|| IfcError::unknown_instance(0, site_id))?;
+        let site =
+            self.file.instance(site_id).ok_or_else(|| IfcError::unknown_instance(0, site_id))?;
         self.build_node(site, &["IFCBUILDING", "IFCBUILDINGSTOREY", "IFCSPACE"])
     }
 
@@ -142,11 +146,7 @@ impl<'a> SpatialNavigator<'a> {
     ) -> Result<SpatialNode, IfcError> {
         let id = instance.id;
         let type_name = instance.type_name.clone();
-        let name = instance
-            .arg(2)
-            .and_then(IfcValue::as_string)
-            .unwrap_or("")
-            .to_string();
+        let name = instance.arg(2).and_then(IfcValue::as_string).unwrap_or("").to_string();
 
         // Find children via aggregation (whole → parts).
         let mut children = Vec::new();
@@ -202,81 +202,125 @@ mod tests {
     /// and Wall #6 contained in Storey #4.
     fn sample_file() -> IfcFile {
         let instances = vec![
-            EntityInstance::new(1, "IFCPROJECT", vec![
-                IfcValue::String("proj".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Project".to_string()),
-            ]),
-            EntityInstance::new(2, "IFCSITE", vec![
-                IfcValue::String("site".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("My Site".to_string()),
-            ]),
-            EntityInstance::new(3, "IFCBUILDING", vec![
-                IfcValue::String("bldg".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Building A".to_string()),
-            ]),
-            EntityInstance::new(4, "IFCBUILDINGSTOREY", vec![
-                IfcValue::String("storey".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Ground Floor".to_string()),
-            ]),
-            EntityInstance::new(5, "IFCSPACE", vec![
-                IfcValue::String("space".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Room 101".to_string()),
-            ]),
-            EntityInstance::new(6, "IFCWALL", vec![
-                IfcValue::String("wall".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Wall-1".to_string()),
-            ]),
+            EntityInstance::new(
+                1,
+                "IFCPROJECT",
+                vec![
+                    IfcValue::String("proj".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Project".to_string()),
+                ],
+            ),
+            EntityInstance::new(
+                2,
+                "IFCSITE",
+                vec![
+                    IfcValue::String("site".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("My Site".to_string()),
+                ],
+            ),
+            EntityInstance::new(
+                3,
+                "IFCBUILDING",
+                vec![
+                    IfcValue::String("bldg".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Building A".to_string()),
+                ],
+            ),
+            EntityInstance::new(
+                4,
+                "IFCBUILDINGSTOREY",
+                vec![
+                    IfcValue::String("storey".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Ground Floor".to_string()),
+                ],
+            ),
+            EntityInstance::new(
+                5,
+                "IFCSPACE",
+                vec![
+                    IfcValue::String("space".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Room 101".to_string()),
+                ],
+            ),
+            EntityInstance::new(
+                6,
+                "IFCWALL",
+                vec![
+                    IfcValue::String("wall".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Wall-1".to_string()),
+                ],
+            ),
             // Project → Site
-            EntityInstance::new(10, "IFCRELAGGREGATES", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Ref(1),
-                IfcValue::List(vec![IfcValue::Ref(2)]),
-            ]),
+            EntityInstance::new(
+                10,
+                "IFCRELAGGREGATES",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Ref(1),
+                    IfcValue::List(vec![IfcValue::Ref(2)]),
+                ],
+            ),
             // Site → Building
-            EntityInstance::new(11, "IFCRELAGGREGATES", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Ref(2),
-                IfcValue::List(vec![IfcValue::Ref(3)]),
-            ]),
+            EntityInstance::new(
+                11,
+                "IFCRELAGGREGATES",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Ref(2),
+                    IfcValue::List(vec![IfcValue::Ref(3)]),
+                ],
+            ),
             // Building → Storey
-            EntityInstance::new(12, "IFCRELAGGREGATES", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Ref(3),
-                IfcValue::List(vec![IfcValue::Ref(4)]),
-            ]),
+            EntityInstance::new(
+                12,
+                "IFCRELAGGREGATES",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Ref(3),
+                    IfcValue::List(vec![IfcValue::Ref(4)]),
+                ],
+            ),
             // Storey → Space
-            EntityInstance::new(13, "IFCRELAGGREGATES", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Ref(4),
-                IfcValue::List(vec![IfcValue::Ref(5)]),
-            ]),
+            EntityInstance::new(
+                13,
+                "IFCRELAGGREGATES",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Ref(4),
+                    IfcValue::List(vec![IfcValue::Ref(5)]),
+                ],
+            ),
             // Storey contains Wall
-            EntityInstance::new(14, "IFCRELCONTAINEDINSPATIALSTRUCTURE", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::List(vec![IfcValue::Ref(6)]),
-                IfcValue::Ref(4),
-            ]),
+            EntityInstance::new(
+                14,
+                "IFCRELCONTAINEDINSPATIALSTRUCTURE",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::List(vec![IfcValue::Ref(6)]),
+                    IfcValue::Ref(4),
+                ],
+            ),
         ];
         IfcFile { header: IfcHeader::default(), instances }
     }

@@ -123,21 +123,23 @@ impl<'a> GeometryExtractor<'a> {
     /// `IfcProductRepresentation`. Returns a list of [`Geometry`] per
     /// representation item.
     pub fn extract_product(&self, product_id: usize) -> Result<Vec<Geometry>, IfcError> {
-        let product = self.file.instance(product_id).ok_or_else(|| {
-            IfcError::unknown_instance(0, product_id)
-        })?;
-        let repr_val = product.arg(4).ok_or_else(|| {
-            IfcError::relationship("IfcProduct: Representation (arg 4) required")
-        })?;
+        let product = self
+            .file
+            .instance(product_id)
+            .ok_or_else(|| IfcError::unknown_instance(0, product_id))?;
+        let repr_val = product
+            .arg(4)
+            .ok_or_else(|| IfcError::relationship("IfcProduct: Representation (arg 4) required"))?;
         let repr_id = repr_val.as_ref().ok_or_else(|| {
             IfcError::relationship("IfcProduct: Representation (arg 4) must be a reference")
         })?;
-        let repr = self.file.instance(repr_id).ok_or_else(|| {
-            IfcError::unknown_instance(0, repr_id)
-        })?;
+        let repr =
+            self.file.instance(repr_id).ok_or_else(|| IfcError::unknown_instance(0, repr_id))?;
         // IfcProductRepresentation = (Name, Description, Representations)
         let reps = repr.arg(2).and_then(IfcValue::as_list).ok_or_else(|| {
-            IfcError::relationship("IfcProductRepresentation: Representations (arg 2) must be a list")
+            IfcError::relationship(
+                "IfcProductRepresentation: Representations (arg 2) must be a list",
+            )
         })?;
 
         let mut out = Vec::new();
@@ -145,9 +147,10 @@ impl<'a> GeometryExtractor<'a> {
             let item_id = item.as_ref().ok_or_else(|| {
                 IfcError::relationship("IfcProductRepresentation: item must be a reference")
             })?;
-            let item_inst = self.file.instance(item_id).ok_or_else(|| {
-                IfcError::unknown_instance(0, item_id)
-            })?;
+            let item_inst = self
+                .file
+                .instance(item_id)
+                .ok_or_else(|| IfcError::unknown_instance(0, item_id))?;
             out.push(self.extract_item(item_inst)?);
         }
         Ok(out)
@@ -162,9 +165,7 @@ impl<'a> GeometryExtractor<'a> {
                 let node = self.extract_boolean_result(item)?;
                 Ok(Geometry::Csg(node))
             }
-            "IFCTRIANGULATEDFACESET" | "IFCPOLYGONALFACESET" => {
-                self.extract_tessellated(item)
-            }
+            "IFCTRIANGULATEDFACESET" | "IFCPOLYGONALFACESET" => self.extract_tessellated(item),
             _other => Err(IfcError::Unsupported("unknown representation item")),
         }
     }
@@ -183,9 +184,8 @@ impl<'a> GeometryExtractor<'a> {
         let outer = item.arg(0).and_then(IfcValue::as_ref).ok_or_else(|| {
             IfcError::relationship("IfcFacetedBrep: Outer (arg 0) must be a reference")
         })?;
-        let shell = self.file.instance(outer).ok_or_else(|| {
-            IfcError::unknown_instance(0, outer)
-        })?;
+        let shell =
+            self.file.instance(outer).ok_or_else(|| IfcError::unknown_instance(0, outer))?;
         let faces_val = shell.arg(0).and_then(IfcValue::as_list).ok_or_else(|| {
             IfcError::relationship("IfcClosedShell: CfsFaces (arg 0) must be a list")
         })?;
@@ -194,9 +194,10 @@ impl<'a> GeometryExtractor<'a> {
             let face_id = face_val.as_ref().ok_or_else(|| {
                 IfcError::relationship("IfcClosedShell: face must be a reference")
             })?;
-            let face = self.file.instance(face_id).ok_or_else(|| {
-                IfcError::unknown_instance(0, face_id)
-            })?;
+            let face = self
+                .file
+                .instance(face_id)
+                .ok_or_else(|| IfcError::unknown_instance(0, face_id))?;
             self.extract_face(face, &mut mesh)?;
         }
         Ok(Geometry::BRep(mesh))
@@ -204,16 +205,18 @@ impl<'a> GeometryExtractor<'a> {
 
     /// Extract a single face into the mesh.
     fn extract_face(&self, face: &EntityInstance, mesh: &mut Mesh) -> Result<(), IfcError> {
-        let bounds = face.arg(0).and_then(IfcValue::as_list).ok_or_else(|| {
-            IfcError::relationship("IfcFace: Bounds (arg 0) must be a list")
-        })?;
+        let bounds = face
+            .arg(0)
+            .and_then(IfcValue::as_list)
+            .ok_or_else(|| IfcError::relationship("IfcFace: Bounds (arg 0) must be a list"))?;
         for bound_val in bounds {
-            let bound_id = bound_val.as_ref().ok_or_else(|| {
-                IfcError::relationship("IfcFace: bound must be a reference")
-            })?;
-            let bound = self.file.instance(bound_id).ok_or_else(|| {
-                IfcError::unknown_instance(0, bound_id)
-            })?;
+            let bound_id = bound_val
+                .as_ref()
+                .ok_or_else(|| IfcError::relationship("IfcFace: bound must be a reference"))?;
+            let bound = self
+                .file
+                .instance(bound_id)
+                .ok_or_else(|| IfcError::unknown_instance(0, bound_id))?;
             self.extract_bound(bound, mesh)?;
         }
         Ok(())
@@ -224,22 +227,21 @@ impl<'a> GeometryExtractor<'a> {
         let loop_ref = bound.arg(0).and_then(IfcValue::as_ref).ok_or_else(|| {
             IfcError::relationship("IfcFaceBound: Bound (arg 0) must be a reference")
         })?;
-        let poly_loop = self.file.instance(loop_ref).ok_or_else(|| {
-            IfcError::unknown_instance(0, loop_ref)
-        })?;
-        let points = poly_loop.arg(0).and_then(IfcValue::as_list).ok_or_else(|| {
-            IfcError::relationship("IfcPolyLoop: Polygon (arg 0) must be a list")
-        })?;
+        let poly_loop =
+            self.file.instance(loop_ref).ok_or_else(|| IfcError::unknown_instance(0, loop_ref))?;
+        let points = poly_loop
+            .arg(0)
+            .and_then(IfcValue::as_list)
+            .ok_or_else(|| IfcError::relationship("IfcPolyLoop: Polygon (arg 0) must be a list"))?;
 
         let base = mesh.vertices.len();
         let mut face_indices = Vec::with_capacity(points.len());
         for pt_val in points {
-            let pt_id = pt_val.as_ref().ok_or_else(|| {
-                IfcError::relationship("IfcPolyLoop: point must be a reference")
-            })?;
-            let pt = self.file.instance(pt_id).ok_or_else(|| {
-                IfcError::unknown_instance(0, pt_id)
-            })?;
+            let pt_id = pt_val
+                .as_ref()
+                .ok_or_else(|| IfcError::relationship("IfcPolyLoop: point must be a reference"))?;
+            let pt =
+                self.file.instance(pt_id).ok_or_else(|| IfcError::unknown_instance(0, pt_id))?;
             let coords = pt.arg(0).and_then(IfcValue::as_list).ok_or_else(|| {
                 IfcError::relationship("IfcCartesianPoint: Coordinates (arg 0) must be a list")
             })?;
@@ -255,7 +257,9 @@ impl<'a> GeometryExtractor<'a> {
     fn parse_point(&self, coords: &[IfcValue], id: &usize) -> Result<Point3, IfcError> {
         let get = |i: usize| {
             coords.get(i).and_then(IfcValue::as_real).ok_or_else(|| {
-                IfcError::relationship(format!("IfcCartesianPoint #{id}: coordinate {i} must be a real"))
+                IfcError::relationship(format!(
+                    "IfcCartesianPoint #{id}: coordinate {i} must be a real"
+                ))
             })
         };
         Ok((get(0)?, get(1)?, get(2)?))
@@ -318,11 +322,14 @@ impl<'a> GeometryExtractor<'a> {
     /// (Coordinates, Normals, Closed, CoordIndex, …).
     fn extract_tessellated(&self, item: &EntityInstance) -> Result<Geometry, IfcError> {
         let coord_inst = item.arg(0).and_then(IfcValue::as_ref).ok_or_else(|| {
-            IfcError::relationship("IfcTriangulatedFaceSet: Coordinates (arg 0) must be a reference")
+            IfcError::relationship(
+                "IfcTriangulatedFaceSet: Coordinates (arg 0) must be a reference",
+            )
         })?;
-        let coord = self.file.instance(coord_inst).ok_or_else(|| {
-            IfcError::unknown_instance(0, coord_inst)
-        })?;
+        let coord = self
+            .file
+            .instance(coord_inst)
+            .ok_or_else(|| IfcError::unknown_instance(0, coord_inst))?;
         let points_list = coord.arg(0).and_then(IfcValue::as_list).ok_or_else(|| {
             IfcError::relationship("IfcCartesianPointList3D: CoordList (arg 0) must be a list")
         })?;
@@ -369,32 +376,64 @@ mod tests {
     use crate::model::IfcHeader;
 
     fn point_inst(id: usize, x: f64, y: f64, z: f64) -> EntityInstance {
-        EntityInstance::new(id, "IFCCARTESIANPOINT", vec![IfcValue::List(vec![
-            IfcValue::Real(x),
-            IfcValue::Real(y),
-            IfcValue::Real(z),
-        ])])
+        EntityInstance::new(
+            id,
+            "IFCCARTESIANPOINT",
+            vec![IfcValue::List(vec![IfcValue::Real(x), IfcValue::Real(y), IfcValue::Real(z)])],
+        )
     }
 
     #[test]
     fn extracts_tessellated_mesh() {
         // #1 IfcCartesianPointList3D, #2 IfcTriangulatedFaceSet
         let instances = vec![
-            EntityInstance::new(1, "IFCCARTESIANPOINTLIST3D", vec![IfcValue::List(vec![
-                IfcValue::List(vec![IfcValue::Real(0.0), IfcValue::Real(0.0), IfcValue::Real(0.0)]),
-                IfcValue::List(vec![IfcValue::Real(1.0), IfcValue::Real(0.0), IfcValue::Real(0.0)]),
-                IfcValue::List(vec![IfcValue::Real(0.0), IfcValue::Real(1.0), IfcValue::Real(0.0)]),
-                IfcValue::List(vec![IfcValue::Real(0.0), IfcValue::Real(0.0), IfcValue::Real(1.0)]),
-            ])]),
-            EntityInstance::new(2, "IFCTRIANGULATEDFACESET", vec![
-                IfcValue::Ref(1),
-                IfcValue::Derived,
-                IfcValue::Bool(false),
-                IfcValue::List(vec![
-                    IfcValue::List(vec![IfcValue::Integer(1), IfcValue::Integer(2), IfcValue::Integer(3)]),
-                    IfcValue::List(vec![IfcValue::Integer(1), IfcValue::Integer(3), IfcValue::Integer(4)]),
-                ]),
-            ]),
+            EntityInstance::new(
+                1,
+                "IFCCARTESIANPOINTLIST3D",
+                vec![IfcValue::List(vec![
+                    IfcValue::List(vec![
+                        IfcValue::Real(0.0),
+                        IfcValue::Real(0.0),
+                        IfcValue::Real(0.0),
+                    ]),
+                    IfcValue::List(vec![
+                        IfcValue::Real(1.0),
+                        IfcValue::Real(0.0),
+                        IfcValue::Real(0.0),
+                    ]),
+                    IfcValue::List(vec![
+                        IfcValue::Real(0.0),
+                        IfcValue::Real(1.0),
+                        IfcValue::Real(0.0),
+                    ]),
+                    IfcValue::List(vec![
+                        IfcValue::Real(0.0),
+                        IfcValue::Real(0.0),
+                        IfcValue::Real(1.0),
+                    ]),
+                ])],
+            ),
+            EntityInstance::new(
+                2,
+                "IFCTRIANGULATEDFACESET",
+                vec![
+                    IfcValue::Ref(1),
+                    IfcValue::Derived,
+                    IfcValue::Bool(false),
+                    IfcValue::List(vec![
+                        IfcValue::List(vec![
+                            IfcValue::Integer(1),
+                            IfcValue::Integer(2),
+                            IfcValue::Integer(3),
+                        ]),
+                        IfcValue::List(vec![
+                            IfcValue::Integer(1),
+                            IfcValue::Integer(3),
+                            IfcValue::Integer(4),
+                        ]),
+                    ]),
+                ],
+            ),
         ];
         let file = IfcFile { header: IfcHeader::default(), instances };
         let extractor = GeometryExtractor::new(&file);
@@ -417,19 +456,27 @@ mod tests {
             point_inst(11, 1.0, 0.0, 0.0),
             point_inst(12, 1.0, 1.0, 0.0),
             point_inst(13, 0.0, 1.0, 0.0),
-            EntityInstance::new(20, "IFCPOLYLOOP", vec![IfcValue::List(vec![
-                IfcValue::Ref(10), IfcValue::Ref(11), IfcValue::Ref(12), IfcValue::Ref(13),
-            ])]),
-            EntityInstance::new(30, "IFCFACEOUTERBOUND", vec![
-                IfcValue::Ref(20),
-                IfcValue::Bool(true),
-            ]),
-            EntityInstance::new(40, "IFCFACE", vec![IfcValue::List(vec![
-                IfcValue::Ref(30),
-            ])]),
-            EntityInstance::new(50, "IFCCLOSEDSHELL", vec![IfcValue::List(vec![
-                IfcValue::Ref(40),
-            ])]),
+            EntityInstance::new(
+                20,
+                "IFCPOLYLOOP",
+                vec![IfcValue::List(vec![
+                    IfcValue::Ref(10),
+                    IfcValue::Ref(11),
+                    IfcValue::Ref(12),
+                    IfcValue::Ref(13),
+                ])],
+            ),
+            EntityInstance::new(
+                30,
+                "IFCFACEOUTERBOUND",
+                vec![IfcValue::Ref(20), IfcValue::Bool(true)],
+            ),
+            EntityInstance::new(40, "IFCFACE", vec![IfcValue::List(vec![IfcValue::Ref(30)])]),
+            EntityInstance::new(
+                50,
+                "IFCCLOSEDSHELL",
+                vec![IfcValue::List(vec![IfcValue::Ref(40)])],
+            ),
             EntityInstance::new(60, "IFCFACETEDBREP", vec![IfcValue::Ref(50)]),
         ];
 
@@ -453,11 +500,15 @@ mod tests {
         let instances = vec![
             EntityInstance::new(1, "IFCBLOCK", vec![IfcValue::Derived]),
             EntityInstance::new(2, "IFCCYLINDER", vec![IfcValue::Derived]),
-            EntityInstance::new(3, "IFCBOOLEANRESULT", vec![
-                IfcValue::String("DIFFERENCE".to_string()),
-                IfcValue::Ref(1),
-                IfcValue::Ref(2),
-            ]),
+            EntityInstance::new(
+                3,
+                "IFCBOOLEANRESULT",
+                vec![
+                    IfcValue::String("DIFFERENCE".to_string()),
+                    IfcValue::Ref(1),
+                    IfcValue::Ref(2),
+                ],
+            ),
             EntityInstance::new(4, "IFCCSGSOLID", vec![IfcValue::Ref(3)]),
         ];
         let file = IfcFile { header: IfcHeader::default(), instances };

@@ -20,9 +20,7 @@ use alloc::vec::Vec;
 use tpt_io_core::{Encoding, Reader, ValidationSettings, Validator};
 
 use crate::error::IfcError;
-use crate::model::{
-    EntityInstance, FileDescription, FileName, IfcFile, IfcHeader, IfcValue,
-};
+use crate::model::{EntityInstance, FileDescription, FileName, IfcFile, IfcHeader, IfcValue};
 use crate::token::{tokenize, Token, TokenKind};
 
 /// Parse an IFC document from a string slice.
@@ -200,7 +198,9 @@ fn apply_file_description(
     for d in descs {
         descriptions.push(
             d.as_string()
-                .ok_or_else(|| IfcError::invalid_argument(offset, "description item must be a string"))?
+                .ok_or_else(|| {
+                    IfcError::invalid_argument(offset, "description item must be a string")
+                })?
                 .to_string(),
         );
     }
@@ -208,7 +208,9 @@ fn apply_file_description(
         args[1]
             .value
             .as_string()
-            .ok_or_else(|| IfcError::invalid_argument(args[1].offset, "implementation_level must be a string"))?
+            .ok_or_else(|| {
+                IfcError::invalid_argument(args[1].offset, "implementation_level must be a string")
+            })?
             .to_string()
     } else {
         String::new()
@@ -218,11 +220,7 @@ fn apply_file_description(
 }
 
 /// Apply a parsed `FILE_NAME('…', '…', (...), (...), '...', '...', '...', '...')`.
-fn apply_file_name(
-    args: &[Arg],
-    header: &mut IfcHeader,
-    offset: usize,
-) -> Result<(), IfcError> {
+fn apply_file_name(args: &[Arg], header: &mut IfcHeader, offset: usize) -> Result<(), IfcError> {
     if args.len() < 7 {
         return Err(IfcError::custom(format!(
             "FILE_NAME requires 7 arguments, found {count} at offset {offset}",
@@ -244,17 +242,23 @@ fn apply_file_name(
     let preprocessor_version = args[4]
         .value
         .as_string()
-        .ok_or_else(|| IfcError::invalid_argument(args[4].offset, "expected string (preprocessor)"))?
+        .ok_or_else(|| {
+            IfcError::invalid_argument(args[4].offset, "expected string (preprocessor)")
+        })?
         .to_string();
     let originating_system = args[5]
         .value
         .as_string()
-        .ok_or_else(|| IfcError::invalid_argument(args[5].offset, "expected string (originating_system)"))?
+        .ok_or_else(|| {
+            IfcError::invalid_argument(args[5].offset, "expected string (originating_system)")
+        })?
         .to_string();
     let authorization = args[6]
         .value
         .as_string()
-        .ok_or_else(|| IfcError::invalid_argument(args[6].offset, "expected string (authorization)"))?
+        .ok_or_else(|| {
+            IfcError::invalid_argument(args[6].offset, "expected string (authorization)")
+        })?
         .to_string();
     header.file_name = FileName {
         name,
@@ -270,24 +274,25 @@ fn apply_file_name(
 
 /// Parse an argument that must be a list of strings.
 fn parse_string_list(a: &Arg) -> Result<Vec<String>, IfcError> {
-    let list = a.value.as_list().ok_or_else(|| {
-        IfcError::invalid_argument(a.offset, "expected list argument")
-    })?;
+    let list = a
+        .value
+        .as_list()
+        .ok_or_else(|| IfcError::invalid_argument(a.offset, "expected list argument"))?;
     let mut out = Vec::with_capacity(list.len());
     for item in list {
-        out.push(item.as_string().ok_or_else(|| {
-            IfcError::invalid_argument(a.offset, "expected string item in list")
-        })?.to_string());
+        out.push(
+            item.as_string()
+                .ok_or_else(|| {
+                    IfcError::invalid_argument(a.offset, "expected string item in list")
+                })?
+                .to_string(),
+        );
     }
     Ok(out)
 }
 
 /// Apply a parsed `FILE_SCHEMA(('IFC4'))`.
-fn apply_file_schema(
-    args: &[Arg],
-    header: &mut IfcHeader,
-    offset: usize,
-) -> Result<(), IfcError> {
+fn apply_file_schema(args: &[Arg], header: &mut IfcHeader, offset: usize) -> Result<(), IfcError> {
     if args.is_empty() {
         return Err(IfcError::missing_argument(offset, "FILE_SCHEMA", 0));
     }
@@ -299,7 +304,9 @@ fn apply_file_schema(
     for s in list {
         schemas.push(
             s.as_string()
-                .ok_or_else(|| IfcError::invalid_argument(args[0].offset, "schema must be a string"))?
+                .ok_or_else(|| {
+                    IfcError::invalid_argument(args[0].offset, "schema must be a string")
+                })?
                 .to_string(),
         );
     }
@@ -378,10 +385,7 @@ fn parse_instance_tokens(tok: &[Token]) -> Result<EntityInstance, IfcError> {
     let id = match &tok[i].kind {
         TokenKind::Ref(id) => *id,
         _ => {
-            return Err(IfcError::custom(format!(
-                "expected instance id, found {:?}",
-                tok[i].kind
-            )));
+            return Err(IfcError::custom(format!("expected instance id, found {:?}", tok[i].kind)));
         }
     };
     i += 1;
@@ -413,7 +417,7 @@ fn parse_instance_tokens(tok: &[Token]) -> Result<EntityInstance, IfcError> {
         Vec::new()
     };
 
-    Ok(EntityInstance { id, type_name, args: args.into_iter().map(|a| a.value).collect(), })
+    Ok(EntityInstance { id, type_name, args: args.into_iter().map(|a| a.value).collect() })
 }
 
 /// Parse a comma-separated argument list until the matching `)`.

@@ -41,10 +41,7 @@ pub fn serialize(file: &IfcFile) -> Result<Vec<u8>, IfcError> {
     ));
 
     // FILE_SCHEMA
-    out.push_str(&format!(
-        "FILE_SCHEMA(('{}'));\n",
-        file.header.schemas.join("','")
-    ));
+    out.push_str(&format!("FILE_SCHEMA(('{}'));\n", file.header.schemas.join("','")));
 
     out.push_str("ENDSEC;\n");
 
@@ -146,17 +143,27 @@ END-ISO-10303-21;
                 schemas: vec!["IFC4".to_string()],
             },
             instances: vec![
-                EntityInstance::new(1, "IFCCARTESIANPOINT", vec![
-                    IfcValue::List(vec![IfcValue::Real(1.0), IfcValue::Real(2.0), IfcValue::Real(3.0)]),
-                ]),
-                EntityInstance::new(2, "IFCPROPERTY", vec![
-                    IfcValue::String("Name".to_string()),
-                    IfcValue::Enum("P_SINGLEVALUE".to_string()),
-                    IfcValue::Ref(1),
-                    IfcValue::Integer(42),
-                    IfcValue::Bool(true),
-                    IfcValue::Derived,
-                ]),
+                EntityInstance::new(
+                    1,
+                    "IFCCARTESIANPOINT",
+                    vec![IfcValue::List(vec![
+                        IfcValue::Real(1.0),
+                        IfcValue::Real(2.0),
+                        IfcValue::Real(3.0),
+                    ])],
+                ),
+                EntityInstance::new(
+                    2,
+                    "IFCPROPERTY",
+                    vec![
+                        IfcValue::String("Name".to_string()),
+                        IfcValue::Enum("P_SINGLEVALUE".to_string()),
+                        IfcValue::Ref(1),
+                        IfcValue::Integer(42),
+                        IfcValue::Bool(true),
+                        IfcValue::Derived,
+                    ],
+                ),
             ],
         };
         let bytes = serialize(&file).unwrap();

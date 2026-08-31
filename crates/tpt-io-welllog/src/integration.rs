@@ -35,12 +35,7 @@ pub mod eng_geotech {
             let b = log.data[log.data.len() - 1][0];
             (a.min(b), a.max(b))
         };
-        BoreholeLogStub {
-            samples: log.len(),
-            channels: log.curves.len(),
-            top,
-            bottom,
-        }
+        BoreholeLogStub { samples: log.len(), channels: log.curves.len(), top, bottom }
     }
 
     /// Convert an [`AlignedLogs`] correlation result into a multi-run stub.

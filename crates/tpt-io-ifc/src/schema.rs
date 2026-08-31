@@ -174,10 +174,7 @@ mod tests {
 
     fn file_with_schema(schema: &str) -> IfcFile {
         IfcFile {
-            header: IfcHeader {
-                schemas: vec![schema.to_string()],
-                ..IfcHeader::default()
-            },
+            header: IfcHeader { schemas: vec![schema.to_string()], ..IfcHeader::default() },
             ..IfcFile::default()
         }
     }

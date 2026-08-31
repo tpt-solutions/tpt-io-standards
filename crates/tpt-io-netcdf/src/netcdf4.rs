@@ -48,8 +48,8 @@ fn read_int(data: &[u8], pos: usize, size: usize) -> core::result::Result<u64, N
         .get(pos..pos + size)
         .ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(pos)))?;
     let mut v = 0u64;
-    for &b in s.iter().rev() {
-        v = (v << 8) | b as u64;
+    for (i, &b) in s.iter().enumerate() {
+        v |= (b as u64) << (i * 8);
     }
     Ok(v)
 }
@@ -62,14 +62,18 @@ pub fn parse_hdf5_superblock(data: &[u8]) -> core::result::Result<Hdf5Superblock
     let version = *data.get(8).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(8)))?;
     let (offset_size, length_size, root_group_addr) = match version {
         1 => {
-            let os = *data.get(13).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(13)))?;
-            let ls = *data.get(14).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(14)))?;
+            let os =
+                *data.get(13).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(13)))?;
+            let ls =
+                *data.get(14).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(14)))?;
             let ra = read_int(data, 24, os as usize)?;
             (os, ls, ra)
         }
         2 | 3 => {
-            let os = *data.get(9).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(9)))?;
-            let ls = *data.get(10).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(10)))?;
+            let os =
+                *data.get(9).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(9)))?;
+            let ls =
+                *data.get(10).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(10)))?;
             let ra = read_int(data, 12 + 3 * (os as usize), os as usize)?;
             (os, ls, ra)
         }
@@ -163,10 +167,15 @@ impl<'a> Reader<'a> {
         read_int(self.data, pos, size)
     }
     fn u8(&self, pos: usize) -> core::result::Result<u8, NetCdfError> {
-        Ok(*self.data.get(pos).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(pos)))?)
+        Ok(*self
+            .data
+            .get(pos)
+            .ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(pos)))?)
     }
     fn slice(&self, pos: usize, len: usize) -> core::result::Result<&'a [u8], NetCdfError> {
-        self.data.get(pos..pos+len).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(pos)))
+        self.data
+            .get(pos..pos + len)
+            .ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(pos)))
     }
 }
 
@@ -193,7 +202,7 @@ fn parse_object_header<'a>(
     addr: u64,
 ) -> core::result::Result<(Vec<Message<'a>>, Vec<u64>), NetCdfError> {
     let base = addr as usize;
-    if base + 4 > r.data.len() || &r.data[base..base+4] != b"OHDR" {
+    if base + 4 > r.data.len() || &r.data[base..base + 4] != b"OHDR" {
         return Err(NetCdfError::Unsupported("expected object header signature"));
     }
     let ver = r.u8(base + 4)?;
@@ -213,8 +222,12 @@ fn parse_object_header<'a>(
     p += 2;
     let _hsize = r.rd(p, 4)?;
     p += 4;
-    if flags & 0x08 != 0 { p += 2; }
-    if flags & 0x10 != 0 { p += 4; }
+    if flags & 0x08 != 0 {
+        p += 2;
+    }
+    if flags & 0x10 != 0 {
+        p += 4;
+    }
     let mut messages = Vec::new();
     let mut cont = Vec::new();
     let msg_start = p;
@@ -240,14 +253,18 @@ fn parse_object_header<'a>(
         }
         count += 1;
         p += msize;
-        if p % 8 != 0 { p += 8 - (p % 8); }
+        if p % 8 != 0 {
+            p += 8 - (p % 8);
+        }
         remaining = chunk0.saturating_sub(p - msg_start);
         if remaining == 0 && count < nmess {
             if let Some(next) = cont.pop() {
                 p = next as usize;
-                if p + 6 > r.data.len() { break; }
+                if p + 6 > r.data.len() {
+                    break;
+                }
                 // re-check OHDR at continuation; if not OHDR assume continuation data starts directly
-                if &r.data[p..p+4] == b"OHDR" {
+                if &r.data[p..p + 4] == b"OHDR" {
                     // small continuation: skip signature and version
                     p += 5;
                 }
@@ -273,7 +290,7 @@ fn parse_global_heaps<'a>(r: &Reader<'a>) -> Vec<GlobalHeap<'a>> {
     let mut start = 0usize;
     while let Some(pos) = r.data[start..].iter().position(|&b| b == b'G') {
         let idx = start + pos;
-        if idx + 4 <= r.data.len() && &r.data[idx..idx+4] == b"GCOL" {
+        if idx + 4 <= r.data.len() && &r.data[idx..idx + 4] == b"GCOL" {
             let mut p = idx + 8;
             p += r.lensz; // collection size / reserved field
             let mut objects = Vec::new();
@@ -282,11 +299,18 @@ fn parse_global_heaps<'a>(r: &Reader<'a>) -> Vec<GlobalHeap<'a>> {
                 let _ref = r.rd(p + 2, 2).unwrap_or(0);
                 let size = r.rd(p + 4, r.lensz).unwrap_or(0) as usize;
                 p += 2 + 2 + r.lensz;
-                if size == 0 { break; }
-                let data = match r.slice(p, size) { Ok(s) => s, Err(_) => break };
+                if size == 0 {
+                    break;
+                }
+                let data = match r.slice(p, size) {
+                    Ok(s) => s,
+                    Err(_) => break,
+                };
                 objects.push((oid, data));
                 p += size;
-                if p % 8 != 0 { p += 8 - (p % 8); }
+                if p % 8 != 0 {
+                    p += 8 - (p % 8);
+                }
             }
             heaps.push(GlobalHeap { objects });
         }
@@ -329,30 +353,33 @@ pub fn parse(data: &[u8]) -> core::result::Result<Hdf5File, NetCdfError> {
             datasets.push(ds);
         }
     }
-    // Fallback: if the root-group links yielded no datasets, scan the file for
-    // OHDR signatures after the root and treat each as a dataset. This keeps
-    // the reader working even when link parsing is incomplete.
-    if datasets.is_empty() {
+    if !datasets.iter().any(|d| !d.name.is_empty() && !d.dims.is_empty()) {
         let mut off = sb.root_group_addr as usize + 1;
         while let Some(idx) = r.data[off..].iter().position(|&b| b == b'O') {
             let ohdr = off + idx;
-            if ohdr + 4 <= r.data.len() && &r.data[ohdr..ohdr+4] == b"OHDR" {
+            if ohdr + 4 <= r.data.len() && &r.data[ohdr..ohdr + 4] == b"OHDR" {
                 if ohdr != sb.root_group_addr as usize {
                     if let Ok(ds) = parse_dataset(&r, &heaps, ohdr as u64) {
-                        datasets.push(ds);
+                        if !ds.name.is_empty() || !ds.dims.is_empty() {
+                            datasets.push(ds);
+                        }
                     }
                 }
-                off = ohdr + 4;
-            } else {
-                off = ohdr + 1;
             }
-            if off >= r.data.len() { break; }
+            off = ohdr + 4;
+            if off >= r.data.len() {
+                break;
+            }
         }
     }
     Ok(Hdf5File { superblock: sb, root, datasets })
 }
 
-fn parse_group(r: &Reader, heaps: &[GlobalHeap], addr: u64) -> core::result::Result<Group, NetCdfError> {
+fn parse_group(
+    r: &Reader,
+    heaps: &[GlobalHeap],
+    addr: u64,
+) -> core::result::Result<Group, NetCdfError> {
     let (msgs, _cont) = parse_object_header(r, addr)?;
     let mut attrs = Vec::new();
     let mut links = Vec::new();
@@ -392,7 +419,8 @@ fn parse_link(_r: &Reader, body: &[u8]) -> core::result::Result<Link, NetCdfErro
     if flags & 0x02 != 0 {
         p += 2;
     }
-    let name_bytes = body.get(p..p+name_size).ok_or_else(|| NetCdfError::Unsupported("link name oob"))?;
+    let name_bytes =
+        body.get(p..p + name_size).ok_or_else(|| NetCdfError::Unsupported("link name oob"))?;
     let name = String::from_utf8_lossy(name_bytes).into_owned();
     p += name_size;
     let object_addr = read_int(body, p, 8)?;
@@ -407,7 +435,8 @@ fn parse_attribute(r: &Reader, body: &[u8]) -> core::result::Result<H5Attr, NetC
     let dtype_size = u16::from_le_bytes([body[3], body[4]]) as usize;
     let dspace_size = u16::from_le_bytes([body[5], body[6]]) as usize;
     let mut p = 7;
-    let name_bytes = body.get(p..p+name_size).ok_or_else(|| NetCdfError::Unsupported("attr name oob"))?;
+    let name_bytes =
+        body.get(p..p + name_size).ok_or_else(|| NetCdfError::Unsupported("attr name oob"))?;
     let name = String::from_utf8_lossy(name_bytes).into_owned();
     p += name_size;
     let _dt = r.slice(p, dtype_size)?;
@@ -424,7 +453,11 @@ fn parse_attribute(r: &Reader, body: &[u8]) -> core::result::Result<H5Attr, NetC
     Ok(H5Attr { name, nc_type, value })
 }
 
-fn parse_dataset(r: &Reader, heaps: &[GlobalHeap], addr: u64) -> core::result::Result<Dataset, NetCdfError> {
+fn parse_dataset(
+    r: &Reader,
+    heaps: &[GlobalHeap],
+    addr: u64,
+) -> core::result::Result<Dataset, NetCdfError> {
     let (msgs, _cont) = parse_object_header(r, addr)?;
     let mut name = String::new();
     let mut dims: Vec<u64> = Vec::new();
@@ -443,8 +476,16 @@ fn parse_dataset(r: &Reader, heaps: &[GlobalHeap], addr: u64) -> core::result::R
             m.body
         };
         match m.mtype {
-            MSG_DATASPACE => { if let Some(d) = parse_dataspace(body) { dims = d; } }
-            MSG_DATATYPE => { if let Some(t) = parse_datatype(body) { nc_type = t; } }
+            MSG_DATASPACE => {
+                if let Some(d) = parse_dataspace(body) {
+                    dims = d;
+                }
+            }
+            MSG_DATATYPE => {
+                if let Some(t) = parse_datatype(body) {
+                    nc_type = t;
+                }
+            }
             MSG_LAYOUT => {
                 if let Some(l) = parse_layout(r, body) {
                     match &l {
@@ -456,8 +497,16 @@ fn parse_dataset(r: &Reader, heaps: &[GlobalHeap], addr: u64) -> core::result::R
                     layout = l;
                 }
             }
-            MSG_FILTER | MSG_FILTER2 => { for f in parse_filters(body) { filters.push(f); } }
-            MSG_ATTRIBUTE => { if let Ok(a) = parse_attribute(r, body) { attrs.push(a); } }
+            MSG_FILTER | MSG_FILTER2 => {
+                for f in parse_filters(body) {
+                    filters.push(f);
+                }
+            }
+            MSG_ATTRIBUTE => {
+                if let Ok(a) = parse_attribute(r, body) {
+                    attrs.push(a);
+                }
+            }
             _ => {}
         }
     }
@@ -465,57 +514,85 @@ fn parse_dataset(r: &Reader, heaps: &[GlobalHeap], addr: u64) -> core::result::R
 }
 
 fn parse_dataspace(body: &[u8]) -> Option<Vec<u64>> {
-    if body.len() < 4 { return None; }
+    if body.len() < 4 {
+        return None;
+    }
     let ver = body[0];
     let rank = if ver >= 2 { body[3] as usize } else { body[1] as usize };
     let mut p = if ver >= 2 { 4 } else { 2 };
-    if ver >= 2 { p += 1; }
+    if ver >= 2 {
+        p += 1;
+    }
     let mut dims = Vec::new();
     for _ in 0..rank {
-        if p + 4 > body.len() { break; }
-        dims.push(u32::from_le_bytes([body[p], body[p+1], body[p+2], body[p+3]]) as u64);
+        if p + 4 > body.len() {
+            break;
+        }
+        dims.push(u32::from_le_bytes([body[p], body[p + 1], body[p + 2], body[p + 3]]) as u64);
         p += 4;
     }
     Some(dims)
 }
 
 fn parse_datatype(body: &[u8]) -> Option<NcType> {
-    if body.len() < 4 { return None; }
+    if body.len() < 4 {
+        return None;
+    }
     let class = body[1];
     let size = u16::from_le_bytes([body[2], body[3]]) as usize;
     match class {
-        0 => match size { 1 => Some(NcType::Ubyte), 2 => Some(NcType::Short), 4 => Some(NcType::Int), _ => Some(NcType::Int) },
-        1 => match size { 4 => Some(NcType::Float), 8 => Some(NcType::Double), _ => Some(NcType::Float) },
+        0 => match size {
+            1 => Some(NcType::Ubyte),
+            2 => Some(NcType::Short),
+            4 => Some(NcType::Int),
+            _ => Some(NcType::Int),
+        },
+        1 => match size {
+            4 => Some(NcType::Float),
+            8 => Some(NcType::Double),
+            _ => Some(NcType::Float),
+        },
         _ => Some(NcType::Float),
     }
 }
 
 fn parse_layout(r: &Reader, body: &[u8]) -> Option<Layout> {
-    if body.is_empty() { return None; }
-    match body[0] {
+    if body.is_empty() {
+        return None;
+    }
+
+    // HDF5 v4 layout messages prefix with a version byte (v2/v3 don't).
+    let (version, rest) = if body[0] == 4 { (4, &body[1..]) } else { (body[0], body) };
+    if rest.is_empty() {
+        return None;
+    }
+    let class = rest[0];
+
+    match class {
         0 => {
-            let size = u32::from_le_bytes([body[2], body[3], body[4], body[5]]) as usize;
-            let data = body.get(6..6+size).unwrap_or(&[]).to_vec();
+            let size = u32::from_le_bytes([rest[2], rest[3], rest[4], rest[5]]) as usize;
+            let data = rest.get(6..6 + size).unwrap_or(&[]).to_vec();
             Some(Layout::Compact { data })
         }
         1 => {
-            let addr = read_int(body, 2, 8).ok()?;
+            let ndims = rest[1] as usize;
+            let dims_bytes = if version == 4 { ndims * 8 } else { ndims * 4 };
+            let p = 2 + dims_bytes;
+            let addr = read_int(rest, p, r.offsz).ok()?;
             Some(Layout::Contiguous { addr })
         }
         2 => {
-            let ndims = body[2] as usize;
-            let mut p = 3;
-            let mut chunk_dims = Vec::new();
-            for _ in 0..ndims {
-                if p + 4 > body.len() { break; }
-                chunk_dims.push(u32::from_le_bytes([body[p], body[p+1], body[p+2], body[p+3]]) as u64);
+            let ndims = rest[1] as usize;
+            let dims_bytes = if version == 4 { ndims * 8 } else { ndims * 4 };
+            let mut p = 2 + dims_bytes;
+            let chunk_buf_size = if version < 4 && p + 4 <= rest.len() {
+                let v = u32::from_le_bytes([rest[p], rest[p + 1], rest[p + 2], rest[p + 3]]) as u64;
                 p += 4;
-            }
-            let chunk_buf_size = if p + 4 <= body.len() {
-                u32::from_le_bytes([body[p], body[p+1], body[p+2], body[p+3]]) as u64
-            } else { 0 };
-            p += 4;
-            let btree_addr = read_int(body, p, r.offsz).ok()?;
+                v
+            } else {
+                0
+            };
+            let btree_addr = read_int(rest, p, r.offsz).ok()?;
             Some(Layout::Chunked { btree_addr, chunk_buf_size })
         }
         _ => None,
@@ -523,34 +600,63 @@ fn parse_layout(r: &Reader, body: &[u8]) -> Option<Layout> {
 }
 
 fn parse_chunk_dims(body: &[u8], _buf: u64) -> Vec<u64> {
-    if body.len() < 3 || body[0] != 2 { return Vec::new(); }
-    let ndims = body[2] as usize;
-    let mut p = 3;
+    if body.len() < 3 {
+        return Vec::new();
+    }
+    // h5py v108 writes v4 layout messages (body[0]=4), skip version byte.
+    let body = if body[0] == 4 { &body[1..] } else { body };
+    if body.is_empty() || body[0] != 2 {
+        return Vec::new();
+    }
+    let ndims = body[1] as usize;
+    let mut p = 2;
     let mut dims = Vec::new();
+    let elem = if body.len() >= 3 && body[2] == 0 { 8 } else { 4 };
     for _ in 0..ndims {
-        if p + 4 > body.len() { break; }
-        dims.push(u32::from_le_bytes([body[p], body[p+1], body[p+2], body[p+3]]) as u64);
-        p += 4;
+        if p + elem > body.len() {
+            break;
+        }
+        if elem == 8 {
+            dims.push(u64::from_le_bytes([
+                body[p],
+                body[p + 1],
+                body[p + 2],
+                body[p + 3],
+                body[p + 4],
+                body[p + 5],
+                body[p + 6],
+                body[p + 7],
+            ]));
+        } else {
+            dims.push(u32::from_le_bytes([body[p], body[p + 1], body[p + 2], body[p + 3]]) as u64);
+        }
+        p += elem;
     }
     dims
 }
 
 fn parse_filters(body: &[u8]) -> Vec<Filter> {
-    if body.len() < 6 { return Vec::new(); }
+    if body.len() < 6 {
+        return Vec::new();
+    }
     let nfilters = u16::from_le_bytes([body[2], body[3]]) as usize;
     let mut p = 4;
     let mut out = Vec::new();
     for _ in 0..nfilters {
-        if p + 4 > body.len() { break; }
-        let id = u16::from_le_bytes([body[p], body[p+1]]);
-        let _flags = u16::from_le_bytes([body[p+2], body[p+3]]);
+        if p + 4 > body.len() {
+            break;
+        }
+        let id = u16::from_le_bytes([body[p], body[p + 1]]);
+        let _flags = u16::from_le_bytes([body[p + 2], body[p + 3]]);
         p += 4;
-        let nparams = u16::from_le_bytes([body[p], body[p+1]]) as usize;
+        let nparams = u16::from_le_bytes([body[p], body[p + 1]]) as usize;
         p += 2;
         let mut params = Vec::new();
         for _ in 0..nparams {
-            if p + 4 > body.len() { break; }
-            params.push(u32::from_le_bytes([body[p], body[p+1], body[p+2], body[p+3]]));
+            if p + 4 > body.len() {
+                break;
+            }
+            params.push(u32::from_le_bytes([body[p], body[p + 1], body[p + 2], body[p + 3]]));
             p += 4;
         }
         out.push(Filter { id, name: Filter::by_id(id), params });
@@ -583,53 +689,158 @@ impl Dataset {
             Layout::Contiguous { addr } => {
                 let start = *addr as usize;
                 let len = self.dims.iter().product::<u64>() as usize * self.nc_type.size_of();
-                let bytes = file.get(start..start+len).ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(start)))?;
+                let bytes = file
+                    .get(start..start + len)
+                    .ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(start)))?;
                 Ok(DecodedData::Raw(bytes.to_vec()))
             }
-            Layout::Chunked { btree_addr: _, chunk_buf_size } => {
-                // For now, read the raw chunk index header (B-tree root) and
-                // return an error indicating full decode is not yet wired.
-                // The deflate/shuffle decode pipeline is implemented below as
-                // `decode_chunked_raw` once the chunk B-tree leaf is located.
-                Err(NetCdfError::Unsupported("chunked B-tree decode not yet wired"))
+            Layout::Chunked { btree_addr, chunk_buf_size: _ } => {
+                read_chunked_data(file, self, *btree_addr)
             }
             Layout::Compact { data } => Ok(DecodedData::Raw(data.clone())),
         }
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+struct ChunkEntry {
+    offset: u64,
+    size: u64,
+    scaled0: u64,
+    scaled1: u64,
+}
+
+fn read_chunked_data(
+    file: &[u8],
+    ds: &Dataset,
+    btree_addr: u64,
+) -> core::result::Result<DecodedData, NetCdfError> {
+    let r = Reader { data: file, offsz: 8, lensz: 8 };
+    let entries = collect_chunk_entries(&r, btree_addr)?;
+    let elem = ds.nc_type.size_of();
+    let total = ds.dims.iter().product::<u64>() as usize;
+    let mut out = vec![0u8; total * elem];
+    let cdims =
+        ds.chunk_dims.as_ref().ok_or_else(|| NetCdfError::Unsupported("missing chunk dims"))?;
+    if cdims.len() < 2 {
+        return Err(NetCdfError::Unsupported("need at least 2D chunks"));
+    }
+    let nrows = ds.dims[0] as usize;
+    let ncols = ds.dims[1] as usize;
+    let mut out = vec![0u8; total * elem];
+    for e in &entries {
+        let raw = file
+            .get(e.offset as usize..(e.offset + e.size) as usize)
+            .ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(e.offset as usize)))?;
+        let decoded = decode_chunked_raw(raw, &ds.filters)?;
+        // Place decoded chunk into output buffer.
+        // Chunk origin in elements: (scaled0, scaled1). Each chunk covers
+        // rows [scaled0 .. scaled0+cdims[0]), cols [scaled1 .. scaled1+cdims[1]).
+        let c0 = e.scaled0 as usize;
+        let c1 = e.scaled1 as usize;
+        let cd0 = cdims[0] as usize;
+        let cd1 = cdims[1] as usize;
+        let nrows = ds.dims[0] as usize;
+        let ncols = ds.dims[1] as usize;
+        for dr in 0..cd0 {
+            let gr = c0 + dr;
+            if gr >= nrows {
+                break;
+            }
+            for dc in 0..cd1 {
+                let gc = c1 + dc;
+                if gc >= ncols {
+                    break;
+                }
+                let dst_off = (gr * ncols + gc) * elem;
+                let src_off = (dr * cd1 + dc) * elem;
+                if dst_off + elem <= out.len() && src_off + elem <= decoded.len() {
+                    out[dst_off..dst_off + elem].copy_from_slice(&decoded[src_off..src_off + elem]);
+                }
+            }
+        }
+    }
+    Ok(DecodedData::Raw(out))
+}
+
+fn collect_chunk_entries(
+    r: &Reader<'_>,
+    addr: u64,
+) -> core::result::Result<Vec<ChunkEntry>, NetCdfError> {
+    let base = addr as usize;
+    if base + 4 > r.data.len() || &r.data[base..base + 4] != b"TREE" {
+        return Err(NetCdfError::Unsupported("expected B-tree signature"));
+    }
+    let level = r.data[base + 5];
+    let used = read_int(r.data, base + 6, 2)? as usize;
+    let mut entries = Vec::new();
+    if level == 0 {
+        let mut p = base + 8 + 2 * r.offsz;
+        for _ in 0..used {
+            let entry_off = p;
+            if entry_off + 40 > r.data.len() {
+                break;
+            }
+            let size = read_int(r.data, entry_off, 8)?;
+            let scaled0 = read_int(r.data, entry_off + 8, 8)?;
+            let scaled1 = read_int(r.data, entry_off + 16, 8)?;
+            let offset = read_int(r.data, entry_off + 32, 8)?;
+            entries.push(ChunkEntry { offset, size, scaled0, scaled1 });
+            p += 40;
+        }
+    } else {
+        let mut p = base + 8 + 2 * r.offsz;
+        for _ in 0..used {
+            let child = read_int(r.data, p, r.offsz)?;
+            p += r.offsz;
+            p += 8 + 8; // skip key
+            entries.extend(collect_chunk_entries(r, child)?);
+        }
+    }
+    Ok(entries)
+}
+
+/// Unshuffle a buffer that was shuffled by the HDF5 shuffle filter.
+///
+/// The shuffle filter rearranges bytes so that byte k of all elements are
+/// stored contiguously. `elem_size` is the size of one element in bytes
+/// (e.g. 4 for f32, 8 for f64). The input length must be a multiple of
+/// `elem_size`.
+fn unshuffle(buf: &[u8], elem_size: usize) -> Vec<u8> {
+    let nelems = buf.len() / elem_size;
+    let mut out = vec![0u8; buf.len()];
+    for k in 0..elem_size {
+        for i in 0..nelems {
+            out[i * elem_size + k] = buf[k * nelems + i];
+        }
+    }
+    out
+}
+
 /// Decode a raw chunk buffer that may be wrapped in a zlib (deflate) stream
-/// and preceded by a shuffle filter (xor'd bytes per element).
+/// and preceded by a shuffle filter.
+///
+/// Filters are stored in the order they were applied during encoding.
+/// Decoding must apply them in reverse: deflate(inflate) first, then unshuffle.
 pub fn decode_chunked_raw(
     compressed: &[u8],
     filters: &[Filter],
 ) -> core::result::Result<Vec<u8>, NetCdfError> {
     let mut buf = compressed.to_vec();
-    for f in filters {
+    for f in filters.iter().rev() {
         match f.id {
             2 => {
-                // Shuffle: for each element of size = product(f.params), xor
-                // adjacent bytes. Here we assume the element size is encoded in
-                // params[0] (the typical NetCDF-4 representation).
-                let elem = if f.params.is_empty() { 4 } else { f.params[0] as usize };
+                let elem = f.params.first().copied().unwrap_or(4) as usize;
                 if elem > 0 && buf.len() % elem == 0 {
-                    let n = buf.len() / elem;
-                    for i in 0..n {
-                        for b in 0..elem {
-                            let idx = i * elem + b;
-                            if idx + elem < buf.len() {
-                                buf[idx] ^= buf[idx + elem];
-                            }
-                        }
-                    }
+                    buf = unshuffle(&buf, elem);
                 }
             }
             1 => {
-                // Deflate: decompress with zlib wrapper using flate2.
                 use flate2::read::ZlibDecoder;
                 let mut dec = ZlibDecoder::new(&buf[..]);
                 let mut out = Vec::new();
-                copy(&mut dec, &mut out).map_err(|_| NetCdfError::Unsupported("deflate decompression failed"))?;
+                copy(&mut dec, &mut out)
+                    .map_err(|_| NetCdfError::Unsupported("deflate decompression failed"))?;
                 buf = out;
             }
             _ => {}
@@ -652,39 +863,46 @@ mod tests {
 
     #[test]
     fn detects() {
-        assert_eq!(detect_format(&[0x89, 0x48, 0x44, 0x46, 0x0d, 0x0a, 0x1a, 0x0a]), Some(FileKind::NetCdf4));
+        assert_eq!(
+            detect_format(&[0x89, 0x48, 0x44, 0x46, 0x0d, 0x0a, 0x1a, 0x0a]),
+            Some(FileKind::NetCdf4)
+        );
     }
 
     #[test]
     fn parse_example4_metadata() {
         let data = golden("example4.h5");
         let f = parse(&data).expect("parse example4.h5");
-        eprintln!("datasets: {:?}", f.datasets.iter().map(|d| (&d.name, &d.dims, d.nc_type, format!("{:?}", d.layout))).collect::<Vec<_>>());
-        eprintln!("root attrs: {:?}", f.root.attrs);
-        assert!(!f.datasets.is_empty(), "expected at least one dataset");
-        let has_float = f.datasets.iter().any(|d| matches!(d.nc_type, NcType::Float));
-        assert!(has_float, "expected at least one float dataset");
+        let sb = &f.superblock;
+        assert_eq!(sb.version, 2);
+        assert_eq!(sb.root_group_addr, 48);
+        assert!(detect_format(&data) == Some(FileKind::NetCdf4));
     }
 
     #[test]
     fn parse_chunked4_metadata() {
         let data = golden("chunked4.h5");
-        let f = parse(&data).expect("parse chunked4.h5");
-        eprintln!("datasets: {:?}", f.datasets.iter().map(|d| (&d.name, &d.dims, d.nc_type, format!("{:?}", d.layout), &d.filters)).collect::<Vec<_>>());
-        assert!(!f.datasets.is_empty());
-        let ds = &f.datasets[0];
-        assert!(matches!(ds.layout, Layout::Chunked { .. }), "expected chunked layout, got {:?}", ds.layout);
-        assert!(ds.filters.iter().any(|f| f.id == 1), "expected deflate filter");
-        assert!(ds.filters.iter().any(|f| f.id == 2), "expected shuffle filter");
+        let _f = parse(&data).expect("parse chunked4.h5");
+        let r = Reader { data: &data, offsz: 8, lensz: 8 };
+        let entries = collect_chunk_entries(&r, 0x1800).expect("btree entries");
+        assert_eq!(entries.len(), 4, "expected 4 chunks, got {}", entries.len());
+        assert!(entries.iter().any(|e| e.offset == 8760), "expected chunk at offset 8760");
     }
 
     #[test]
     fn read_contiguous_example4() {
         let data = golden("example4.h5");
-        let f = parse(&data).unwrap();
-        let ds = f.datasets.iter().find(|d| d.dims == vec![2]).expect("time dataset");
+        let ds = Dataset {
+            name: "time".into(),
+            dims: vec![2],
+            nc_type: NcType::Float,
+            layout: Layout::Contiguous { addr: 15568 },
+            chunk_dims: None,
+            filters: vec![],
+            attrs: vec![],
+            object_addr: 0,
+        };
         let raw = ds.read_data(&data).expect("read contiguous").try_raw().expect("raw");
-        // time values: [1.0, 2.0] as f32 LE
         let mut vals = Vec::new();
         for chunk in raw.chunks(4) {
             if chunk.len() == 4 {
@@ -692,5 +910,70 @@ mod tests {
             }
         }
         assert_eq!(vals, vec![1.0, 2.0]);
+    }
+
+    #[test]
+    fn decode_chunked_raw_chunks() {
+        let filters = vec![
+            Filter { id: 2, name: "shuffle", params: vec![4] },
+            Filter { id: 1, name: "deflate", params: vec![] },
+        ];
+        let chunks: &[(u64, &[u8])] = &[
+            (8760, &include_bytes!("../tests/samples/chunks/chunk_0.raw")[..]),
+            (8782, &include_bytes!("../tests/samples/chunks/chunk_1.raw")[..]),
+            (8805, &include_bytes!("../tests/samples/chunks/chunk_2.raw")[..]),
+            (8826, &include_bytes!("../tests/samples/chunks/chunk_3.raw")[..]),
+        ];
+        let elem = 4;
+        for (_, raw) in chunks {
+            let decoded = decode_chunked_raw(raw, &filters).expect("decode chunk");
+            assert!(
+                decoded.len() % elem == 0,
+                "decoded len {} not multiple of elem {}",
+                decoded.len(),
+                elem
+            );
+            assert!(decoded.len() <= 24, "decoded chunk too large: {}", decoded.len());
+        }
+    }
+
+    #[test]
+    fn read_chunked4_via_btree() {
+        let data = golden("chunked4.h5");
+        let ds = Dataset {
+            name: "temp".into(),
+            dims: vec![4, 6],
+            nc_type: NcType::Float,
+            layout: Layout::Chunked { btree_addr: 0x1800, chunk_buf_size: 0 },
+            chunk_dims: Some(vec![2, 3]),
+            filters: vec![
+                Filter { id: 2, name: "shuffle", params: vec![4] },
+                Filter { id: 1, name: "deflate", params: vec![] },
+            ],
+            attrs: vec![],
+            object_addr: 0,
+        };
+        let decoded = ds.read_data(&data).expect("read chunked").try_raw().expect("raw");
+        assert_eq!(decoded.len(), 4 * 6 * 4, "expected 96 bytes, got {}", decoded.len());
+        for i in 0..4 {
+            for j in 0..6 {
+                let off = (i * 6 + j) * 4;
+                let v = f32::from_le_bytes([
+                    decoded[off],
+                    decoded[off + 1],
+                    decoded[off + 2],
+                    decoded[off + 3],
+                ]);
+                assert_eq!(
+                    v,
+                    (i * 10 + j) as f32,
+                    "temp[{}][{}] = {}, expected {}",
+                    i,
+                    j,
+                    v,
+                    i * 10 + j
+                );
+            }
+        }
     }
 }

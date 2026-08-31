@@ -201,14 +201,14 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] Cargo.toml + `sci-grid-integration` optional feature
 - [x] `NetCdfError` enum
 - [x] NetCDF-3 classic format parsing (header, `parser.rs`)
-- [~] NetCDF-4 (HDF5-based) format parsing (detection + HDF5 superblock; dataset/chunking/deflate decode pending)
+- [~] NetCDF-4 (HDF5-based) format parsing (detection, HDF5 superblock v1/2/3, object-header/datatype/dataspace/layout message parsing, root-group link + local-heap traversal, contiguous + chunked (B-tree v1) data reads implemented; still debugging v4 layout-message + link parsing against h5py-generated files — 2 lib tests failing on `example4.nc`)
 - [x] Dimension definition extraction
 - [x] Variable metadata extraction (generic attrs incl. units/long_name/valid_range as raw `Attr`s)
 - [x] Global attribute extraction
 - [x] Chunked reading for large multi-dim arrays (`NetCdf::read_hyperslab`, time × depth × lat × lon)
 - [x] Coordinate variable detection (`NetCdf::coordinate_variables`) — no reprojection/mapping yet
-- [ ] Deflate/shuffle compression support (NetCDF-4 path; recognized via `netcdf4` module, not yet decoded)
-- [ ] Chunking metadata for performance (NetCDF-4 path; not yet decoded)
+- [~] Deflate/shuffle compression support (NetCDF-4 path; filter-pipeline message parsing + `decode_chunked_raw` reverse pipeline — inflate then unshuffle — implemented and unit-tested; end-to-end blocked on the v4 layout parsing above)
+- [~] Chunking metadata for performance (NetCDF-4 path; chunk-dims extraction + chunk B-tree entry collection + chunk-into-buffer placement implemented; same v4 layout blocker)
 - [x] `tpt-sci-grid` integration (feature-gated stub, `integration.rs`)
 - [x] Header round-trip (`writer::round_trip`)
 - [x] Fuzz target (`cargo-fuzz`) — `fuzz/` dir + `netcdf` target added

@@ -56,6 +56,8 @@ pub enum SbmlError {
     /// A semantic/consistency validation issue (mass/charge balance, missing
     /// references, duplicate or missing identifiers, …).
     Validation(String),
+    /// An I/O error occurred while writing the document.
+    Io(String),
 }
 
 impl From<ParseError> for SbmlError {
@@ -67,6 +69,13 @@ impl From<ParseError> for SbmlError {
 impl From<quick_xml::Error> for SbmlError {
     fn from(e: quick_xml::Error) -> Self {
         SbmlError::Xml(e.to_string())
+    }
+}
+
+#[cfg(feature = "std")]
+impl From<std::io::Error> for SbmlError {
+    fn from(e: std::io::Error) -> Self {
+        SbmlError::Io(e.to_string())
     }
 }
 
@@ -107,6 +116,7 @@ impl core::fmt::Display for SbmlError {
             }
             SbmlError::MathParse(s) => write!(f, "MathML parse error: {s}"),
             SbmlError::Validation(s) => write!(f, "validation error: {s}"),
+            SbmlError::Io(s) => write!(f, "I/O error: {s}"),
         }
     }
 }

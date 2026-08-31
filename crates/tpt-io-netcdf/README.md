@@ -18,8 +18,8 @@ workspace.
 | Chunked / hyperslab reading of large multi-dim arrays | ✅ (`NetCdf::read_hyperslab`) |
 | Header round-trip (`writer::round_trip`) | ✅ |
 | `tpt-sci-grid` integration (feature-gated stub) | ✅ (`sci-grid-integration`) |
-| NetCDF-4 (HDF5) detection + superblock parse | 🔶 partial (`netcdf4` module) |
-| NetCDF-4 dataset / deflate / shuffle / chunking decode | ❌ not yet |
+| NetCDF-4 (HDF5) detection + superblock parse | ✅ |
+| NetCDF-4 dataset / deflate / shuffle / chunking decode | ✅ |
 | Fuzz target, golden corpus, proptest | ✅ |
 
 ## NetCDF-3 usage
@@ -55,18 +55,21 @@ the record layout) or `NetCdf::is_record_var` to detect such variables.
 
 ## NetCDF-4 (HDF5)
 
-NetCDF-4 files are HDF5 containers. Full decode (descending the object tree to
-datasets, chunked/deflate/shuffle-filtered data, and NetCDF dimension/coordinate
-conventions) is **not yet implemented**, but the crate detects them and exposes
-superblock metadata so callers can triage:
+NetCDF-4 files are HDF5 containers. The crate detects them, parses the
+superblock, descends the object tree to enumerate datasets, reads their
+dimensions, types, storage layout, and filter pipeline (deflate/shuffle),
+and can read back both contiguous and chunked+filtered data:
 
 ```rust
-use tpt_io_netcdf::netcdf4::{detect_format, parse_hdf5_superblock, FileKind};
+use tpt_io_netcdf::netcdf4::{detect_format, parse_hdf5_superblock, FileKind, parse};
 
 let kind = detect_format(&bytes);          // Some(FileKind::NetCdf4)
 if kind == Some(FileKind::NetCdf4) {
-    let sb = parse_hdf5_superblock(&bytes).unwrap();
-    println!("HDF5 superblock v{}", sb.version);
+    let f = parse(&bytes).expect("parse netcdf4");
+    for ds in &f.datasets {
+        println!("{}: dims={:?}, type={:?}", ds.name, ds.dims, ds.nc_type);
+        let raw = ds.read_data(&bytes).expect("read data");
+    }
 }
 ```
 

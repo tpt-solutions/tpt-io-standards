@@ -41,6 +41,7 @@ pub mod mathml;
 pub mod model;
 pub mod parser;
 pub mod validate;
+pub mod writer;
 
 pub use error::SbmlError;
 pub use model::{
@@ -56,6 +57,9 @@ pub use validate::{
     check_mass_balance, check_semantic, check_syntactic, validate_sbml, ValidationIssue,
     ValidationReport,
 };
+
+#[cfg(feature = "std")]
+pub use writer::{round_trip, serialize};
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub use tpt_io_core::ParseError;
@@ -143,5 +147,13 @@ mod tests {
         let sbml = Sbml::parse(SAMPLE).unwrap();
         let report = validate::validate_sbml(&sbml);
         assert!(report.is_ok(), "issues: {:?}", report.errors);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn round_trip_sample() {
+        let sbml = Sbml::parse(SAMPLE).expect("parsed");
+        let round = writer::round_trip(&sbml).expect("round-tripped");
+        assert_eq!(sbml, round);
     }
 }

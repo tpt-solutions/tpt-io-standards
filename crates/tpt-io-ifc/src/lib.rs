@@ -40,17 +40,12 @@ pub mod spatial;
 pub mod token;
 pub mod writer;
 
-#[cfg(any(
-    feature = "eng-geometry-integration",
-    feature = "eng-cad-integration"
-))]
+#[cfg(any(feature = "eng-geometry-integration", feature = "eng-cad-integration"))]
 pub mod integration;
 
 pub use error::IfcError;
 pub use graph::RelGraph;
-pub use model::{
-    EntityInstance, FileDescription, FileName, IfcFile, IfcHeader, IfcValue,
-};
+pub use model::{EntityInstance, FileDescription, FileName, IfcFile, IfcHeader, IfcValue};
 pub use parser::{parse_str, IfcReader, IfcValidator};
 pub use property::{Property, PropertySet, PropertyTraversal, PropertyValue};
 pub use schema::{detect_schema, IfcSchemaVersion, SchemaMigration};

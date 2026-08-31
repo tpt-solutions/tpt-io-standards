@@ -97,12 +97,8 @@ fn golden_spatial_navigation() {
     assert_eq!(storey.type_name, "IFCBUILDINGSTOREY");
 
     // The wall is contained in the storey.
-    let wall_id = file
-        .instances
-        .iter()
-        .find(|i| i.type_name == "IFCWALL")
-        .map(|i| i.id)
-        .expect("wall");
+    let wall_id =
+        file.instances.iter().find(|i| i.type_name == "IFCWALL").map(|i| i.id).expect("wall");
     assert_eq!(nav.storey_of(wall_id).unwrap(), Some(storey.id));
 }
 
@@ -112,11 +108,8 @@ fn golden_geometry_extraction() {
     let extractor = GeometryExtractor::new(&file);
 
     // Find the IfcFacetedBrep (#49) and extract it.
-    let brep = file
-        .instances
-        .iter()
-        .find(|i| i.type_name == "IFCFACETEDBREP")
-        .expect("a brep exists");
+    let brep =
+        file.instances.iter().find(|i| i.type_name == "IFCFACETEDBREP").expect("a brep exists");
     let geom = extractor.extract_item(brep).expect("extract brep");
     match geom {
         tpt_io_ifc::geometry::Geometry::BRep(mesh) => {
@@ -236,4 +229,3 @@ mod proptest_roundtrip {
         }
     }
 }
-

@@ -107,15 +107,10 @@ impl<'a> PropertyTraversal<'a> {
     /// `IfcPropertySet` has the form:
     /// `(GlobalId, OwnerHistory, Name, Description, HasProperties)`.
     pub fn resolve_pset(&self, pset: &'a EntityInstance) -> Result<PropertySet<'a>, IfcError> {
-        let name = pset
-            .arg(2)
-            .and_then(IfcValue::as_string)
-            .unwrap_or("")
-            .to_string();
-        let props_list = pset
-            .arg(4)
-            .and_then(IfcValue::as_list)
-            .ok_or_else(|| IfcError::relationship("IfcPropertySet: HasProperties (arg 4) must be a list"))?;
+        let name = pset.arg(2).and_then(IfcValue::as_string).unwrap_or("").to_string();
+        let props_list = pset.arg(4).and_then(IfcValue::as_list).ok_or_else(|| {
+            IfcError::relationship("IfcPropertySet: HasProperties (arg 4) must be a list")
+        })?;
 
         let mut properties = Vec::with_capacity(props_list.len());
         for prop_val in props_list {
@@ -131,11 +126,7 @@ impl<'a> PropertyTraversal<'a> {
 
     /// Resolve a single property instance.
     fn resolve_property(&self, inst: &'a EntityInstance) -> Result<Property<'a>, IfcError> {
-        let name = inst
-            .arg(0)
-            .and_then(IfcValue::as_string)
-            .unwrap_or("")
-            .to_string();
+        let name = inst.arg(0).and_then(IfcValue::as_string).unwrap_or("").to_string();
 
         match inst.type_name.as_str() {
             "IFCPROPERTYSINGLEVALUE" => self.resolve_single_value(inst, name),
@@ -191,12 +182,9 @@ impl<'a> PropertyTraversal<'a> {
         inst: &'a EntityInstance,
         name: String,
     ) -> Result<Property<'a>, IfcError> {
-        let list = inst
-            .arg(2)
-            .and_then(IfcValue::as_list)
-            .ok_or_else(|| {
-                IfcError::relationship("IfcPropertyListValue: ListValues (arg 2) required")
-            })?;
+        let list = inst.arg(2).and_then(IfcValue::as_list).ok_or_else(|| {
+            IfcError::relationship("IfcPropertyListValue: ListValues (arg 2) required")
+        })?;
         let refs: Vec<&IfcValue> = list.iter().collect();
         let unit = inst.arg(3).and_then(IfcValue::as_string);
         Ok(Property { name, value: PropertyValue::List(refs), unit })
@@ -209,7 +197,9 @@ impl<'a> PropertyTraversal<'a> {
         name: String,
     ) -> Result<Property<'a>, IfcError> {
         let value = inst.arg(3).ok_or_else(|| {
-            IfcError::relationship("IfcPropertyReferenceValue: PropertyReferenceValue (arg 3) required")
+            IfcError::relationship(
+                "IfcPropertyReferenceValue: PropertyReferenceValue (arg 3) required",
+            )
         })?;
         let unit = inst.arg(4).and_then(IfcValue::as_string);
         Ok(Property { name, value: PropertyValue::Reference(value), unit })
@@ -243,40 +233,60 @@ mod tests {
         // #1 IfcWall, #2 IfcRelDefinesByProperties, #3 IfcPropertySet,
         // #4 IfcPropertySingleValue, #5 IfcPropertyBoundedValue
         let instances = vec![
-            EntityInstance::new(1, "IFCWALL", vec![
-                IfcValue::String("wall-guid".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Wall".to_string()),
-            ]),
-            EntityInstance::new(2, "IFCRELDEFINESBYPROPERTIES", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::List(vec![IfcValue::Ref(1)]),
-                IfcValue::Ref(3),
-            ]),
-            EntityInstance::new(3, "IFCPROPERTYSET", vec![
-                IfcValue::String("pset-guid".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Pset_WallCommon".to_string()),
-                IfcValue::Derived,
-                IfcValue::List(vec![IfcValue::Ref(4), IfcValue::Ref(5)]),
-            ]),
-            EntityInstance::new(4, "IFCPROPERTYSINGLEVALUE", vec![
-                IfcValue::String("IsExternal".to_string()),
-                IfcValue::Derived,
-                IfcValue::Bool(true),
-                IfcValue::Derived,
-            ]),
-            EntityInstance::new(5, "IFCPROPERTYBOUNDEDVALUE", vec![
-                IfcValue::String("ThermalTransmittance".to_string()),
-                IfcValue::Derived,
-                IfcValue::Real(0.5),
-                IfcValue::Real(0.1),
-                IfcValue::Derived,
-                IfcValue::Derived,
-            ]),
+            EntityInstance::new(
+                1,
+                "IFCWALL",
+                vec![
+                    IfcValue::String("wall-guid".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Wall".to_string()),
+                ],
+            ),
+            EntityInstance::new(
+                2,
+                "IFCRELDEFINESBYPROPERTIES",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::List(vec![IfcValue::Ref(1)]),
+                    IfcValue::Ref(3),
+                ],
+            ),
+            EntityInstance::new(
+                3,
+                "IFCPROPERTYSET",
+                vec![
+                    IfcValue::String("pset-guid".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Pset_WallCommon".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::List(vec![IfcValue::Ref(4), IfcValue::Ref(5)]),
+                ],
+            ),
+            EntityInstance::new(
+                4,
+                "IFCPROPERTYSINGLEVALUE",
+                vec![
+                    IfcValue::String("IsExternal".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::Bool(true),
+                    IfcValue::Derived,
+                ],
+            ),
+            EntityInstance::new(
+                5,
+                "IFCPROPERTYBOUNDEDVALUE",
+                vec![
+                    IfcValue::String("ThermalTransmittance".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::Real(0.5),
+                    IfcValue::Real(0.1),
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                ],
+            ),
         ];
         IfcFile { header: IfcHeader::default(), instances }
     }

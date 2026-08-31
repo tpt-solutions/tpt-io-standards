@@ -117,13 +117,41 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, IfcError> {
 
         // Single-character delimiters.
         match c {
-            b';' => { tokens.push(Token { offset: i, kind: TokenKind::Semi }); i += 1; continue; }
-            b'=' => { tokens.push(Token { offset: i, kind: TokenKind::Equals }); i += 1; continue; }
-            b'(' => { tokens.push(Token { offset: i, kind: TokenKind::LParen }); i += 1; continue; }
-            b')' => { tokens.push(Token { offset: i, kind: TokenKind::RParen }); i += 1; continue; }
-            b',' => { tokens.push(Token { offset: i, kind: TokenKind::Comma }); i += 1; continue; }
-            b'$' => { tokens.push(Token { offset: i, kind: TokenKind::Derived }); i += 1; continue; }
-            b'*' => { tokens.push(Token { offset: i, kind: TokenKind::Redefined }); i += 1; continue; }
+            b';' => {
+                tokens.push(Token { offset: i, kind: TokenKind::Semi });
+                i += 1;
+                continue;
+            }
+            b'=' => {
+                tokens.push(Token { offset: i, kind: TokenKind::Equals });
+                i += 1;
+                continue;
+            }
+            b'(' => {
+                tokens.push(Token { offset: i, kind: TokenKind::LParen });
+                i += 1;
+                continue;
+            }
+            b')' => {
+                tokens.push(Token { offset: i, kind: TokenKind::RParen });
+                i += 1;
+                continue;
+            }
+            b',' => {
+                tokens.push(Token { offset: i, kind: TokenKind::Comma });
+                i += 1;
+                continue;
+            }
+            b'$' => {
+                tokens.push(Token { offset: i, kind: TokenKind::Derived });
+                i += 1;
+                continue;
+            }
+            b'*' => {
+                tokens.push(Token { offset: i, kind: TokenKind::Redefined });
+                i += 1;
+                continue;
+            }
             _ => {}
         }
 
@@ -160,7 +188,8 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, IfcError> {
         }
 
         // Number: integer or real (optional sign, digits, optional fraction, optional exponent).
-        if c.is_ascii_digit() || (c == b'-' && i + 1 < len && bytes[i + 1].is_ascii_digit())
+        if c.is_ascii_digit()
+            || (c == b'-' && i + 1 < len && bytes[i + 1].is_ascii_digit())
             || (c == b'+' && i + 1 < len && bytes[i + 1].is_ascii_digit())
         {
             let (num, next, is_real) = read_number(bytes, i)?;
@@ -302,7 +331,10 @@ fn read_number(bytes: &[u8], start: usize) -> Result<(String, usize, bool), IfcE
             i += 1;
         }
         if i == exp_start {
-            return Err(IfcError::invalid_number(start, core::str::from_utf8(&bytes[start..i]).unwrap_or("?")));
+            return Err(IfcError::invalid_number(
+                start,
+                core::str::from_utf8(&bytes[start..i]).unwrap_or("?"),
+            ));
         }
     }
 
@@ -340,9 +372,17 @@ mod tests {
         assert!(matches!(&toks[7].kind, TokenKind::Semi));
         assert!(matches!(&toks[8].kind, TokenKind::Ref(1)));
         assert!(matches!(&toks[9].kind, TokenKind::Equals));
-        if let TokenKind::Ident(n) = &toks[10].kind { assert_eq!(n, "IFCWALL"); } else { panic!(); }
+        if let TokenKind::Ident(n) = &toks[10].kind {
+            assert_eq!(n, "IFCWALL");
+        } else {
+            panic!();
+        }
         assert!(matches!(&toks[11].kind, TokenKind::LParen));
-        if let TokenKind::String(s) = &toks[12].kind { assert_eq!(s, "abc"); } else { panic!(); }
+        if let TokenKind::String(s) = &toks[12].kind {
+            assert_eq!(s, "abc");
+        } else {
+            panic!();
+        }
         assert!(matches!(&toks[13].kind, TokenKind::RParen));
         assert!(matches!(&toks[14].kind, TokenKind::Semi));
         assert!(matches!(&toks[15].kind, TokenKind::EndSec));
@@ -356,11 +396,31 @@ mod tests {
         let src = "#2 = IFC('Hello''World',.RED.,42,3.14,1.0E-3);";
         let toks = tokenize(src).unwrap();
         assert!(matches!(&toks[0].kind, TokenKind::Ref(2)));
-        if let TokenKind::String(s) = &toks[4].kind { assert_eq!(s, "Hello'World"); } else { panic!(); }
-        if let TokenKind::Enum(e) = &toks[6].kind { assert_eq!(e, "RED"); } else { panic!(); }
-        if let TokenKind::Integer(n) = &toks[8].kind { assert_eq!(n, "42"); } else { panic!(); }
-        if let TokenKind::Real(r) = &toks[10].kind { assert_eq!(r, "3.14"); } else { panic!(); }
-        if let TokenKind::Real(r) = &toks[12].kind { assert_eq!(r, "1.0E-3"); } else { panic!(); }
+        if let TokenKind::String(s) = &toks[4].kind {
+            assert_eq!(s, "Hello'World");
+        } else {
+            panic!();
+        }
+        if let TokenKind::Enum(e) = &toks[6].kind {
+            assert_eq!(e, "RED");
+        } else {
+            panic!();
+        }
+        if let TokenKind::Integer(n) = &toks[8].kind {
+            assert_eq!(n, "42");
+        } else {
+            panic!();
+        }
+        if let TokenKind::Real(r) = &toks[10].kind {
+            assert_eq!(r, "3.14");
+        } else {
+            panic!();
+        }
+        if let TokenKind::Real(r) = &toks[12].kind {
+            assert_eq!(r, "1.0E-3");
+        } else {
+            panic!();
+        }
     }
 
     #[test]

@@ -183,7 +183,10 @@ impl IfcFile {
     }
 
     /// Return all instances of a given type name (case-sensitive).
-    pub fn instances_of<'a>(&'a self, type_name: &'a str) -> impl Iterator<Item = &'a EntityInstance> + 'a {
+    pub fn instances_of<'a>(
+        &'a self,
+        type_name: &'a str,
+    ) -> impl Iterator<Item = &'a EntityInstance> + 'a {
         self.instances.iter().filter(move |e| e.type_name == type_name)
     }
 

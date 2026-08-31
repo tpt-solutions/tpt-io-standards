@@ -89,7 +89,10 @@ impl<'a> RelGraph<'a> {
 
     /// Return the relationship instance of `type_name` with the given id.
     pub fn rel(&self, type_name: &str, id: usize) -> Option<&EntityInstance> {
-        self.rel_ids(type_name).iter().find(|&&rid| rid == id).and_then(|rid| self.file.instance(*rid))
+        self.rel_ids(type_name)
+            .iter()
+            .find(|&&rid| rid == id)
+            .and_then(|rid| self.file.instance(*rid))
     }
 
     /// Iterate over all relationship instances of a given type.
@@ -109,10 +112,11 @@ impl<'a> RelGraph<'a> {
     pub fn containment(&self) -> Result<Vec<Containment>, IfcError> {
         let mut out = Vec::new();
         for rel in self.rels("IFCRELCONTAINEDINSPATIALSTRUCTURE") {
-            let objects = rel
-                .arg(4)
-                .and_then(IfcValue::as_list)
-                .ok_or_else(|| IfcError::relationship("IfcRelContainedInSpatialStructure: RelatedObjects (arg 4) must be a list"))?;
+            let objects = rel.arg(4).and_then(IfcValue::as_list).ok_or_else(|| {
+                IfcError::relationship(
+                    "IfcRelContainedInSpatialStructure: RelatedObjects (arg 4) must be a list",
+                )
+            })?;
             let structure = rel
                 .arg(5)
                 .and_then(IfcValue::as_ref)
@@ -148,17 +152,21 @@ impl<'a> RelGraph<'a> {
     pub fn material_associations(&self) -> Result<Vec<MaterialAssoc>, IfcError> {
         let mut out = Vec::new();
         for rel in self.rels("IFCRELASSOCIATESMATERIAL") {
-            let objects = rel
-                .arg(4)
-                .and_then(IfcValue::as_list)
-                .ok_or_else(|| IfcError::relationship("IfcRelAssociatesMaterial: RelatedObjects (arg 4) must be a list"))?;
-            let material = rel
-                .arg(5)
-                .and_then(IfcValue::as_ref)
-                .ok_or_else(|| IfcError::relationship("IfcRelAssociatesMaterial: RelatingMaterial (arg 5) must be a reference"))?;
+            let objects = rel.arg(4).and_then(IfcValue::as_list).ok_or_else(|| {
+                IfcError::relationship(
+                    "IfcRelAssociatesMaterial: RelatedObjects (arg 4) must be a list",
+                )
+            })?;
+            let material = rel.arg(5).and_then(IfcValue::as_ref).ok_or_else(|| {
+                IfcError::relationship(
+                    "IfcRelAssociatesMaterial: RelatingMaterial (arg 5) must be a reference",
+                )
+            })?;
             for obj in objects {
                 let elem = obj.as_ref().ok_or_else(|| {
-                    IfcError::relationship("IfcRelAssociatesMaterial: RelatedObjects item must be a reference")
+                    IfcError::relationship(
+                        "IfcRelAssociatesMaterial: RelatedObjects item must be a reference",
+                    )
                 })?;
                 out.push(MaterialAssoc { material_id: material, element_id: elem });
             }
@@ -177,17 +185,21 @@ impl<'a> RelGraph<'a> {
     pub fn property_definitions(&self) -> Result<Vec<PropertyDef>, IfcError> {
         let mut out = Vec::new();
         for rel in self.rels("IFCRELDEFINESBYPROPERTIES") {
-            let objects = rel
-                .arg(4)
-                .and_then(IfcValue::as_list)
-                .ok_or_else(|| IfcError::relationship("IfcRelDefinesByProperties: RelatedObjects (arg 4) must be a list"))?;
-            let pset = rel
-                .arg(5)
-                .and_then(IfcValue::as_ref)
-                .ok_or_else(|| IfcError::relationship("IfcRelDefinesByProperties: RelatingDefinition (arg 5) must be a reference"))?;
+            let objects = rel.arg(4).and_then(IfcValue::as_list).ok_or_else(|| {
+                IfcError::relationship(
+                    "IfcRelDefinesByProperties: RelatedObjects (arg 4) must be a list",
+                )
+            })?;
+            let pset = rel.arg(5).and_then(IfcValue::as_ref).ok_or_else(|| {
+                IfcError::relationship(
+                    "IfcRelDefinesByProperties: RelatingDefinition (arg 5) must be a reference",
+                )
+            })?;
             for obj in objects {
                 let elem = obj.as_ref().ok_or_else(|| {
-                    IfcError::relationship("IfcRelDefinesByProperties: RelatedObjects item must be a reference")
+                    IfcError::relationship(
+                        "IfcRelDefinesByProperties: RelatedObjects item must be a reference",
+                    )
                 })?;
                 out.push(PropertyDef { pset_id: pset, element_id: elem });
             }
@@ -206,17 +218,19 @@ impl<'a> RelGraph<'a> {
     pub fn aggregations(&self) -> Result<Vec<Aggregation>, IfcError> {
         let mut out = Vec::new();
         for rel in self.rels("IFCRELAGGREGATES") {
-            let whole = rel
-                .arg(4)
-                .and_then(IfcValue::as_ref)
-                .ok_or_else(|| IfcError::relationship("IfcRelAggregates: RelatingObject (arg 4) must be a reference"))?;
-            let objects = rel
-                .arg(5)
-                .and_then(IfcValue::as_list)
-                .ok_or_else(|| IfcError::relationship("IfcRelAggregates: RelatedObjects (arg 5) must be a list"))?;
+            let whole = rel.arg(4).and_then(IfcValue::as_ref).ok_or_else(|| {
+                IfcError::relationship(
+                    "IfcRelAggregates: RelatingObject (arg 4) must be a reference",
+                )
+            })?;
+            let objects = rel.arg(5).and_then(IfcValue::as_list).ok_or_else(|| {
+                IfcError::relationship("IfcRelAggregates: RelatedObjects (arg 5) must be a list")
+            })?;
             for obj in objects {
                 let part = obj.as_ref().ok_or_else(|| {
-                    IfcError::relationship("IfcRelAggregates: RelatedObjects item must be a reference")
+                    IfcError::relationship(
+                        "IfcRelAggregates: RelatedObjects item must be a reference",
+                    )
                 })?;
                 out.push(Aggregation { whole_id: whole, part_id: part });
             }
@@ -306,85 +320,125 @@ mod tests {
     fn sample_file() -> IfcFile {
         let instances = vec![
             // IfcProject #1
-            EntityInstance::new(1, "IFCPROJECT", vec![
-                IfcValue::String("proj-guid".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Project".to_string()),
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::List(vec![IfcValue::Ref(10)]),
-                IfcValue::Derived,
-            ]),
+            EntityInstance::new(
+                1,
+                "IFCPROJECT",
+                vec![
+                    IfcValue::String("proj-guid".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Project".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::List(vec![IfcValue::Ref(10)]),
+                    IfcValue::Derived,
+                ],
+            ),
             // IfcSite #2
-            EntityInstance::new(2, "IFCSITE", vec![
-                IfcValue::String("site-guid".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Site".to_string()),
-            ]),
+            EntityInstance::new(
+                2,
+                "IFCSITE",
+                vec![
+                    IfcValue::String("site-guid".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Site".to_string()),
+                ],
+            ),
             // IfcBuilding #3
-            EntityInstance::new(3, "IFCBUILDING", vec![
-                IfcValue::String("bldg-guid".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Building".to_string()),
-            ]),
+            EntityInstance::new(
+                3,
+                "IFCBUILDING",
+                vec![
+                    IfcValue::String("bldg-guid".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Building".to_string()),
+                ],
+            ),
             // IfcBuildingStorey #4
-            EntityInstance::new(4, "IFCBUILDINGSTOREY", vec![
-                IfcValue::String("storey-guid".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Storey".to_string()),
-            ]),
+            EntityInstance::new(
+                4,
+                "IFCBUILDINGSTOREY",
+                vec![
+                    IfcValue::String("storey-guid".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Storey".to_string()),
+                ],
+            ),
             // IfcWall #5
-            EntityInstance::new(5, "IFCWALL", vec![
-                IfcValue::String("wall-guid".to_string()),
-                IfcValue::Derived,
-                IfcValue::String("Wall".to_string()),
-            ]),
+            EntityInstance::new(
+                5,
+                "IFCWALL",
+                vec![
+                    IfcValue::String("wall-guid".to_string()),
+                    IfcValue::Derived,
+                    IfcValue::String("Wall".to_string()),
+                ],
+            ),
             // IfcRelAggregates: project(1) → site(2)
-            EntityInstance::new(6, "IFCRELAGGREGATES", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Ref(1),
-                IfcValue::List(vec![IfcValue::Ref(2)]),
-            ]),
+            EntityInstance::new(
+                6,
+                "IFCRELAGGREGATES",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Ref(1),
+                    IfcValue::List(vec![IfcValue::Ref(2)]),
+                ],
+            ),
             // IfcRelAggregates: site(2) → building(3)
-            EntityInstance::new(7, "IFCRELAGGREGATES", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Ref(2),
-                IfcValue::List(vec![IfcValue::Ref(3)]),
-            ]),
+            EntityInstance::new(
+                7,
+                "IFCRELAGGREGATES",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Ref(2),
+                    IfcValue::List(vec![IfcValue::Ref(3)]),
+                ],
+            ),
             // IfcRelAggregates: building(3) → storey(4)
-            EntityInstance::new(8, "IFCRELAGGREGATES", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Ref(3),
-                IfcValue::List(vec![IfcValue::Ref(4)]),
-            ]),
+            EntityInstance::new(
+                8,
+                "IFCRELAGGREGATES",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Ref(3),
+                    IfcValue::List(vec![IfcValue::Ref(4)]),
+                ],
+            ),
             // IfcRelContainedInSpatialStructure: storey(4) contains wall(5)
-            EntityInstance::new(9, "IFCRELCONTAINEDINSPATIALSTRUCTURE", vec![
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::List(vec![IfcValue::Ref(5)]),
-                IfcValue::Ref(4),
-            ]),
+            EntityInstance::new(
+                9,
+                "IFCRELCONTAINEDINSPATIALSTRUCTURE",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::List(vec![IfcValue::Ref(5)]),
+                    IfcValue::Ref(4),
+                ],
+            ),
             // IfcGeometricRepresentationContext #10
-            EntityInstance::new(10, "IFCGEOMETRICREPRESENTATIONCONTEXT", vec![
-                IfcValue::Derived,
-                IfcValue::String("Model".to_string()),
-                IfcValue::Real(3.0),
-                IfcValue::Derived,
-                IfcValue::Derived,
-                IfcValue::Derived,
-            ]),
+            EntityInstance::new(
+                10,
+                "IFCGEOMETRICREPRESENTATIONCONTEXT",
+                vec![
+                    IfcValue::Derived,
+                    IfcValue::String("Model".to_string()),
+                    IfcValue::Real(3.0),
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                    IfcValue::Derived,
+                ],
+            ),
         ];
         IfcFile { header: IfcHeader::default(), instances }
     }

@@ -157,10 +157,7 @@ pub(crate) fn parse_header(input: &str) -> Result<(ParsedHeader, &str), WellLogE
 }
 
 /// Finish a [`ParsedHeader`] by reading ASCII `~A` data rows from `rest`.
-pub(crate) fn parse_ascii_data(
-    header: ParsedHeader,
-    rest: &str,
-) -> Result<WellLog, WellLogError> {
+pub(crate) fn parse_ascii_data(header: ParsedHeader, rest: &str) -> Result<WellLog, WellLogError> {
     let ParsedHeader { version, wrap, well, parameters, curves } = header;
     let ncol = curves.len();
     let mut data: Vec<Vec<f64>> = Vec::new();

@@ -9,6 +9,9 @@ use std::path::PathBuf;
 use tpt_io_core::{Reader, Validator};
 use tpt_io_sbml::{parse_sbml, Sbml, SbmlParser, ValidationIssue};
 
+#[cfg(feature = "std")]
+use tpt_io_sbml::writer::round_trip;
+
 fn sample(name: &str) -> Vec<u8> {
     let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     p.push("tests");
@@ -142,7 +145,42 @@ fn reader_trait_and_validator() {
 
 #[test]
 fn unknown_input_does_not_panic_and_reports_error() {
-    // Not SBML at all.
     let res = parse_sbml(b"not xml <<<");
     assert!(res.is_err());
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn round_trip_l2_core() {
+    let doc = sample("biomodel_l2.xml");
+    let sbml = Sbml::parse(&doc).expect("parse biomodel_l2.xml");
+    let round = round_trip(&sbml).expect("round trip");
+    assert_eq!(sbml, round);
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn round_trip_fbc() {
+    let doc = sample("fbc_l3.xml");
+    let sbml = Sbml::parse(&doc).expect("parse fbc_l3.xml");
+    let round = round_trip(&sbml).expect("round trip");
+    assert_eq!(sbml, round);
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn round_trip_qual() {
+    let doc = sample("qual_l3.xml");
+    let sbml = Sbml::parse(&doc).expect("parse qual_l3.xml");
+    let round = round_trip(&sbml).expect("round trip");
+    assert_eq!(sbml, round);
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn round_trip_spatial() {
+    let doc = sample("spatial_l3.xml");
+    let sbml = Sbml::parse(&doc).expect("parse spatial_l3.xml");
+    let round = round_trip(&sbml).expect("round trip");
+    assert_eq!(sbml, round);
 }

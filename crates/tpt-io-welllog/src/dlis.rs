@@ -85,10 +85,7 @@ impl SetObject {
     /// Look up the first attribute value by label (case-insensitive).
     pub fn attr(&self, label: &str) -> Option<&RepValue> {
         let l = label.to_ascii_uppercase();
-        self.attributes
-            .iter()
-            .find(|(k, _)| k.to_ascii_uppercase() == l)
-            .map(|(_, v)| v)
+        self.attributes.iter().find(|(k, _)| k.to_ascii_uppercase() == l).map(|(_, v)| v)
     }
 }
 
@@ -174,9 +171,7 @@ pub fn parse(input: &[u8]) -> Result<Dlis, WellLogError> {
 
     // Storage Unit Label (80 bytes).
     if input.len() < 80 {
-        return Err(WellLogError::Unsupported(
-            "DLIS file shorter than 80-byte Storage Unit Label",
-        ));
+        return Err(WellLogError::Unsupported("DLIS file shorter than 80-byte Storage Unit Label"));
     }
     dlis.label = parse_sul(&input[..80])?;
 
@@ -263,17 +258,13 @@ fn parse_set_record(
     // SET-TYPE (IDENT) then COUNT (ULONG).
     let rc_type = c.read_u16()?;
     if rc_type != 1 {
-        return Err(WellLogError::Unsupported(
-            "DLIS SET record missing IDENT set-type",
-        ));
+        return Err(WellLogError::Unsupported("DLIS SET record missing IDENT set-type"));
     }
     let set_type = c.read_value(1)?.into_string();
 
     let rc_count = c.read_u16()?;
     if rc_count != 8 {
-        return Err(WellLogError::Unsupported(
-            "DLIS SET record missing ULONG count",
-        ));
+        return Err(WellLogError::Unsupported("DLIS SET record missing ULONG count"));
     }
     let count = match c.read_value(8)? {
         RepValue::Uint(n) => n as usize,
@@ -283,9 +274,7 @@ fn parse_set_record(
     for _ in 0..count {
         let rc_name = c.read_u16()?;
         if rc_name != 12 {
-            return Err(WellLogError::Unsupported(
-                "DLIS SET object missing OBNAME",
-            ));
+            return Err(WellLogError::Unsupported("DLIS SET object missing OBNAME"));
         }
         let obname = match c.read_value(12)? {
             RepValue::Obname(o) => o,
@@ -313,9 +302,7 @@ fn parse_attributes(c: &mut Cursor<'_>) -> Result<Vec<(String, RepValue)>, WellL
         }
         // LABEL is an IDENT.
         if rc != 1 {
-            return Err(WellLogError::Unsupported(
-                "DLIS attribute missing IDENT label",
-            ));
+            return Err(WellLogError::Unsupported("DLIS attribute missing IDENT label"));
         }
         let label = c.read_value(1)?.into_string();
         let value_rc = c.read_u16()?;
@@ -326,12 +313,7 @@ fn parse_attributes(c: &mut Cursor<'_>) -> Result<Vec<(String, RepValue)>, WellL
 }
 
 /// Route a parsed Set object into the correct [`Dlis`] collection.
-fn classify(
-    dlis: &mut Dlis,
-    obj: SetObject,
-    set_type_code: u8,
-    current_frame: &mut Option<usize>,
-) {
+fn classify(dlis: &mut Dlis, obj: SetObject, set_type_code: u8, current_frame: &mut Option<usize>) {
     match set_type_code {
         0 => dlis.file_header = Some(obj),
         2 => dlis.wells.push(obj),
@@ -351,12 +333,7 @@ fn classify(
                 Some(RepValue::Obname(o)) => Some(o.clone()),
                 _ => None,
             };
-            let frame = Frame {
-                name: obj.name.clone(),
-                channels,
-                index,
-                samples: Vec::new(),
-            };
+            let frame = Frame { name: obj.name.clone(), channels, index, samples: Vec::new() };
             *current_frame = Some(dlis.frames.len());
             dlis.frames.push(frame);
         }
@@ -366,10 +343,8 @@ fn classify(
 
 /// Build typed [`Channel`] metadata from a `CHANNEL` Set object.
 fn channel_from_object(obj: &SetObject) -> Channel {
-    let long_name = obj
-        .attr("LONG-NAME")
-        .or_else(|| obj.attr("LONG_NAME"))
-        .map(|v| v.clone().into_string());
+    let long_name =
+        obj.attr("LONG-NAME").or_else(|| obj.attr("LONG_NAME")).map(|v| v.clone().into_string());
     let units = obj.attr("UNITS").map(|v| v.clone().into_string());
     let rep_code = obj.attr("REPRESENTATION-CODE").and_then(|v| match v {
         RepValue::Uint(n) => Some(*n as u16),
@@ -395,9 +370,9 @@ fn parse_frame_data(
 ) -> Result<(), WellLogError> {
     let implicit = matches!(rec_type, 3 | 7 | 11 | 15);
     let elem_size = match rec_type {
-        1 | 3 => 4,     // f32 / i32
-        5 | 7 => 8,     // f64 / i64
-        11 | 15 => 2,   // i16 (value slot)
+        1 | 3 => 4,   // f32 / i32
+        5 | 7 => 8,   // f64 / i64
+        11 | 15 => 2, // i16 (value slot)
         _ => 4,
     };
 
@@ -434,11 +409,7 @@ fn parse_frame_data(
         }
     };
 
-    let total_frames = if implicit {
-        (c.read_u16()? as usize).min(1 << 20)
-    } else {
-        1
-    };
+    let total_frames = if implicit { (c.read_u16()? as usize).min(1 << 20) } else { 1 };
 
     for _ in 0..total_frames {
         let frame_number = c.read_u16()? as u32;
@@ -596,13 +567,13 @@ mod tests {
         lr.extend_from_slice(b"FRAME");
         lr.extend_from_slice(&8u16.to_be_bytes()); // rep code: ULONG
         lr.extend_from_slice(&1u32.to_be_bytes()); // count = 1
-        // object OBNAME (rep 12)
+                                                   // object OBNAME (rep 12)
         lr.extend_from_slice(&12u16.to_be_bytes());
         lr.extend_from_slice(&3u16.to_be_bytes()); // ident length
         lr.extend_from_slice(b"FR1");
         lr.extend_from_slice(&0i16.to_be_bytes()); // origin
         lr.extend_from_slice(&1u16.to_be_bytes()); // copy
-        // attributes: LABEL("CHANNELS") = OBNAME DEPT, then terminator 0
+                                                   // attributes: LABEL("CHANNELS") = OBNAME DEPT, then terminator 0
         lr.extend_from_slice(&1u16.to_be_bytes()); // rep: IDENT (label)
         lr.extend_from_slice(&8u16.to_be_bytes()); // label length
         lr.extend_from_slice(b"CHANNELS");

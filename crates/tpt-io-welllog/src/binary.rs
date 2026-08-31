@@ -31,9 +31,8 @@ pub(crate) fn decode_to_string(bytes: &[u8]) -> Result<(String, Encoding), WellL
     let enc = Encoding::detect(bytes);
     match enc {
         Encoding::Ascii | Encoding::Utf8 => {
-            let s = enc
-                .as_str(bytes)
-                .ok_or(WellLogError::Unsupported("input was not valid UTF-8"))?;
+            let s =
+                enc.as_str(bytes).ok_or(WellLogError::Unsupported("input was not valid UTF-8"))?;
             Ok((s.to_string(), enc))
         }
         Encoding::Utf16Le => Ok((utf16_to_string(bytes, false)?, enc)),
@@ -59,9 +58,8 @@ fn utf16_to_string(bytes: &[u8], be: bool) -> Result<String, WellLogError> {
         units.push(unit);
         i += 2;
     }
-    let s: String = core::char::decode_utf16(units)
-        .map(|r| r.unwrap_or(char::REPLACEMENT_CHARACTER))
-        .collect();
+    let s: String =
+        core::char::decode_utf16(units).map(|r| r.unwrap_or(char::REPLACEMENT_CHARACTER)).collect();
     Ok(s)
 }
 
@@ -100,10 +98,9 @@ impl BinaryType {
             "U1" | "B" => Some(BinaryType::U1),
             "U2" => Some(BinaryType::U2),
             "U4" => Some(BinaryType::U4),
-            other => other
-                .strip_prefix('S')
-                .and_then(|s| s.parse::<usize>().ok())
-                .map(BinaryType::Str),
+            other => {
+                other.strip_prefix('S').and_then(|s| s.parse::<usize>().ok()).map(BinaryType::Str)
+            }
         }
     }
 
@@ -143,11 +140,7 @@ pub fn parse(input: &[u8]) -> Result<WellLog, WellLogError> {
     // (b) Whole-file UTF-16 (or other encoding): transcode and parse as text.
     let (text, enc) = decode_to_string(input)?;
     let (header, remainder) = parse_header(&text)?;
-    let keyword = remainder
-        .lines()
-        .map(|l| l.trim())
-        .find(|l| !l.is_empty())
-        .unwrap_or("");
+    let keyword = remainder.lines().map(|l| l.trim()).find(|l| !l.is_empty()).unwrap_or("");
     let is_binary = keyword.len() <= 7
         && keyword.chars().all(|c| c.is_ascii_alphabetic())
         && keyword.eq_ignore_ascii_case("BINARY");
@@ -195,11 +188,8 @@ fn parse_binary_tail(
     header: crate::parser::ParsedHeader,
     tail: &[u8],
 ) -> Result<WellLog, WellLogError> {
-    let curve_types: Vec<Option<BinaryType>> = header
-        .curves
-        .iter()
-        .map(|c| BinaryType::parse(&c.api_code))
-        .collect();
+    let curve_types: Vec<Option<BinaryType>> =
+        header.curves.iter().map(|c| BinaryType::parse(&c.api_code)).collect();
 
     if curve_types.iter().any(|t| t.is_none()) {
         return Err(WellLogError::Unsupported(
@@ -289,9 +279,7 @@ fn read_value(t: BinaryType, slice: &[u8]) -> Result<f64, WellLogError> {
         BinaryType::Str(_) => {
             // Strings cannot be represented on the numeric matrix; attempt a
             // numeric parse, else emit the null value sentinel 0.0.
-            let s = core::str::from_utf8(slice)
-                .map(|s| s.trim().to_string())
-                .unwrap_or_default();
+            let s = core::str::from_utf8(slice).map(|s| s.trim().to_string()).unwrap_or_default();
             s.parse::<f64>().unwrap_or(0.0)
         }
     };

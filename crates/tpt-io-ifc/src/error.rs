@@ -210,10 +210,7 @@ mod tests {
             IfcError::unknown_instance(42, 99).to_string(),
             "reference to unknown instance #99 at offset 42"
         );
-        assert_eq!(
-            IfcError::MissingSection("DATA").to_string(),
-            "missing required section: DATA"
-        );
+        assert_eq!(IfcError::MissingSection("DATA").to_string(), "missing required section: DATA");
         assert_eq!(
             IfcError::Unsupported("IFC4X3 torsion").to_string(),
             "IFC unsupported feature: IFC4X3 torsion"

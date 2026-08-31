@@ -70,13 +70,8 @@ pub fn common_grid(runs: &[&WellLog], step: Option<f64>) -> Vec<f64> {
     if !min.is_finite() || !max.is_finite() {
         return Vec::new();
     }
-    let step = step.unwrap_or_else(|| {
-        if smallest_interval.is_finite() {
-            smallest_interval
-        } else {
-            1.0
-        }
-    });
+    let step =
+        step.unwrap_or_else(|| if smallest_interval.is_finite() { smallest_interval } else { 1.0 });
     let step = if step <= 0.0 { 1.0 } else { step };
     let n = ((max - min) / step).ceil() as usize + 1;
     let mut grid = Vec::with_capacity(n);
@@ -160,13 +155,7 @@ pub fn align_runs(runs: &[&WellLog], step: Option<f64>) -> AlignedLogs {
 /// Returns the shift `s` such that `b`'s depth `x` corresponds to `a`'s depth
 /// `x + s` (i.e. `b` should be shifted by `s` to match `a`). The search is
 /// performed on a `step`-spaced lattice within `[-max_shift, +max_shift]`.
-pub fn cross_correlate(
-    a: &WellLog,
-    b: &WellLog,
-    col: usize,
-    max_shift: f64,
-    step: f64,
-) -> f64 {
+pub fn cross_correlate(a: &WellLog, b: &WellLog, col: usize, max_shift: f64, step: f64) -> f64 {
     if a.is_empty() || b.is_empty() {
         return 0.0;
     }
@@ -289,7 +278,7 @@ mod tests {
         // recorded 10 m too deep (value at depth x = formation(x - 10)).
         let base = run(100.0, 1.0, 50, curve); // 100..150
         let shifted = run(110.0, 1.0, 50, |d| curve(d - 10.0)); // 110..160 (+10 deeper)
-        // `b` is 10 m deeper, so it must be shifted by -10 to match `a`.
+                                                                // `b` is 10 m deeper, so it must be shifted by -10 to match `a`.
         let est = cross_correlate(&base, &shifted, 1, 20.0, 1.0);
         assert!((est - (-10.0)).abs() < 1.5, "estimated shift {est}");
     }
