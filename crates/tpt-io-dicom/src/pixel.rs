@@ -189,7 +189,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn extract_pixel_descriptor() {
+    fn test_extract_pixel_descriptor() {
         let mut ds = Dataset::new();
         ds.push(crate::model::Element {
             tag: Tag::new(0x0028, 0x0010),

@@ -186,16 +186,13 @@ struct Message<'a> {
 }
 
 const MSG_DATASPACE: u16 = 0x0001;
-const MSG_LINKINFO: u16 = 0x0002;
 const MSG_DATATYPE: u16 = 0x0003;
-const MSG_FILLVALUE: u16 = 0x0005;
 const MSG_LINK: u16 = 0x0006;
 const MSG_LAYOUT: u16 = 0x0008;
 const MSG_FILTER: u16 = 0x000A;
 const MSG_FILTER2: u16 = 0x000B;
 const MSG_ATTRIBUTE: u16 = 0x000C;
 const MSG_OBJHDRCONT: u16 = 0x0010;
-const MSG_ATTRINFO: u16 = 0x0015;
 
 fn parse_object_header<'a>(
     r: &Reader<'a>,
@@ -207,7 +204,7 @@ fn parse_object_header<'a>(
     }
     let ver = r.u8(base + 4)?;
     if ver != 2 {
-        return Err(NetCdfError::Unsupported("only object header version 2 is supported"))?;
+        Err(NetCdfError::Unsupported("only object header version 2 is supported"))?;
     }
     let mut p = base + 5;
     let flags = r.u8(p)?;
@@ -320,7 +317,7 @@ fn parse_global_heaps<'a>(r: &Reader<'a>) -> Vec<GlobalHeap<'a>> {
 }
 
 fn resolve_shared<'a>(
-    r: &Reader<'a>,
+    _r: &Reader<'a>,
     heaps: &[GlobalHeap<'a>],
     body: &'a [u8],
 ) -> core::result::Result<&'a [u8], NetCdfError> {
@@ -328,7 +325,7 @@ fn resolve_shared<'a>(
         return Err(NetCdfError::Unsupported("shared message too short"));
     }
     let id = u32::from_le_bytes([body[0], body[1], body[2], body[3]]);
-    let collection = (id >> 16) as u64;
+    let _collection = (id >> 16) as u64;
     let obj = (id & 0xFFFF) as u64;
     for h in heaps {
         if let Some((_, d)) = h.objects.iter().find(|(o, _)| *o == obj) {
@@ -357,12 +354,13 @@ pub fn parse(data: &[u8]) -> core::result::Result<Hdf5File, NetCdfError> {
         let mut off = sb.root_group_addr as usize + 1;
         while let Some(idx) = r.data[off..].iter().position(|&b| b == b'O') {
             let ohdr = off + idx;
-            if ohdr + 4 <= r.data.len() && &r.data[ohdr..ohdr + 4] == b"OHDR" {
-                if ohdr != sb.root_group_addr as usize {
-                    if let Ok(ds) = parse_dataset(&r, &heaps, ohdr as u64) {
-                        if !ds.name.is_empty() || !ds.dims.is_empty() {
-                            datasets.push(ds);
-                        }
+            if ohdr + 4 <= r.data.len()
+                && &r.data[ohdr..ohdr + 4] == b"OHDR"
+                && ohdr != sb.root_group_addr as usize
+            {
+                if let Ok(ds) = parse_dataset(&r, &heaps, ohdr as u64) {
+                    if !ds.name.is_empty() || !ds.dims.is_empty() {
+                        datasets.push(ds);
                     }
                 }
             }
@@ -419,8 +417,7 @@ fn parse_link(_r: &Reader, body: &[u8]) -> core::result::Result<Link, NetCdfErro
     if flags & 0x02 != 0 {
         p += 2;
     }
-    let name_bytes =
-        body.get(p..p + name_size).ok_or_else(|| NetCdfError::Unsupported("link name oob"))?;
+    let name_bytes = body.get(p..p + name_size).ok_or(NetCdfError::Unsupported("link name oob"))?;
     let name = String::from_utf8_lossy(name_bytes).into_owned();
     p += name_size;
     let object_addr = read_int(body, p, 8)?;
@@ -435,8 +432,7 @@ fn parse_attribute(r: &Reader, body: &[u8]) -> core::result::Result<H5Attr, NetC
     let dtype_size = u16::from_le_bytes([body[3], body[4]]) as usize;
     let dspace_size = u16::from_le_bytes([body[5], body[6]]) as usize;
     let mut p = 7;
-    let name_bytes =
-        body.get(p..p + name_size).ok_or_else(|| NetCdfError::Unsupported("attr name oob"))?;
+    let name_bytes = body.get(p..p + name_size).ok_or(NetCdfError::Unsupported("attr name oob"))?;
     let name = String::from_utf8_lossy(name_bytes).into_owned();
     p += name_size;
     let _dt = r.slice(p, dtype_size)?;
@@ -459,7 +455,7 @@ fn parse_dataset(
     addr: u64,
 ) -> core::result::Result<Dataset, NetCdfError> {
     let (msgs, _cont) = parse_object_header(r, addr)?;
-    let mut name = String::new();
+    let name = String::new();
     let mut dims: Vec<u64> = Vec::new();
     let mut nc_type = NcType::Float;
     let mut layout = Layout::Contiguous { addr: 0 };
@@ -488,11 +484,8 @@ fn parse_dataset(
             }
             MSG_LAYOUT => {
                 if let Some(l) = parse_layout(r, body) {
-                    match &l {
-                        Layout::Chunked { chunk_buf_size, .. } => {
-                            chunk_dims = Some(parse_chunk_dims(body, *chunk_buf_size));
-                        }
-                        _ => {}
+                    if let Layout::Chunked { chunk_buf_size, .. } = &l {
+                        chunk_dims = Some(parse_chunk_dims(body, *chunk_buf_size));
                     }
                     layout = l;
                 }
@@ -719,14 +712,10 @@ fn read_chunked_data(
     let entries = collect_chunk_entries(&r, btree_addr)?;
     let elem = ds.nc_type.size_of();
     let total = ds.dims.iter().product::<u64>() as usize;
-    let mut out = vec![0u8; total * elem];
-    let cdims =
-        ds.chunk_dims.as_ref().ok_or_else(|| NetCdfError::Unsupported("missing chunk dims"))?;
+    let cdims = ds.chunk_dims.as_ref().ok_or(NetCdfError::Unsupported("missing chunk dims"))?;
     if cdims.len() < 2 {
         return Err(NetCdfError::Unsupported("need at least 2D chunks"));
     }
-    let nrows = ds.dims[0] as usize;
-    let ncols = ds.dims[1] as usize;
     let mut out = vec![0u8; total * elem];
     for e in &entries {
         let raw = file

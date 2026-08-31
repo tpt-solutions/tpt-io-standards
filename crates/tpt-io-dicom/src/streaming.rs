@@ -8,8 +8,7 @@ use alloc::vec::Vec;
 
 use crate::error::DicomError;
 use crate::model::Dataset;
-use crate::pixel::{extract_pixel_descriptor, decompress_pixel_data, PixelDescriptor};
-use crate::uid::TransferSyntax;
+use crate::pixel::{decompress_pixel_data, extract_pixel_descriptor, PixelDescriptor};
 
 /// A streaming pixel data reader for large volumetric datasets.
 #[derive(Debug)]
@@ -32,12 +31,7 @@ impl<'a> PixelStream<'a> {
 
         // Determine transfer syntax from dataset if available.
         // For now, we use the default from descriptor.
-        Ok(Self {
-            dataset,
-            descriptor,
-            raw_data,
-            current_frame: 0,
-        })
+        Ok(Self { dataset, descriptor, raw_data, current_frame: 0 })
     }
 
     /// Get the pixel descriptor.
@@ -53,9 +47,7 @@ impl<'a> PixelStream<'a> {
     /// Read a single frame by index.
     pub fn read_frame(&self, frame_index: u32) -> Result<Vec<u8>, DicomError> {
         if frame_index >= self.descriptor.number_of_frames {
-            return Err(DicomError::InvalidPixelData {
-                offset: frame_index as usize,
-            });
+            return Err(DicomError::InvalidPixelData { offset: frame_index as usize });
         }
         let frame_size = self.descriptor.bytes_per_frame();
         let offset = frame_index as usize * frame_size;
@@ -81,10 +73,7 @@ impl<'a> PixelStream<'a> {
 
     /// Iterate over a range of frames.
     pub fn frame_range(&self, start: u32, end: u32) -> FrameIter<'_> {
-        FrameIter {
-            stream: self,
-            current: start.min(self.descriptor.number_of_frames),
-        }
+        FrameIter { stream: self, current: start.min(self.descriptor.number_of_frames) }
     }
 }
 
@@ -132,11 +121,7 @@ pub struct ChunkedPixelReader<'a> {
 impl<'a> ChunkedPixelReader<'a> {
     /// Create a new chunked reader.
     pub fn new(raw_data: &'a [u8], chunk_size: usize) -> Self {
-        Self {
-            raw_data,
-            position: 0,
-            chunk_size: chunk_size.max(1),
-        }
+        Self { raw_data, position: 0, chunk_size: chunk_size.max(1) }
     }
 
     /// Read the next chunk of pixel data.

@@ -70,21 +70,13 @@ pub fn extract_instance_info(dataset: &Dataset) -> Option<Instance> {
         _ => None,
     };
 
-    Some(Instance {
-        sop_instance_uid,
-        sop_class_uid,
-        instance_number,
-        dataset: dataset.clone(),
-    })
+    Some(Instance { sop_instance_uid, sop_class_uid, instance_number, dataset: dataset.clone() })
 }
 
 /// Build a Study from a series dataset.
 pub fn study_from_series(series_dataset: &Dataset) -> Study {
     Study {
-        study_instance_uid: series_dataset
-            .string(Tag::new(0x0020, 0x000D))
-            .unwrap_or("")
-            .into(),
+        study_instance_uid: series_dataset.string(Tag::new(0x0020, 0x000D)).unwrap_or("").into(),
         study_date: series_dataset.string(Tag::new(0x0008, 0x0020)).unwrap_or("").into(),
         study_time: series_dataset.string(Tag::new(0x0008, 0x0030)).unwrap_or("").into(),
         study_description: series_dataset.string(Tag::new(0x0010, 0x1030)).unwrap_or("").into(),
@@ -103,10 +95,7 @@ pub fn series_from_instance(instance_dataset: &Dataset) -> Series {
     };
 
     Series {
-        series_instance_uid: instance_dataset
-            .string(Tag::new(0x0020, 0x000E))
-            .unwrap_or("")
-            .into(),
+        series_instance_uid: instance_dataset.string(Tag::new(0x0020, 0x000E)).unwrap_or("").into(),
         series_number,
         series_description: instance_dataset.string(Tag::new(0x0008, 0x103E)).unwrap_or("").into(),
         modality: instance_dataset.string(Tag::new(0x0008, 0x0060)).unwrap_or("").into(),
@@ -184,7 +173,7 @@ mod tests {
     }
 
     #[test]
-    fn extract_instance_info() {
+    fn test_extract_instance_info() {
         let ds = make_test_dataset();
         let inst = extract_instance_info(&ds).unwrap();
         assert_eq!(inst.sop_instance_uid, "1.2.3.4.5.6.7");

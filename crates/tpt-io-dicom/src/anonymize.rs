@@ -7,9 +7,10 @@ use crate::model::{Dataset, Element, Tag, Value, VR};
 use crate::tag::VRCode;
 
 /// Anonymization action for a tag.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum AnonAction {
     /// Remove the tag entirely.
+    #[default]
     Remove,
     /// Replace with a dummy value (zero-length or default).
     Empty,
@@ -123,8 +124,7 @@ fn is_patient_identifying(tag: Tag) -> bool {
         (0x0040, 0xA730) | // Content Sequence (may contain patient info)
         (0x0088, 0x0140) | // Storage Media File-set UID
         (0x3006, 0x0024) | // Referenced Frame of Reference UID
-        (0x3006, 0x00C2) | // Related Frame of Reference UID
-        (0x0008, 0x0018)   // SOP Instance UID
+        (0x3006, 0x00C2) // Related Frame of Reference UID
     )
 }
 
@@ -237,8 +237,8 @@ mod tests {
             value: Value::String("Doe^John".into()),
         });
 
-        let profile = AnonymizationProfile::basic()
-            .with_override(Tag::new(0x0010, 0x0010), AnonAction::Keep);
+        let profile =
+            AnonymizationProfile::basic().with_override(Tag::new(0x0010, 0x0010), AnonAction::Keep);
         anonymize_dataset(&mut ds, &profile);
 
         // Patient name should be kept due to override.

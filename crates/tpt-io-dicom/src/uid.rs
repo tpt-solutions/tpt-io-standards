@@ -90,15 +90,27 @@ impl SopClass {
             SopClass::ComputedRadiographyImageStorage => "1.2.840.10008.5.1.4.1.1.1",
             SopClass::DigitalXRayImageStorageForPresentation => "1.2.840.10008.5.1.4.1.1.1.1",
             SopClass::DigitalXRayImageStorageForProcessing => "1.2.840.10008.5.1.4.1.1.1.1.1",
-            SopClass::DigitalMammographyXRayImageStorageForPresentation => "1.2.840.10008.5.1.4.1.1.1.2",
-            SopClass::DigitalMammographyXRayImageStorageForProcessing => "1.2.840.10008.5.1.4.1.1.1.2.1",
+            SopClass::DigitalMammographyXRayImageStorageForPresentation => {
+                "1.2.840.10008.5.1.4.1.1.1.2"
+            }
+            SopClass::DigitalMammographyXRayImageStorageForProcessing => {
+                "1.2.840.10008.5.1.4.1.1.1.2.1"
+            }
             SopClass::UltrasoundMultiFrameImageStorageRetired => "1.2.840.10008.5.1.4.1.1.3",
             SopClass::UltrasoundMultiFrameImageStorage => "1.2.840.10008.5.1.4.1.1.3.1",
             SopClass::SecondaryCaptureImageStorage => "1.2.840.10008.5.1.4.1.1.7",
-            SopClass::MultiFrameSingleBitSecondaryCaptureImageStorage => "1.2.840.10008.5.1.4.1.1.7.1",
-            SopClass::MultiFrameGrayscaleByteSecondaryCaptureImageStorage => "1.2.840.10008.5.1.4.1.1.7.2",
-            SopClass::MultiFrameGrayscaleWordSecondaryCaptureImageStorage => "1.2.840.10008.5.1.4.1.1.7.3",
-            SopClass::MultiFrameTrueColorSecondaryCaptureImageStorage => "1.2.840.10008.5.1.4.1.1.7.4",
+            SopClass::MultiFrameSingleBitSecondaryCaptureImageStorage => {
+                "1.2.840.10008.5.1.4.1.1.7.1"
+            }
+            SopClass::MultiFrameGrayscaleByteSecondaryCaptureImageStorage => {
+                "1.2.840.10008.5.1.4.1.1.7.2"
+            }
+            SopClass::MultiFrameGrayscaleWordSecondaryCaptureImageStorage => {
+                "1.2.840.10008.5.1.4.1.1.7.3"
+            }
+            SopClass::MultiFrameTrueColorSecondaryCaptureImageStorage => {
+                "1.2.840.10008.5.1.4.1.1.7.4"
+            }
             SopClass::EncapsulatedPdf => "1.2.840.10008.5.1.4.1.1.104.1",
             SopClass::RtImageStorage => "1.2.840.10008.5.1.4.1.1.481.1",
             SopClass::RtDoseStorage => "1.2.840.10008.5.1.4.1.1.481.2",
@@ -133,15 +145,27 @@ impl SopClass {
             "1.2.840.10008.5.1.4.1.1.1" => Some(SopClass::ComputedRadiographyImageStorage),
             "1.2.840.10008.5.1.4.1.1.1.1" => Some(SopClass::DigitalXRayImageStorageForPresentation),
             "1.2.840.10008.5.1.4.1.1.1.1.1" => Some(SopClass::DigitalXRayImageStorageForProcessing),
-            "1.2.840.10008.5.1.4.1.1.1.2" => Some(SopClass::DigitalMammographyXRayImageStorageForPresentation),
-            "1.2.840.10008.5.1.4.1.1.1.2.1" => Some(SopClass::DigitalMammographyXRayImageStorageForProcessing),
+            "1.2.840.10008.5.1.4.1.1.1.2" => {
+                Some(SopClass::DigitalMammographyXRayImageStorageForPresentation)
+            }
+            "1.2.840.10008.5.1.4.1.1.1.2.1" => {
+                Some(SopClass::DigitalMammographyXRayImageStorageForProcessing)
+            }
             "1.2.840.10008.5.1.4.1.1.3" => Some(SopClass::UltrasoundMultiFrameImageStorageRetired),
             "1.2.840.10008.5.1.4.1.1.3.1" => Some(SopClass::UltrasoundMultiFrameImageStorage),
             "1.2.840.10008.5.1.4.1.1.7" => Some(SopClass::SecondaryCaptureImageStorage),
-            "1.2.840.10008.5.1.4.1.1.7.1" => Some(SopClass::MultiFrameSingleBitSecondaryCaptureImageStorage),
-            "1.2.840.10008.5.1.4.1.1.7.2" => Some(SopClass::MultiFrameGrayscaleByteSecondaryCaptureImageStorage),
-            "1.2.840.10008.5.1.4.1.1.7.3" => Some(SopClass::MultiFrameGrayscaleWordSecondaryCaptureImageStorage),
-            "1.2.840.10008.5.1.4.1.1.7.4" => Some(SopClass::MultiFrameTrueColorSecondaryCaptureImageStorage),
+            "1.2.840.10008.5.1.4.1.1.7.1" => {
+                Some(SopClass::MultiFrameSingleBitSecondaryCaptureImageStorage)
+            }
+            "1.2.840.10008.5.1.4.1.1.7.2" => {
+                Some(SopClass::MultiFrameGrayscaleByteSecondaryCaptureImageStorage)
+            }
+            "1.2.840.10008.5.1.4.1.1.7.3" => {
+                Some(SopClass::MultiFrameGrayscaleWordSecondaryCaptureImageStorage)
+            }
+            "1.2.840.10008.5.1.4.1.1.7.4" => {
+                Some(SopClass::MultiFrameTrueColorSecondaryCaptureImageStorage)
+            }
             "1.2.840.10008.5.1.4.1.1.104.1" => Some(SopClass::EncapsulatedPdf),
             "1.2.840.10008.5.1.4.1.1.481.1" => Some(SopClass::RtImageStorage),
             "1.2.840.10008.5.1.4.1.1.481.2" => Some(SopClass::RtDoseStorage),
@@ -170,11 +194,12 @@ impl SopClass {
 }
 
 /// Well-known DICOM Transfer Syntax UIDs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum TransferSyntax {
     /// Implicit VR Little Endian
     ImplicitVrLittleEndian,
     /// Explicit VR Little Endian
+    #[default]
     ExplicitVrLittleEndian,
     /// Explicit VR Big Endian (Retired)
     ExplicitVrBigEndian,

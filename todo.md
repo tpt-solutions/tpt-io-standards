@@ -260,7 +260,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] Model validation against SBML schema (structural checks: level support, duplicate ids, compartment/species/reference resolution, MathML reference scoping — no XSD/schema validation)
 - [x] Mass balance / charge balance consistency checking (charge balance per reaction + FBC reference integrity + element/mass balance from FBC `chemicalFormula` done)
 - [x] `tpt-sci-reaction-network` / `tpt-sci-ode` integration (feature-gated stubs, `integration.rs`)
-- [~] Round-trip, fuzz, golden-file, property tests (fuzz target + golden `tests/samples` corpus + property tests added; writer/round-trip still pending a serializer)
+- [x] Round-trip, fuzz, golden-file, property tests (fuzz target + golden `tests/samples` corpus + property tests added; writer implemented with passing round-trip for L2 core, FBC, Qual, and Spatial packages)
 - [~] README + docs, `cargo publish --dry-run` (README + `cargo doc` clean; packaging verifies, but blocked on unpublished `tpt-io-core` path dep per §4 publish order — same as sibling crates)
 
 ## 3. `tpt-io` (umbrella — last, depends on all domain crates)

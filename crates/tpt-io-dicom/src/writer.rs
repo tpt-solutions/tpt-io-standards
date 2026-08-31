@@ -126,7 +126,19 @@ fn serialize_element_explicit_vr(
     // Length field.
     let vr_is_special = matches!(
         element.vr,
-        VR::Known(VRCode::OB | VRCode::OD | VRCode::OF | VRCode::OL | VRCode::OV | VRCode::OW | VRCode::SQ | VRCode::UC | VRCode::UN | VRCode::UR | VRCode::UT)
+        VR::Known(
+            VRCode::OB
+                | VRCode::OD
+                | VRCode::OF
+                | VRCode::OL
+                | VRCode::OV
+                | VRCode::OW
+                | VRCode::SQ
+                | VRCode::UC
+                | VRCode::UN
+                | VRCode::UR
+                | VRCode::UT
+        )
     );
 
     if vr_is_special {
@@ -213,6 +225,7 @@ pub fn round_trip_dataset(
         0,
         transfer_syntax.is_explicit_vr(),
         transfer_syntax.is_little_endian(),
+        None,
     )?;
     Ok(parsed)
 }
@@ -220,7 +233,8 @@ pub fn round_trip_dataset(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{Tag, Element, VR};
+    use crate::model::{Element, Tag, VR};
+    use crate::DicomReader;
 
     #[test]
     fn round_trip_string_element() {
@@ -251,7 +265,8 @@ mod tests {
             value: Value::String("1.2.840.10008.5.1.4.1.1.2".into()),
         });
 
-        let file = DicomFile { meta, dataset, transfer_syntax: TransferSyntax::ExplicitVrLittleEndian };
+        let file =
+            DicomFile { meta, dataset, transfer_syntax: TransferSyntax::ExplicitVrLittleEndian };
         let writer = DicomWriter::new();
         let bytes = writer.serialize_file(&file).unwrap();
 

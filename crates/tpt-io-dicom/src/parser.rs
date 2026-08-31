@@ -66,19 +66,26 @@ pub fn parse_dicom(input: &[u8], require_preamble: bool) -> Result<DicomFile, Di
     }
 
     // Step 2: file meta-information group (0002,xxxx) — always explicit VR little-endian.
-    let (meta, bytes_read) = parse_dataset(input, offset, true, true)?;
+    let (meta, bytes_read) = parse_dataset(input, offset, true, true, Some(0x0002))?;
     offset += bytes_read;
 
     // Step 3: detect transfer syntax from meta group.
     let ts_uid = meta.string(Tag::new(0x0002, 0x0010));
     let transfer_syntax = match ts_uid {
-        Some(uid) => TransferSyntax::from_uid(uid).unwrap_or(TransferSyntax::ImplicitVrLittleEndian),
+        Some(uid) => {
+            TransferSyntax::from_uid(uid).unwrap_or(TransferSyntax::ImplicitVrLittleEndian)
+        }
         None => TransferSyntax::ImplicitVrLittleEndian,
     };
 
     // Step 4: main data set using detected transfer syntax.
-    let (dataset, _bytes_read) =
-        parse_dataset(input, offset, transfer_syntax.is_explicit_vr(), transfer_syntax.is_little_endian())?;
+    let (dataset, _bytes_read) = parse_dataset(
+        input,
+        offset,
+        transfer_syntax.is_explicit_vr(),
+        transfer_syntax.is_little_endian(),
+        None,
+    )?;
 
     Ok(DicomFile { meta, dataset, transfer_syntax })
 }
@@ -87,16 +94,25 @@ pub fn parse_dicom(input: &[u8], require_preamble: bool) -> Result<DicomFile, Di
 ///
 /// `explicit_vr` controls whether VR is read for each element.
 /// `little_endian` controls byte ordering.
+/// `stop_at_group` optionally stops parsing when an element with a different
+/// group number is encountered (used for the file-meta group 0x0002).
 pub fn parse_dataset(
     input: &[u8],
     offset: usize,
     explicit_vr: bool,
     little_endian: bool,
+    stop_at_group: Option<u16>,
 ) -> Result<(Dataset, usize), DicomError> {
     let mut dataset = Dataset::new();
     let mut pos = offset;
 
     while pos + 4 <= input.len() {
+        let group = u16::from_le_bytes([input[pos], input[pos + 1]]);
+        if let Some(stop) = stop_at_group {
+            if group != stop {
+                break;
+            }
+        }
         let (element, bytes_read) = parse_element(input, pos, explicit_vr, little_endian)?;
         dataset.push(element);
         pos += bytes_read;
@@ -123,16 +139,12 @@ pub fn parse_element(
     pos += 2;
     let tag = Tag::new(group, element_num);
 
-    let (vr, value, header_size) = if explicit_vr {
+    let (vr, value, header_size, value_len) = if explicit_vr {
         parse_explicit_vr_element(input, pos, little_endian)?
     } else {
         parse_implicit_vr_element(input, pos, little_endian, group, element_num)?
     };
-    pos += header_size;
-
-    // Skip value bytes.
-    let value_len = value_byte_length(&value);
-    pos += value_len;
+    pos += header_size + value_len;
 
     Ok((Element { tag, vr, value }, pos - offset))
 }
@@ -142,7 +154,7 @@ fn parse_explicit_vr_element(
     input: &[u8],
     offset: usize,
     little_endian: bool,
-) -> Result<(VR, Value, usize), DicomError> {
+) -> Result<(VR, Value, usize, usize), DicomError> {
     let mut pos = offset;
 
     // Read VR (2 ASCII bytes).
@@ -159,12 +171,29 @@ fn parse_explicit_vr_element(
 
     // Determine length field size based on VR.
     let (value_len, length_field_size) = match vr {
-        VR::Known(VRCode::OB | VRCode::OD | VRCode::OF | VRCode::OL | VRCode::OV | VRCode::OW | VRCode::SQ | VRCode::UC | VRCode::UN | VRCode::UR | VRCode::UT) => {
+        VR::Known(
+            VRCode::OB
+            | VRCode::OD
+            | VRCode::OF
+            | VRCode::OL
+            | VRCode::OV
+            | VRCode::OW
+            | VRCode::SQ
+            | VRCode::UC
+            | VRCode::UN
+            | VRCode::UR
+            | VRCode::UT,
+        ) => {
             // These VRs have 2 reserved bytes + 4-byte length.
             if pos + 6 > input.len() {
                 return Err(DicomError::Core(ParseError::eof(input.len())));
             }
-            let length = u32::from_le_bytes([input[pos + 2], input[pos + 3], input[pos + 4], input[pos + 5]]) as usize;
+            let length = u32::from_le_bytes([
+                input[pos + 2],
+                input[pos + 3],
+                input[pos + 4],
+                input[pos + 5],
+            ]) as usize;
             (length, 6)
         }
         _ => {
@@ -186,7 +215,7 @@ fn parse_explicit_vr_element(
 
     let value = decode_value(input, pos, value_len, &vr, little_endian, true)?;
 
-    Ok((vr, value, header_consumed))
+    Ok((vr, value, header_consumed, value_len))
 }
 
 /// Parse an element using implicit VR transfer syntax.
@@ -196,7 +225,7 @@ fn parse_implicit_vr_element(
     little_endian: bool,
     group: u16,
     element_num: u16,
-) -> Result<(VR, Value, usize), DicomError> {
+) -> Result<(VR, Value, usize, usize), DicomError> {
     let mut pos = offset;
 
     // 4-byte length field (no VR).
@@ -224,7 +253,7 @@ fn parse_implicit_vr_element(
 
     let value = decode_value(input, pos, length, &vr, little_endian, false)?;
 
-    Ok((vr, value, 4))
+    Ok((vr, value, 4, length))
 }
 
 /// Decode a value from raw bytes based on VR.
@@ -234,7 +263,7 @@ fn decode_value(
     length: usize,
     vr: &VR,
     little_endian: bool,
-    explicit: bool,
+    _explicit: bool,
 ) -> Result<Value, DicomError> {
     if length == 0 {
         return Ok(Value::Raw(Vec::new()));
@@ -251,9 +280,7 @@ fn decode_value(
             let items = parse_sequence(bytes, length, little_endian)?;
             Ok(Value::Sequence(items))
         }
-        VR::Known(v) if is_string_vr(*v) => {
-            Ok(Value::String(decode_dicom_string(bytes)))
-        }
+        VR::Known(v) if is_string_vr(*v) => Ok(Value::String(decode_dicom_string(bytes))),
         VR::Known(VRCode::US) => {
             if length >= 2 {
                 let val = if little_endian {
@@ -317,9 +344,15 @@ fn decode_value(
         VR::Known(VRCode::FD) => {
             if length >= 8 {
                 let val = if little_endian {
-                    f64::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]])
+                    f64::from_le_bytes([
+                        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6],
+                        bytes[7],
+                    ])
                 } else {
-                    f64::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]])
+                    f64::from_be_bytes([
+                        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6],
+                        bytes[7],
+                    ])
                 };
                 Ok(Value::F64(val))
             } else {
@@ -357,11 +390,7 @@ fn parse_sequence(
     little_endian: bool,
 ) -> Result<Vec<Dataset>, DicomError> {
     let mut items = Vec::new();
-    let end = if length == 0xFFFF_FFFF || length >= input.len() {
-        input.len()
-    } else {
-        length
-    };
+    let end = if length == 0xFFFF_FFFF || length >= input.len() { input.len() } else { length };
 
     let mut pos = 0;
     while pos + 8 <= core::cmp::min(end, input.len()) {
@@ -392,12 +421,15 @@ fn parse_sequence(
         }
 
         if item_group != 0xFFFE || item_element != 0xE000 {
-            return Err(DicomError::InvalidTag { offset: pos - 8, group: item_group, element: item_element });
+            return Err(DicomError::InvalidTag {
+                offset: pos - 8,
+                group: item_group,
+                element: item_element,
+            });
         }
 
         let item_end = core::cmp::min(pos + item_length, input.len());
-        let (item_dataset, _item_read) =
-            parse_dataset(input, pos, true, little_endian)?;
+        let (item_dataset, _item_read) = parse_dataset(input, pos, true, little_endian, None)?;
         items.push(item_dataset);
         pos = item_end;
     }
@@ -409,9 +441,23 @@ fn parse_sequence(
 fn is_string_vr(vr: VRCode) -> bool {
     matches!(
         vr,
-        VRCode::AE | VRCode::AS | VRCode::CS | VRCode::DA | VRCode::DS | VRCode::DT
-            | VRCode::IS | VRCode::LO | VRCode::LT | VRCode::PN | VRCode::SH | VRCode::ST
-            | VRCode::TM | VRCode::UC | VRCode::UI | VRCode::UR | VRCode::UT
+        VRCode::AE
+            | VRCode::AS
+            | VRCode::CS
+            | VRCode::DA
+            | VRCode::DS
+            | VRCode::DT
+            | VRCode::IS
+            | VRCode::LO
+            | VRCode::LT
+            | VRCode::PN
+            | VRCode::SH
+            | VRCode::ST
+            | VRCode::TM
+            | VRCode::UC
+            | VRCode::UI
+            | VRCode::UR
+            | VRCode::UT
     )
 }
 

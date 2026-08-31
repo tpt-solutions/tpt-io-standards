@@ -51,7 +51,7 @@ pub mod eng_geotech {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "eng-geotech-integration"))]
 mod tests {
     use super::eng_geotech::{to_borehole_log, BoreholeLogStub};
     use crate::model::WellLog;
