@@ -3,8 +3,7 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use crate::model::{Dataset, Element, Tag, Value, VR};
-use crate::tag::VRCode;
+use crate::model::{Dataset, Tag, Value};
 
 /// Anonymization action for a tag.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -183,6 +182,7 @@ fn simple_hash(data: &[u8]) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{Element, VR, VRCode};
 
     #[test]
     fn basic_anonymization_removes_patient_name() {

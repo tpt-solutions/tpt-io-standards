@@ -56,9 +56,9 @@ pub struct Instance {
 
 /// Navigate a DICOM instance dataset and extract its identifying UIDs.
 pub fn extract_instance_info(dataset: &Dataset) -> Option<Instance> {
-    let sop_instance_uid = match dataset.string(Tag::new(0x0008, 0x0018)) {
-        Some(s) => s.into(),
-        None => return None,
+    let sop_instance_uid = {
+        let s = dataset.string(Tag::new(0x0008, 0x0018))?;
+        s.into()
     };
     let sop_class_uid = match dataset.string(Tag::new(0x0008, 0x0016)) {
         Some(s) => s.into(),

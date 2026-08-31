@@ -241,13 +241,7 @@ fn parse_implicit_vr_element(
 
     // Look up VR from tag dictionary.
     let vr = match lookup_tag(group, element_num) {
-        Some(info) => {
-            if info.vr.len() == 1 {
-                VR::Known(info.vr[0])
-            } else {
-                VR::Known(info.vr[0]) // Use first VR as default
-            }
-        }
+        Some(info) => VR::Known(info.vr[0]),
         None => VR::Unknown(*b"UN"),
     };
 

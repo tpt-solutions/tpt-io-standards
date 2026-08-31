@@ -593,10 +593,8 @@ pub fn lookup_tag(group: u16, element: u16) -> Option<TagInfo> {
             _ => {}
         }
     }
-    if group == 0x7FE0 {
-        if element == 0x0010 {
-            return Some(TagInfo { keyword: "PixelData", vr: &[VRCode::OW, VRCode::OB], vm: "1" });
-        }
+    if group == 0x7FE0 && element == 0x0010 {
+        return Some(TagInfo { keyword: "PixelData", vr: &[VRCode::OW, VRCode::OB], vm: "1" });
     }
     None
 }

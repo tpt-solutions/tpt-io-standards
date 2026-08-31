@@ -26,7 +26,7 @@ pub struct PixelStream<'a> {
 impl<'a> PixelStream<'a> {
     /// Create a new pixel stream from a dataset.
     pub fn new(dataset: &'a Dataset) -> Result<Self, DicomError> {
-        let mut descriptor = extract_pixel_descriptor(dataset)?;
+        let descriptor = extract_pixel_descriptor(dataset)?;
         let raw_data = crate::pixel::extract_raw_pixel_data(dataset)?;
 
         // Determine transfer syntax from dataset if available.
@@ -72,7 +72,7 @@ impl<'a> PixelStream<'a> {
     }
 
     /// Iterate over a range of frames.
-    pub fn frame_range(&self, start: u32, end: u32) -> FrameIter<'_> {
+    pub fn frame_range(&self, start: u32, _end: u32) -> FrameIter<'_> {
         FrameIter { stream: self, current: start.min(self.descriptor.number_of_frames) }
     }
 }

@@ -4,7 +4,6 @@ use alloc::vec::Vec;
 
 use crate::error::DicomError;
 use crate::model::{Dataset, Tag, Value};
-use crate::tag::VRCode;
 use crate::uid::TransferSyntax;
 
 /// Pixel data descriptor extracted from a DICOM dataset.
@@ -187,6 +186,7 @@ pub fn read_pixel(pixel_data: &[u8], index: usize, descriptor: &PixelDescriptor)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::VRCode;
 
     #[test]
     fn test_extract_pixel_descriptor() {
