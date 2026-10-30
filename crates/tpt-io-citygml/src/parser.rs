@@ -19,7 +19,7 @@ use tpt_io_core::{Encoding, Reader, ValidationSettings, Validator};
 use crate::error::CityGmlError;
 use crate::model::{
     CityGmlVersion, CityModel, CityObject, CityObjectKind, Crs, Geometry, LinearRing, Lod, Point3,
-    Solid, Surface, ThematicAttribute, ThematicKey,
+    Solid, Surface, SurfaceClass, ThematicAttribute, ThematicKey,
 };
 
 /// CityGML 3.0 core namespace bytes.
@@ -83,6 +83,9 @@ struct XmlParser {
     thematic_key: Option<ThematicKey>,
     /// Object stack for nesting.
     object_stack: Vec<CityObject>,
+    /// Semantic class of the enclosing `WallSurface`/`RoofSurface`/… element,
+    /// applied to every polygon it contains.
+    surface_class: SurfaceClass,
 }
 
 impl XmlParser {
@@ -140,9 +143,19 @@ impl XmlParser {
             self.current_surface = Some(Surface::default());
         }
 
+        // Semantic surface element (WallSurface, RoofSurface, …): classifies
+        // the polygons inside it.
+        let class = SurfaceClass::from_tag(tag);
+        if class != SurfaceClass::Generic && !self.object_stack.is_empty() {
+            self.surface_class = class;
+            if let Some(surface) = self.current_surface.as_mut() {
+                surface.class = class;
+            }
+        }
+
         // Polygon: create a surface to hold the ring.
         if tag == "Polygon" && self.current_surface.is_none() {
-            self.current_surface = Some(Surface::default());
+            self.current_surface = Some(Surface { class: self.surface_class, ..Surface::default() });
         }
 
         // Solid.
@@ -234,6 +247,9 @@ impl XmlParser {
                         self.object_stack.last_mut().unwrap().children.push(obj);
                     }
                 }
+            }
+            t if SurfaceClass::from_tag(t) != SurfaceClass::Generic => {
+                self.surface_class = SurfaceClass::Generic;
             }
             t if is_thematic_element(t) => {
                 self.in_thematic = false;

@@ -574,6 +574,7 @@ dependencies = [
  "proptest",
  "quick-xml",
  "serde",
+ "serde_json",
  "tpt-io-core",
  "tpt-io-geo",
 ]

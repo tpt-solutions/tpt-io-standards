@@ -7,7 +7,7 @@
 //! The `geo-integration` feature gates the heavier transformation utilities
 //! that depend on `tpt-io-geo`.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 use crate::model::Crs;
 

@@ -5,7 +5,7 @@
 //! which may carry geometry at one or more LODs (0–4), semantic surface
 //! classifications, and thematic attributes.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 /// CityGML schema version detected during parsing.

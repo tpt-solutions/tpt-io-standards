@@ -137,6 +137,8 @@ impl std::error::Error for CityGmlError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(feature = "std"))]
+    use alloc::string::ToString;
 
     #[test]
     fn core_error_converts() {
