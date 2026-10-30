@@ -16,11 +16,12 @@ name = "tpt_io_netcdf"
 
 [dependencies]
 tpt-io-core = { workspace = true }
-flate2 = "1.1"
+flate2 = { version = "1.1", optional = true }
 
 [features]
 default = ["std"]
-std = ["tpt-io-core/std"]
+# `flate2`'s reader API is std-only, so deflate decoding needs `std`.
+std = ["tpt-io-core/std", "dep:flate2"]
 alloc = ["tpt-io-core/alloc"]
 # Integration with future `tpt-sci-grid` (not yet published).
 sci-grid-integration = []

@@ -13,7 +13,6 @@
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
-use std::io::copy;
 
 use crate::error::NetCdfError;
 use crate::header::NcType;
@@ -117,7 +116,7 @@ impl Filter {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Layout {
     Contiguous { addr: u64 },
-    Chunked { btree_addr: u64, chunk_buf_size: u64 },
+    Chunked { btree_addr: u64 },
     Compact { data: Vec<u8> },
 }
 
@@ -194,84 +193,92 @@ const MSG_FILTER2: u16 = 0x000B;
 const MSG_ATTRIBUTE: u16 = 0x000C;
 const MSG_OBJHDRCONT: u16 = 0x0010;
 
+/// Read the messages of a version-2 object header.
+///
+/// The header is `OHDR`, version, flags, optional timestamps and attribute
+/// counts, then the size of chunk 0 and the messages. Message headers are
+/// type (1 byte), size (2 bytes), flags (1 byte), plus a 2-byte creation order
+/// when the object tracks it. Messages are not padded. Each chunk is followed
+/// by a 4-byte checksum that is not part of its size. Continuation messages
+/// point at `OCHK` blocks whose messages are read the same way.
 fn parse_object_header<'a>(
     r: &Reader<'a>,
     addr: u64,
-) -> core::result::Result<(Vec<Message<'a>>, Vec<u64>), NetCdfError> {
+) -> core::result::Result<Vec<Message<'a>>, NetCdfError> {
     let base = addr as usize;
-    if base + 4 > r.data.len() || &r.data[base..base + 4] != b"OHDR" {
+    if r.slice(base, 4)? != &b"OHDR"[..] {
         return Err(NetCdfError::Unsupported("expected object header signature"));
     }
-    let ver = r.u8(base + 4)?;
-    if ver != 2 {
-        Err(NetCdfError::Unsupported("only object header version 2 is supported"))?;
+    if r.u8(base + 4)? != 2 {
+        return Err(NetCdfError::Unsupported("only object header version 2 is supported"));
     }
-    let mut p = base + 5;
-    let flags = r.u8(p)?;
-    p += 1;
-    let c0w = if flags & 0x01 != 0 { 2 } else { 1 };
-    let cnw = if flags & 0x02 != 0 { 2 } else { 1 };
-    let chunk0 = r.rd(p, c0w)? as usize;
-    p += c0w;
-    let _chunkn = r.rd(p, cnw)?;
-    p += cnw;
-    let nmess = r.rd(p, 2)? as usize;
-    p += 2;
-    let _hsize = r.rd(p, 4)?;
-    p += 4;
-    if flags & 0x08 != 0 {
-        p += 2;
+    let flags = r.u8(base + 5)?;
+    let mut p = base + 6;
+    if flags & 0x20 != 0 {
+        // Access, modification, change and birth times (4 bytes each).
+        p += 16;
     }
     if flags & 0x10 != 0 {
+        // Maximum compact and minimum dense attribute counts (2 bytes each).
         p += 4;
     }
+    let size_width = 1usize << (flags & 0x03);
+    let chunk0_len = r.rd(p, size_width)? as usize;
+    p += size_width;
+    let track_order = flags & 0x04 != 0;
+
     let mut messages = Vec::new();
-    let mut cont = Vec::new();
-    let msg_start = p;
-    let mut remaining = chunk0.saturating_sub(p - msg_start);
-    let mut p = msg_start;
-    let mut count = 0usize;
-    while count < nmess && p + 6 <= r.data.len() && remaining >= 6 {
-        let mtype = r.rd(p, 2)? as u16;
-        let msize = r.rd(p + 2, 2)? as usize;
-        let mflags = r.u8(p + 4)?;
-        p += 6;
-        let body = r.slice(p, msize)?;
-        let shared = mflags & 0x02 != 0;
-        if mtype == MSG_OBJHDRCONT {
-            let mut q = 0usize;
-            while q + 16 <= body.len() {
-                let off = read_int(body, q, 8)?;
-                cont.push(off);
-                q += 16;
-            }
-        } else {
-            messages.push(Message { mtype, body, shared });
+    let mut continuations: Vec<(usize, usize)> = Vec::new();
+    read_messages(r, p, p + chunk0_len, track_order, &mut messages, &mut continuations)?;
+
+    let mut i = 0;
+    while i < continuations.len() {
+        let (off, len) = continuations[i];
+        i += 1;
+        if len < 8 || r.slice(off, 4)? != &b"OCHK"[..] {
+            return Err(NetCdfError::Unsupported("bad object header continuation block"));
         }
-        count += 1;
-        p += msize;
-        if p % 8 != 0 {
-            p += 8 - (p % 8);
-        }
-        remaining = chunk0.saturating_sub(p - msg_start);
-        if remaining == 0 && count < nmess {
-            if let Some(next) = cont.pop() {
-                p = next as usize;
-                if p + 6 > r.data.len() {
-                    break;
-                }
-                // re-check OHDR at continuation; if not OHDR assume continuation data starts directly
-                if &r.data[p..p + 4] == b"OHDR" {
-                    // small continuation: skip signature and version
-                    p += 5;
-                }
-                remaining = usize::MAX; // continuation chunk is large
-            } else {
-                break;
-            }
-        }
+        // Skip the signature at the start and the checksum at the end.
+        read_messages(
+            r,
+            off + 4,
+            off + len - 4,
+            track_order,
+            &mut messages,
+            &mut continuations,
+        )?;
     }
-    Ok((messages, cont))
+    Ok(messages)
+}
+
+/// Read version-2 object header messages in `[start, end)`.
+fn read_messages<'a>(
+    r: &Reader<'a>,
+    start: usize,
+    end: usize,
+    track_order: bool,
+    out: &mut Vec<Message<'a>>,
+    continuations: &mut Vec<(usize, usize)>,
+) -> core::result::Result<(), NetCdfError> {
+    let header_len = if track_order { 6 } else { 4 };
+    let mut p = start;
+    while p + header_len <= end {
+        let mtype = r.u8(p)? as u16;
+        let msize = r.rd(p + 1, 2)? as usize;
+        let mflags = r.u8(p + 3)?;
+        let body = r.slice(p + header_len, msize)?;
+        match mtype {
+            0 => {}
+            MSG_OBJHDRCONT => {
+                let off = read_int(body, 0, r.offsz)? as usize;
+                let len = read_int(body, r.offsz, r.lensz)? as usize;
+                continuations.push((off, len));
+            }
+            _ => out.push(Message { mtype, body, shared: mflags & 0x02 != 0 }),
+        }
+        p += header_len + msize;
+    }
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -346,7 +353,8 @@ pub fn parse(data: &[u8]) -> core::result::Result<Hdf5File, NetCdfError> {
     let root = parse_group(&r, &heaps, sb.root_group_addr)?;
     let mut datasets = Vec::new();
     for link in &root.links {
-        if let Ok(ds) = parse_dataset(&r, &heaps, link.object_addr) {
+        if let Ok(mut ds) = parse_dataset(&r, &heaps, link.object_addr) {
+            ds.name = link.name.clone();
             datasets.push(ds);
         }
     }
@@ -378,7 +386,7 @@ fn parse_group(
     heaps: &[GlobalHeap],
     addr: u64,
 ) -> core::result::Result<Group, NetCdfError> {
-    let (msgs, _cont) = parse_object_header(r, addr)?;
+    let msgs = parse_object_header(r, addr)?;
     let mut attrs = Vec::new();
     let mut links = Vec::new();
     for m in &msgs {
@@ -407,20 +415,37 @@ fn parse_group(
     Ok(Group { attrs, links })
 }
 
-fn parse_link(_r: &Reader, body: &[u8]) -> core::result::Result<Link, NetCdfError> {
-    if body.len() < 8 {
-        return Err(NetCdfError::Unsupported("link message too short"));
+/// Parse a version-1 link message. Only hard links carry an object address;
+/// soft and external links are reported as unsupported and skipped.
+fn parse_link(r: &Reader, body: &[u8]) -> core::result::Result<Link, NetCdfError> {
+    if body.len() < 2 || body[0] != 1 {
+        return Err(NetCdfError::Unsupported("unsupported link message"));
     }
     let flags = body[1];
-    let name_size = u16::from_le_bytes([body[2], body[3]]) as usize;
-    let mut p = 4;
-    if flags & 0x02 != 0 {
-        p += 2;
+    let mut p = 2;
+    let mut link_type = 0u8;
+    if flags & 0x08 != 0 {
+        link_type = *body.get(p).ok_or(NetCdfError::Unsupported("link type oob"))?;
+        p += 1;
     }
-    let name_bytes = body.get(p..p + name_size).ok_or(NetCdfError::Unsupported("link name oob"))?;
+    if flags & 0x04 != 0 {
+        // Creation order (8 bytes).
+        p += 8;
+    }
+    if flags & 0x10 != 0 {
+        // Character set (1 byte).
+        p += 1;
+    }
+    let name_width = 1usize << (flags & 0x03);
+    let name_len = read_int(body, p, name_width)? as usize;
+    p += name_width;
+    let name_bytes = body.get(p..p + name_len).ok_or(NetCdfError::Unsupported("link name oob"))?;
     let name = String::from_utf8_lossy(name_bytes).into_owned();
-    p += name_size;
-    let object_addr = read_int(body, p, 8)?;
+    p += name_len;
+    if link_type != 0 {
+        return Err(NetCdfError::Unsupported("only hard links are followed"));
+    }
+    let object_addr = read_int(body, p, r.offsz)?;
     Ok(Link { name, object_addr })
 }
 
@@ -454,7 +479,7 @@ fn parse_dataset(
     heaps: &[GlobalHeap],
     addr: u64,
 ) -> core::result::Result<Dataset, NetCdfError> {
-    let (msgs, _cont) = parse_object_header(r, addr)?;
+    let msgs = parse_object_header(r, addr)?;
     let name = String::new();
     let mut dims: Vec<u64> = Vec::new();
     let mut nc_type = NcType::Float;
@@ -473,7 +498,7 @@ fn parse_dataset(
         };
         match m.mtype {
             MSG_DATASPACE => {
-                if let Some(d) = parse_dataspace(body) {
+                if let Some(d) = parse_dataspace(body, r.lensz) {
                     dims = d;
                 }
             }
@@ -483,10 +508,8 @@ fn parse_dataset(
                 }
             }
             MSG_LAYOUT => {
-                if let Some(l) = parse_layout(r, body) {
-                    if let Layout::Chunked { chunk_buf_size, .. } = &l {
-                        chunk_dims = Some(parse_chunk_dims(body, *chunk_buf_size));
-                    }
+                if let Some((l, dims)) = parse_layout(r, body) {
+                    chunk_dims = dims;
                     layout = l;
                 }
             }
@@ -506,23 +529,22 @@ fn parse_dataset(
     Ok(Dataset { name, dims, nc_type, layout, chunk_dims, filters, attrs, object_addr: addr })
 }
 
-fn parse_dataspace(body: &[u8]) -> Option<Vec<u64>> {
-    if body.len() < 4 {
-        return None;
-    }
-    let ver = body[0];
-    let rank = if ver >= 2 { body[3] as usize } else { body[1] as usize };
-    let mut p = if ver >= 2 { 4 } else { 2 };
-    if ver >= 2 {
-        p += 1;
-    }
-    let mut dims = Vec::new();
+/// Parse a dataspace message (versions 1 and 2) into its dimension sizes.
+///
+/// Layout: version, rank, flags, then version 1 has 5 reserved bytes and
+/// version 2 has a type byte before the dimensions. Each dimension is
+/// `lensz` bytes. Maximum dimensions, when present, are ignored.
+fn parse_dataspace(body: &[u8], lensz: usize) -> Option<Vec<u64>> {
+    let rank = *body.get(1)? as usize;
+    let mut p = match *body.first()? {
+        1 => 8,
+        2 => 4,
+        _ => return None,
+    };
+    let mut dims = Vec::with_capacity(rank);
     for _ in 0..rank {
-        if p + 4 > body.len() {
-            break;
-        }
-        dims.push(u32::from_le_bytes([body[p], body[p + 1], body[p + 2], body[p + 3]]) as u64);
-        p += 4;
+        dims.push(read_int(body, p, lensz).ok()?);
+        p += lensz;
     }
     Some(dims)
 }
@@ -549,110 +571,87 @@ fn parse_datatype(body: &[u8]) -> Option<NcType> {
     }
 }
 
-fn parse_layout(r: &Reader, body: &[u8]) -> Option<Layout> {
-    if body.is_empty() {
+/// Parse a version-3 data layout message.
+///
+/// Layout: version (3), class, then per class: compact stores a 2-byte size
+/// and the data; contiguous stores the address; chunked stores the rank plus
+/// one, the B-tree address and the chunk dimensions as 4-byte values. The last
+/// chunk dimension is the element size and is not part of the chunk shape.
+/// Returns the layout and, for chunked storage, the chunk dimensions.
+fn parse_layout(r: &Reader, body: &[u8]) -> Option<(Layout, Option<Vec<u64>>)> {
+    if body.len() < 2 || body[0] != 3 {
         return None;
     }
-
-    // HDF5 v4 layout messages prefix with a version byte (v2/v3 don't).
-    let (version, rest) = if body[0] == 4 { (4, &body[1..]) } else { (body[0], body) };
-    if rest.is_empty() {
-        return None;
-    }
-    let class = rest[0];
-
-    match class {
+    match body[1] {
         0 => {
-            let size = u32::from_le_bytes([rest[2], rest[3], rest[4], rest[5]]) as usize;
-            let data = rest.get(6..6 + size).unwrap_or(&[]).to_vec();
-            Some(Layout::Compact { data })
+            let size = read_int(body, 2, 2).ok()? as usize;
+            let data = body.get(4..4 + size)?.to_vec();
+            Some((Layout::Compact { data }, None))
         }
         1 => {
-            let ndims = rest[1] as usize;
-            let dims_bytes = if version == 4 { ndims * 8 } else { ndims * 4 };
-            let p = 2 + dims_bytes;
-            let addr = read_int(rest, p, r.offsz).ok()?;
-            Some(Layout::Contiguous { addr })
+            let addr = read_int(body, 2, r.offsz).ok()?;
+            Some((Layout::Contiguous { addr }, None))
         }
         2 => {
-            let ndims = rest[1] as usize;
-            let dims_bytes = if version == 4 { ndims * 8 } else { ndims * 4 };
-            let mut p = 2 + dims_bytes;
-            let chunk_buf_size = if version < 4 && p + 4 <= rest.len() {
-                let v = u32::from_le_bytes([rest[p], rest[p + 1], rest[p + 2], rest[p + 3]]) as u64;
+            let dimensionality = *body.get(2)? as usize;
+            let btree_addr = read_int(body, 3, r.offsz).ok()?;
+            let mut p = 3 + r.offsz;
+            let mut dims = Vec::with_capacity(dimensionality);
+            for _ in 0..dimensionality {
+                dims.push(read_int(body, p, 4).ok()?);
                 p += 4;
-                v
-            } else {
-                0
-            };
-            let btree_addr = read_int(rest, p, r.offsz).ok()?;
-            Some(Layout::Chunked { btree_addr, chunk_buf_size })
+            }
+            dims.pop();
+            Some((Layout::Chunked { btree_addr }, Some(dims)))
         }
         _ => None,
     }
 }
 
-fn parse_chunk_dims(body: &[u8], _buf: u64) -> Vec<u64> {
-    if body.len() < 3 {
-        return Vec::new();
-    }
-    // h5py v108 writes v4 layout messages (body[0]=4), skip version byte.
-    let body = if body[0] == 4 { &body[1..] } else { body };
-    if body.is_empty() || body[0] != 2 {
-        return Vec::new();
-    }
-    let ndims = body[1] as usize;
-    let mut p = 2;
-    let mut dims = Vec::new();
-    let elem = if body.len() >= 3 && body[2] == 0 { 8 } else { 4 };
-    for _ in 0..ndims {
-        if p + elem > body.len() {
-            break;
-        }
-        if elem == 8 {
-            dims.push(u64::from_le_bytes([
-                body[p],
-                body[p + 1],
-                body[p + 2],
-                body[p + 3],
-                body[p + 4],
-                body[p + 5],
-                body[p + 6],
-                body[p + 7],
-            ]));
-        } else {
-            dims.push(u32::from_le_bytes([body[p], body[p + 1], body[p + 2], body[p + 3]]) as u64);
-        }
-        p += elem;
-    }
-    dims
-}
-
+/// Parse a filter pipeline message (versions 1 and 2), in application order.
+///
+/// Layout: version, filter count, then per filter an id, an optional name
+/// length, flags, a parameter count, the name, and the parameters. Version 1
+/// pads odd parameter counts to 8 bytes, and it always carries a name length.
+/// Version 2 carries a name length only for filter ids of 256 or more, and it
+/// does not pad.
 fn parse_filters(body: &[u8]) -> Vec<Filter> {
-    if body.len() < 6 {
+    let rd = |pos: usize, n: usize| read_int(body, pos, n).ok();
+    let (Some(&version), Some(&count)) = (body.first(), body.get(1)) else {
         return Vec::new();
-    }
-    let nfilters = u16::from_le_bytes([body[2], body[3]]) as usize;
-    let mut p = 4;
+    };
+    let mut p = match version {
+        1 => 8,
+        2 => 2,
+        _ => return Vec::new(),
+    };
     let mut out = Vec::new();
-    for _ in 0..nfilters {
-        if p + 4 > body.len() {
-            break;
-        }
-        let id = u16::from_le_bytes([body[p], body[p + 1]]);
-        let _flags = u16::from_le_bytes([body[p + 2], body[p + 3]]);
-        p += 4;
-        let nparams = u16::from_le_bytes([body[p], body[p + 1]]) as usize;
+    for _ in 0..count {
+        let Some(id) = rd(p, 2) else { break };
         p += 2;
+        let name_len = if version == 1 || id >= 256 {
+            let Some(n) = rd(p, 2) else { break };
+            p += 2;
+            n as usize
+        } else {
+            0
+        };
+        let Some(_flags) = rd(p, 2) else { break };
+        p += 2;
+        let Some(nparams) = rd(p, 2) else { break };
+        p += 2;
+        // A version-1 name length already includes its 8-byte padding.
+        p += name_len;
         let mut params = Vec::new();
         for _ in 0..nparams {
-            if p + 4 > body.len() {
-                break;
-            }
-            params.push(u32::from_le_bytes([body[p], body[p + 1], body[p + 2], body[p + 3]]));
+            let Some(v) = rd(p, 4) else { break };
+            params.push(v as u32);
             p += 4;
         }
-        out.push(Filter { id, name: Filter::by_id(id), params });
+        if version == 1 && nparams % 2 == 1 {
+            p += 4;
+        }
+        out.push(Filter { id: id as u16, name: Filter::by_id(id as u16), params });
     }
     out
 }
@@ -687,7 +686,7 @@ impl Dataset {
                     .ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(start)))?;
                 Ok(DecodedData::Raw(bytes.to_vec()))
             }
-            Layout::Chunked { btree_addr, chunk_buf_size: _ } => {
+            Layout::Chunked { btree_addr } => {
                 read_chunked_data(file, self, *btree_addr)
             }
             Layout::Compact { data } => Ok(DecodedData::Raw(data.clone())),
@@ -695,96 +694,111 @@ impl Dataset {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/// One chunk of a chunked dataset: where its (possibly filtered) bytes live,
+/// and the element offset of its origin in each dimension.
+#[derive(Debug, Clone)]
 struct ChunkEntry {
     offset: u64,
     size: u64,
-    scaled0: u64,
-    scaled1: u64,
+    origin: Vec<u64>,
 }
 
+/// Assemble a chunked dataset into a contiguous row-major buffer.
+///
+/// Each chunk is decoded through its filter pipeline and copied into place by
+/// its N-dimensional origin. Chunks at the high edges may be partly outside the
+/// dataset; those elements are dropped.
 fn read_chunked_data(
     file: &[u8],
     ds: &Dataset,
     btree_addr: u64,
 ) -> core::result::Result<DecodedData, NetCdfError> {
     let r = Reader { data: file, offsz: 8, lensz: 8 };
-    let entries = collect_chunk_entries(&r, btree_addr)?;
-    let elem = ds.nc_type.size_of();
-    let total = ds.dims.iter().product::<u64>() as usize;
+    let rank = ds.dims.len();
     let cdims = ds.chunk_dims.as_ref().ok_or(NetCdfError::Unsupported("missing chunk dims"))?;
-    if cdims.len() < 2 {
-        return Err(NetCdfError::Unsupported("need at least 2D chunks"));
+    if rank == 0 || cdims.len() != rank {
+        return Err(NetCdfError::Unsupported("chunk rank does not match dataspace"));
     }
+    let entries = collect_chunk_entries(&r, btree_addr, rank)?;
+    let elem = ds.nc_type.size_of();
+    let shape: Vec<usize> = ds.dims.iter().map(|&d| d as usize).collect();
+    let chunk_shape: Vec<usize> = cdims.iter().map(|&d| d as usize).collect();
+    let chunk_elems: usize = chunk_shape.iter().product();
+    let total: usize = shape.iter().product();
+
+    // Row-major element strides of the full dataset.
+    let mut stride = vec![1usize; rank];
+    for i in (0..rank - 1).rev() {
+        stride[i] = stride[i + 1] * shape[i + 1];
+    }
+
     let mut out = vec![0u8; total * elem];
     for e in &entries {
         let raw = file
             .get(e.offset as usize..(e.offset + e.size) as usize)
             .ok_or_else(|| NetCdfError::Core(tpt_io_core::ParseError::eof(e.offset as usize)))?;
         let decoded = decode_chunked_raw(raw, &ds.filters)?;
-        // Place decoded chunk into output buffer.
-        // Chunk origin in elements: (scaled0, scaled1). Each chunk covers
-        // rows [scaled0 .. scaled0+cdims[0]), cols [scaled1 .. scaled1+cdims[1]).
-        let c0 = e.scaled0 as usize;
-        let c1 = e.scaled1 as usize;
-        let cd0 = cdims[0] as usize;
-        let cd1 = cdims[1] as usize;
-        let nrows = ds.dims[0] as usize;
-        let ncols = ds.dims[1] as usize;
-        for dr in 0..cd0 {
-            let gr = c0 + dr;
-            if gr >= nrows {
-                break;
-            }
-            for dc in 0..cd1 {
-                let gc = c1 + dc;
-                if gc >= ncols {
+        if decoded.len() < chunk_elems * elem {
+            return Err(NetCdfError::Unsupported("decoded chunk is shorter than its shape"));
+        }
+        for lin in 0..chunk_elems {
+            // Unravel the chunk-local index (row-major) and map it to the dataset.
+            let mut rem = lin;
+            let mut dst = 0usize;
+            let mut inside = true;
+            for i in (0..rank).rev() {
+                let local = rem % chunk_shape[i];
+                rem /= chunk_shape[i];
+                let g = e.origin[i] as usize + local;
+                if g >= shape[i] {
+                    inside = false;
                     break;
                 }
-                let dst_off = (gr * ncols + gc) * elem;
-                let src_off = (dr * cd1 + dc) * elem;
-                if dst_off + elem <= out.len() && src_off + elem <= decoded.len() {
-                    out[dst_off..dst_off + elem].copy_from_slice(&decoded[src_off..src_off + elem]);
-                }
+                dst += g * stride[i];
+            }
+            if inside {
+                out[dst * elem..(dst + 1) * elem]
+                    .copy_from_slice(&decoded[lin * elem..(lin + 1) * elem]);
             }
         }
     }
     Ok(DecodedData::Raw(out))
 }
 
+/// Walk a version-1 chunk B-tree and collect its leaf entries.
+///
+/// A node is `TREE`, type, level, entry count, two sibling addresses, then
+/// `key0, child0, key1, child1, …`. A chunk key is a 4-byte size, a 4-byte
+/// filter mask, and `rank + 1` 8-byte element offsets (the last is the element
+/// dimension). The child is the chunk's file address at leaves, or the next
+/// node below an inner level.
 fn collect_chunk_entries(
     r: &Reader<'_>,
     addr: u64,
+    rank: usize,
 ) -> core::result::Result<Vec<ChunkEntry>, NetCdfError> {
     let base = addr as usize;
-    if base + 4 > r.data.len() || &r.data[base..base + 4] != b"TREE" {
+    if r.slice(base, 4)? != &b"TREE"[..] {
         return Err(NetCdfError::Unsupported("expected B-tree signature"));
     }
-    let level = r.data[base + 5];
-    let used = read_int(r.data, base + 6, 2)? as usize;
+    let level = r.u8(base + 5)?;
+    let used = r.rd(base + 6, 2)? as usize;
+    let key_len = 8 + 8 * (rank + 1);
     let mut entries = Vec::new();
-    if level == 0 {
-        let mut p = base + 8 + 2 * r.offsz;
-        for _ in 0..used {
-            let entry_off = p;
-            if entry_off + 40 > r.data.len() {
-                break;
-            }
-            let size = read_int(r.data, entry_off, 8)?;
-            let scaled0 = read_int(r.data, entry_off + 8, 8)?;
-            let scaled1 = read_int(r.data, entry_off + 16, 8)?;
-            let offset = read_int(r.data, entry_off + 32, 8)?;
-            entries.push(ChunkEntry { offset, size, scaled0, scaled1 });
-            p += 40;
+    let mut p = base + 8 + 2 * r.offsz;
+    for _ in 0..used {
+        let size = r.rd(p, 4)?;
+        let mut origin = Vec::with_capacity(rank);
+        for i in 0..rank {
+            origin.push(r.rd(p + 8 + 8 * i, 8)?);
         }
-    } else {
-        let mut p = base + 8 + 2 * r.offsz;
-        for _ in 0..used {
-            let child = read_int(r.data, p, r.offsz)?;
-            p += r.offsz;
-            p += 8 + 8; // skip key
-            entries.extend(collect_chunk_entries(r, child)?);
+        let child = r.rd(p + key_len, r.offsz)?;
+        if level == 0 {
+            entries.push(ChunkEntry { offset: child, size, origin });
+        } else {
+            entries.extend(collect_chunk_entries(r, child, rank)?);
         }
+        p += key_len + r.offsz;
     }
     Ok(entries)
 }
@@ -806,6 +820,25 @@ fn unshuffle(buf: &[u8], elem_size: usize) -> Vec<u8> {
     out
 }
 
+/// Inflate a zlib (deflate) stream.
+#[cfg(feature = "std")]
+fn inflate(buf: &[u8]) -> Result<Vec<u8>, NetCdfError> {
+    use std::io::copy;
+
+    let mut dec = flate2::read::ZlibDecoder::new(buf);
+    let mut out = Vec::new();
+    copy(&mut dec, &mut out)
+        .map_err(|_| NetCdfError::Unsupported("deflate decompression failed"))?;
+    Ok(out)
+}
+
+/// Without `std` there is no deflate backend, so compressed chunks are
+/// reported as unsupported rather than failing to build.
+#[cfg(not(feature = "std"))]
+fn inflate(_buf: &[u8]) -> Result<Vec<u8>, NetCdfError> {
+    Err(NetCdfError::Unsupported("deflate requires the `std` feature"))
+}
+
 /// Decode a raw chunk buffer that may be wrapped in a zlib (deflate) stream
 /// and preceded by a shuffle filter.
 ///
@@ -825,12 +858,7 @@ pub fn decode_chunked_raw(
                 }
             }
             1 => {
-                use flate2::read::ZlibDecoder;
-                let mut dec = ZlibDecoder::new(&buf[..]);
-                let mut out = Vec::new();
-                copy(&mut dec, &mut out)
-                    .map_err(|_| NetCdfError::Unsupported("deflate decompression failed"))?;
-                buf = out;
+                buf = inflate(&buf)?;
             }
             _ => {}
         }
@@ -838,7 +866,7 @@ pub fn decode_chunked_raw(
     Ok(buf)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use super::*;
 
@@ -873,7 +901,7 @@ mod tests {
         let data = golden("chunked4.h5");
         let _f = parse(&data).expect("parse chunked4.h5");
         let r = Reader { data: &data, offsz: 8, lensz: 8 };
-        let entries = collect_chunk_entries(&r, 0x1800).expect("btree entries");
+        let entries = collect_chunk_entries(&r, 0x1800, 2).expect("btree entries");
         assert_eq!(entries.len(), 4, "expected 4 chunks, got {}", entries.len());
         assert!(entries.iter().any(|e| e.offset == 8760), "expected chunk at offset 8760");
     }
@@ -927,13 +955,52 @@ mod tests {
     }
 
     #[test]
+    fn parse_and_read_chunked4_end_to_end() {
+        // Metadata, layout and filters all come from the file, not from fixtures.
+        let bytes = golden("chunked4.h5");
+        let file = parse(&bytes).expect("parse chunked4.h5");
+        let ds = file.datasets.iter().find(|d| d.name == "temp").expect("temp");
+        assert_eq!(ds.dims, vec![4, 6]);
+        assert_eq!(ds.chunk_dims.as_deref(), Some(&[2, 3][..]));
+        let names: Vec<&str> = ds.filters.iter().map(|f| f.name).collect();
+        assert_eq!(names, ["shuffle", "deflate"]);
+
+        let decoded = ds.read_data(&bytes).expect("read").try_raw().expect("raw");
+        for i in 0..4 {
+            for j in 0..6 {
+                let off = (i * 6 + j) * 4;
+                let v = f32::from_le_bytes(decoded[off..off + 4].try_into().unwrap());
+                assert_eq!(v, (i * 10 + j) as f32, "temp[{i}][{j}]");
+            }
+        }
+    }
+
+    #[test]
+    fn read_chunked_4d_places_every_element() {
+        // 2x3x4x5 variable, chunks 1x2x3x2 (partial edge chunks), shuffle + deflate.
+        let bytes = golden("chunked4d.h5");
+        let file = parse(&bytes).expect("parse chunked4d.h5");
+        let ds = file.datasets.iter().find(|d| d.name == "temp4d").expect("temp4d");
+        assert_eq!(ds.dims, vec![2, 3, 4, 5]);
+        assert_eq!(ds.chunk_dims.as_deref(), Some(&[1, 2, 3, 2][..]));
+
+        let decoded = ds.read_data(&bytes).expect("read").try_raw().expect("raw");
+        let total = 2 * 3 * 4 * 5;
+        assert_eq!(decoded.len(), total * 4);
+        for k in 0..total {
+            let v = f32::from_le_bytes(decoded[k * 4..k * 4 + 4].try_into().unwrap());
+            assert_eq!(v, k as f32, "element {k} holds {v}");
+        }
+    }
+
+    #[test]
     fn read_chunked4_via_btree() {
         let data = golden("chunked4.h5");
         let ds = Dataset {
             name: "temp".into(),
             dims: vec![4, 6],
             nc_type: NcType::Float,
-            layout: Layout::Chunked { btree_addr: 0x1800, chunk_buf_size: 0 },
+            layout: Layout::Chunked { btree_addr: 0x1800 },
             chunk_dims: Some(vec![2, 3]),
             filters: vec![
                 Filter { id: 2, name: "shuffle", params: vec![4] },
