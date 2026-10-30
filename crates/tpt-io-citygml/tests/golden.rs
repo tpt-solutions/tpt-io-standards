@@ -75,6 +75,23 @@ fn golden_citygml_30_model() {
     assert_eq!(building.geometries[1].surfaces[0].class, SurfaceClass::Roof);
 }
 
+#[cfg(feature = "geo-integration")]
+#[test]
+fn golden_envelope_crs_reprojects_to_wgs84() {
+    use tpt_io_citygml::geo::transform::to_wgs84;
+    use tpt_io_citygml::model::Point3;
+
+    // Wellington (NZTM, EPSG:2193): the sample's lower corner sits near the CBD.
+    let model = parse_str(WELLINGTON_20).unwrap();
+    let crs = model.crs.as_ref().unwrap();
+    let pt = Point3 { x: 1748000.0, y: 5426000.0, z: 0.0 };
+    let wgs = to_wgs84(&pt, crs).unwrap();
+
+    assert!((wgs.x - 174.77).abs() < 0.05, "lon {}", wgs.x);
+    assert!((wgs.y + 41.28).abs() < 0.05, "lat {}", wgs.y);
+    assert_eq!(wgs.z, 0.0);
+}
+
 #[cfg(feature = "cityjson")]
 #[test]
 fn golden_citygml_20_cityjson_round_trip() {

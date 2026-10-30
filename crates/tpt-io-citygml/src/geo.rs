@@ -93,11 +93,15 @@ pub mod transform {
 
     /// Transform a single point from the source CRS to EPSG:4326 (WGS84).
     ///
-    /// Placeholder: real implementation will use `tpt-io-geo`'s transform
-    /// once that crate implements CRS handling.
+    /// The source CRS must carry an EPSG code that `tpt-io-geo` knows about.
+    /// Coordinates are reprojected to geographic degrees; the height is kept.
     pub fn to_wgs84(pt: &Point3, src: &Crs) -> Result<Point3, &'static str> {
-        let _ = (pt, src);
-        Err("geo transformation not yet implemented in tpt-io-geo")
+        let code = src.epsg_code().ok_or("CRS has no EPSG code")?;
+        let from = tpt_io_geo::crs::Crs::from_epsg(code).ok_or("unsupported EPSG code")?;
+        let to = tpt_io_geo::crs::Crs::wgs84();
+        let (lon, lat) = tpt_io_geo::crs::reproject(&from, &to, pt.x, pt.y)
+            .map_err(|_| "reprojection failed")?;
+        Ok(Point3 { x: lon, y: lat, z: pt.z })
     }
 }
 
