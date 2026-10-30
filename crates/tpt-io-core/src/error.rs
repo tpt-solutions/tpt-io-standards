@@ -7,6 +7,7 @@
 //! common failure modes while adding format-specific variants.
 
 use alloc::borrow::Cow;
+use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt;

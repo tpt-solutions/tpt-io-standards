@@ -7,10 +7,11 @@
 //! (`(`, `)`, `,`, `;`, `=`), and the derived-marker `$`. Line comments (`//`)
 //! and nested block comments (`(* … *)`) are skipped.
 //!
-//! The tokenizer is zero-copy: every [`Token`] borrows its text from the input
-//! and carries a byte offset so the parser can report precise errors.
+//! The lexing itself lives in [`tpt_io_core::step`], shared with the other STEP
+//! exchange formats. This module maps its tokens onto IFC's section keywords.
+//! Every [`Token`] carries a byte offset so the parser can report precise errors.
 
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::vec::Vec;
 
 use crate::error::IfcError;
@@ -67,292 +68,42 @@ pub enum TokenKind {
 
 /// Tokenize a complete SPF document into a `Vec<Token>`.
 ///
-/// Returns every token (including the mandatory `ISO-10303-21` header and
-/// `END-ISO-10303-21` trailer) so the parser can validate document structure.
+/// The lexical work is done by [`tpt_io_core::step`]; this maps its neutral
+/// tokens onto IFC's section keywords. Returns every token, including the
+/// mandatory `ISO-10303-21` header and `END-ISO-10303-21` trailer, so the parser
+/// can validate document structure.
 pub fn tokenize(input: &str) -> Result<Vec<Token>, IfcError> {
-    let bytes = input.as_bytes();
-    let mut tokens: Vec<Token> = Vec::new();
-    let mut i = 0usize;
-    let len = bytes.len();
+    use tpt_io_core::step::{tokenize as step_tokenize, StepKind};
 
-    while i < len {
-        let c = bytes[i];
-
-        // Whitespace.
-        if c.is_ascii_whitespace() {
-            i += 1;
-            continue;
-        }
-
-        // Line comment: // … to end of line.
-        if c == b'/' && i + 1 < len && bytes[i + 1] == b'/' {
-            i += 2;
-            while i < len && bytes[i] != b'\n' {
-                i += 1;
-            }
-            continue;
-        }
-
-        // Block comment: (* … *) — may nest.
-        //
-        // Ambiguity: `(*` is also an open-paren followed by the redefined
-        // marker `*` (e.g. `IFCSIUNIT(*,.LENGTHUNIT.,...)`). We resolve it by
-        // treating `(*` as a comment only when the `*` is NOT immediately
-        // followed by `,` or `)` (which would make it a standalone value).
-        if c == b'(' && i + 1 < len && bytes[i + 1] == b'*' {
-            let after_star = if i + 2 < len { bytes[i + 2] } else { 0 };
-            if after_star != b',' && after_star != b')' {
-                i = skip_block_comment(bytes, i)?;
-                continue;
-            }
-        }
-
-        // String literal.
-        if c == b'\'' {
-            let (s, next) = read_string(bytes, i)?;
-            tokens.push(Token { offset: i, kind: TokenKind::String(s) });
-            i = next;
-            continue;
-        }
-
-        // Single-character delimiters.
-        match c {
-            b';' => {
-                tokens.push(Token { offset: i, kind: TokenKind::Semi });
-                i += 1;
-                continue;
-            }
-            b'=' => {
-                tokens.push(Token { offset: i, kind: TokenKind::Equals });
-                i += 1;
-                continue;
-            }
-            b'(' => {
-                tokens.push(Token { offset: i, kind: TokenKind::LParen });
-                i += 1;
-                continue;
-            }
-            b')' => {
-                tokens.push(Token { offset: i, kind: TokenKind::RParen });
-                i += 1;
-                continue;
-            }
-            b',' => {
-                tokens.push(Token { offset: i, kind: TokenKind::Comma });
-                i += 1;
-                continue;
-            }
-            b'$' => {
-                tokens.push(Token { offset: i, kind: TokenKind::Derived });
-                i += 1;
-                continue;
-            }
-            b'*' => {
-                tokens.push(Token { offset: i, kind: TokenKind::Redefined });
-                i += 1;
-                continue;
-            }
-            _ => {}
-        }
-
-        // Instance reference #id.
-        if c == b'#' {
-            let start = i;
-            i += 1;
-            let num_start = i;
-            while i < len && bytes[i].is_ascii_digit() {
-                i += 1;
-            }
-            if i == num_start {
-                return Err(IfcError::invalid_instance_id(start, "#"));
-            }
-            let id: usize = core::str::from_utf8(&bytes[num_start..i])
-                .unwrap()
-                .parse()
-                .map_err(|_| IfcError::invalid_instance_id(start, &input[start..i]))?;
-            tokens.push(Token { offset: start, kind: TokenKind::Ref(id) });
-            continue;
-        }
-
-        // Enumeration .NAME. (leading dot, uppercase letters/digits/underscore).
-        if c == b'.' && i + 1 < len && bytes[i + 1].is_ascii_alphabetic() {
-            let (enm, next) = read_enum(bytes, i)?;
-            tokens.push(Token { offset: i, kind: TokenKind::Enum(enm) });
-            i = next;
-            continue;
-        }
-
-        // Trailing-dot enumeration (e.g. `.` is not valid, but a lone `.X.` is).
-        if c == b'.' && i + 1 < len && bytes[i + 1] == b'.' {
-            return Err(IfcError::invalid_token(i, ".."));
-        }
-
-        // Number: integer or real (optional sign, digits, optional fraction, optional exponent).
-        if c.is_ascii_digit()
-            || (c == b'-' && i + 1 < len && bytes[i + 1].is_ascii_digit())
-            || (c == b'+' && i + 1 < len && bytes[i + 1].is_ascii_digit())
-        {
-            let (num, next, is_real) = read_number(bytes, i)?;
-            let kind = if is_real { TokenKind::Real(num) } else { TokenKind::Integer(num) };
-            tokens.push(Token { offset: i, kind });
-            i = next;
-            continue;
-        }
-
-        // Identifier / keyword (uppercase letters, digits, underscore; must start with a letter).
-        if c.is_ascii_alphabetic() {
-            let (ident, next) = read_ident(bytes, i)?;
-            let offset = i;
-            let kind = match ident.as_str() {
-                "ISO-10303-21" => TokenKind::IsoHeader,
-                "END-ISO-10303-21" => TokenKind::IsoTrailer,
-                "HEADER" => TokenKind::Header,
-                "DATA" => TokenKind::Data,
-                "ENDSEC" => TokenKind::EndSec,
-                _ => TokenKind::Ident(ident),
+    let tokens = step_tokenize(input)?;
+    Ok(tokens
+        .into_iter()
+        .map(|t| {
+            let kind = match t.kind {
+                StepKind::Ident(ident) => match ident.as_str() {
+                    "ISO-10303-21" => TokenKind::IsoHeader,
+                    "END-ISO-10303-21" => TokenKind::IsoTrailer,
+                    "HEADER" => TokenKind::Header,
+                    "DATA" => TokenKind::Data,
+                    "ENDSEC" => TokenKind::EndSec,
+                    _ => TokenKind::Ident(ident),
+                },
+                StepKind::Semi => TokenKind::Semi,
+                StepKind::Equals => TokenKind::Equals,
+                StepKind::LParen => TokenKind::LParen,
+                StepKind::RParen => TokenKind::RParen,
+                StepKind::Comma => TokenKind::Comma,
+                StepKind::Derived => TokenKind::Derived,
+                StepKind::Redefined => TokenKind::Redefined,
+                StepKind::Ref(id) => TokenKind::Ref(id),
+                StepKind::Enum(name) => TokenKind::Enum(name),
+                StepKind::String(s) => TokenKind::String(s),
+                StepKind::Integer(n) => TokenKind::Integer(n),
+                StepKind::Real(r) => TokenKind::Real(r),
             };
-            tokens.push(Token { offset, kind });
-            i = next;
-            continue;
-        }
-
-        return Err(IfcError::invalid_token(i, core::str::from_utf8(&[c]).unwrap_or("?")));
-    }
-
-    Ok(tokens)
-}
-
-/// Skip a nested `(* … *)` block comment starting at the opening `(`.
-fn skip_block_comment(bytes: &[u8], start: usize) -> Result<usize, IfcError> {
-    let mut i = start + 2; // past `(*`
-    let mut depth = 1usize;
-    let len = bytes.len();
-    while i + 1 < len && depth > 0 {
-        if bytes[i] == b'(' && bytes[i + 1] == b'*' {
-            depth += 1;
-            i += 2;
-        } else if bytes[i] == b'*' && bytes[i + 1] == b')' {
-            depth -= 1;
-            i += 2;
-        } else {
-            i += 1;
-        }
-    }
-    if depth > 0 {
-        return Err(IfcError::invalid_token(start, "(*"));
-    }
-    Ok(i)
-}
-
-/// Read a string literal starting at the opening `'`. Returns the unescaped
-/// content and the index just past the closing `'`.
-fn read_string(bytes: &[u8], start: usize) -> Result<(String, usize), IfcError> {
-    let mut i = start + 1; // past opening quote
-    let len = bytes.len();
-    let mut out = String::new();
-    while i < len {
-        let c = bytes[i];
-        if c == b'\'' {
-            if i + 1 < len && bytes[i + 1] == b'\'' {
-                // Escaped quote '' → single quote.
-                out.push('\'');
-                i += 2;
-                continue;
-            }
-            // End of string.
-            return Ok((out, i + 1));
-        }
-        // Per SPF, control characters other than tab are not allowed in strings.
-        if c < 0x20 && c != b'\t' {
-            return Err(IfcError::invalid_token(i, core::str::from_utf8(&[c]).unwrap_or("?")));
-        }
-        out.push(c as char);
-        i += 1;
-    }
-    Err(IfcError::unterminated_string(start))
-}
-
-/// Read an enumeration literal `.NAME.` starting at the leading dot.
-fn read_enum(bytes: &[u8], start: usize) -> Result<(String, usize), IfcError> {
-    let mut i = start + 1; // past leading dot
-    let len = bytes.len();
-    let mut out = String::new();
-    while i < len {
-        let c = bytes[i];
-        if c == b'.' {
-            return Ok((out, i + 1));
-        }
-        if c.is_ascii_alphanumeric() || c == b'_' {
-            out.push(c as char);
-            i += 1;
-        } else {
-            return Err(IfcError::invalid_token(i, core::str::from_utf8(&[c]).unwrap_or("?")));
-        }
-    }
-    Err(IfcError::invalid_token(start, "."))
-}
-
-/// Read a numeric literal. Returns the raw text, the index past it, and whether
-/// it contains a fractional part or exponent (i.e. is a real).
-fn read_number(bytes: &[u8], start: usize) -> Result<(String, usize, bool), IfcError> {
-    let mut i = start;
-    let len = bytes.len();
-    let mut is_real = false;
-
-    // Optional sign.
-    if i < len && (bytes[i] == b'+' || bytes[i] == b'-') {
-        i += 1;
-    }
-    // Integer part.
-    let int_start = i;
-    while i < len && bytes[i].is_ascii_digit() {
-        i += 1;
-    }
-    if i == int_start {
-        return Err(IfcError::invalid_number(start, ""));
-    }
-    // Fractional part.
-    if i < len && bytes[i] == b'.' {
-        is_real = true;
-        i += 1;
-        while i < len && bytes[i].is_ascii_digit() {
-            i += 1;
-        }
-    }
-    // Exponent.
-    if i < len && (bytes[i] == b'E' || bytes[i] == b'e') {
-        is_real = true;
-        i += 1;
-        if i < len && (bytes[i] == b'+' || bytes[i] == b'-') {
-            i += 1;
-        }
-        let exp_start = i;
-        while i < len && bytes[i].is_ascii_digit() {
-            i += 1;
-        }
-        if i == exp_start {
-            return Err(IfcError::invalid_number(
-                start,
-                core::str::from_utf8(&bytes[start..i]).unwrap_or("?"),
-            ));
-        }
-    }
-
-    let text = core::str::from_utf8(&bytes[start..i]).unwrap_or("").to_string();
-    Ok((text, i, is_real))
-}
-
-/// Read an identifier (entity type name or keyword). Hyphens are included so
-/// that the SPF keywords `ISO-10303-21` and `END-ISO-10303-21` are read as a
-/// single token.
-fn read_ident(bytes: &[u8], start: usize) -> Result<(String, usize), IfcError> {
-    let mut i = start;
-    let len = bytes.len();
-    while i < len && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_' || bytes[i] == b'-') {
-        i += 1;
-    }
-    let text = core::str::from_utf8(&bytes[start..i]).unwrap_or("").to_string();
-    Ok((text, i))
+            Token { offset: t.offset, kind }
+        })
+        .collect())
 }
 
 #[cfg(test)]

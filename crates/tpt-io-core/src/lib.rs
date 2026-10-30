@@ -10,6 +10,8 @@
 #![forbid(unsafe_code)]
 
 #[cfg(any(feature = "alloc", feature = "std"))]
+#[allow(unused_imports)]
+#[macro_use]
 extern crate alloc;
 
 pub mod checksum;
@@ -18,6 +20,10 @@ pub mod encoding;
 pub mod error;
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub mod json;
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub mod sexpr;
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub mod step;
 pub mod traits;
 
 pub use encoding::Encoding;
