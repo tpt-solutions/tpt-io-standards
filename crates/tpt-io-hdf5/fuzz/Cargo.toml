@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-hdf5-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-hdf5 = { path = ".." }
+
+[[bin]]
+name = "hdf5"
+path = "fuzz_targets/hdf5.rs"
+test = false
+doc = false

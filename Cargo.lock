@@ -631,6 +631,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "tpt-io-hdf5"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "proptest",
+ "tpt-io-core",
+]
+
+[[package]]
 name = "tpt-io-ifc"
 version = "0.1.0"
 dependencies = [
@@ -643,9 +652,9 @@ dependencies = [
 name = "tpt-io-netcdf"
 version = "0.1.0"
 dependencies = [
- "flate2",
  "proptest",
  "tpt-io-core",
+ "tpt-io-hdf5",
 ]
 
 [[package]]

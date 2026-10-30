@@ -1,0 +1,28 @@
+[package]
+name = "tpt-io-hdf5"
+description = "Pure-Rust HDF5 reader: superblock, object headers, groups, datasets, chunking and deflate/shuffle filters."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["hdf5", "parser", "scientific"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_hdf5"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+# zlib (deflate) decoding; its reader API is std-only, so it is tied to `std`.
+flate2 = { version = "1.1", optional = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std", "dep:flate2"]
+alloc = ["tpt-io-core/alloc"]
+
+[dev-dependencies]
+proptest = "1"

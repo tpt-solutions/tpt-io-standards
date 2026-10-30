@@ -48,3 +48,13 @@ mod tests {
         assert!(matches!(e, NetCdfError::Core(_)));
     }
 }
+
+impl From<tpt_io_hdf5::Hdf5Error> for NetCdfError {
+    fn from(e: tpt_io_hdf5::Hdf5Error) -> Self {
+        match e {
+            tpt_io_hdf5::Hdf5Error::Core(c) => NetCdfError::Core(c),
+            tpt_io_hdf5::Hdf5Error::Unsupported(s) => NetCdfError::Unsupported(s),
+            _ => NetCdfError::Unsupported("unrecognised HDF5 error"),
+        }
+    }
+}

@@ -39,10 +39,13 @@ the record layout) or `NetCdf::is_record_var` to detect such variables.
 
 ## NetCDF-4 (HDF5)
 
-NetCDF-4 files are HDF5 containers. The crate detects them, parses the
-superblock, descends the object tree to enumerate datasets, reads their
-dimensions, types, storage layout, and filter pipeline (deflate/shuffle),
-and can read back both contiguous and chunked+filtered data:
+NetCDF-4 files are HDF5 containers. The HDF5 reader lives in
+[`tpt-io-hdf5`](../tpt-io-hdf5); this crate re-exports it and adds the
+NetCDF-level detection. It enumerates datasets, reads their dimensions,
+datatypes, storage layout, and filter pipeline (deflate/shuffle), and can read
+back both contiguous and chunked+filtered data. Variable-length data (such as
+`str` attributes) is not decoded yet; see that crate's README for the full
+list:
 
 ```rust
 use tpt_io_netcdf::netcdf4::{detect_format, parse_hdf5_superblock, FileKind, parse};
@@ -51,7 +54,7 @@ let kind = detect_format(&bytes);          // Some(FileKind::NetCdf4)
 if kind == Some(FileKind::NetCdf4) {
     let f = parse(&bytes).expect("parse netcdf4");
     for ds in &f.datasets {
-        println!("{}: dims={:?}, type={:?}", ds.name, ds.dims, ds.nc_type);
+        println!("{}: dims={:?}, type={:?}", ds.name, ds.dims, ds.datatype);
         let raw = ds.read_data(&bytes).expect("read data");
     }
 }
