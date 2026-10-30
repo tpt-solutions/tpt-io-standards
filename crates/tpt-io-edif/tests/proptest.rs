@@ -31,7 +31,7 @@ fn build_model(ports: &[String], nets: &[(String, NetMembers)]) -> Edif {
             })
             .collect(),
         properties: vec![],
-        geometry: None,
+        geometry: vec![],
     };
     Edif {
         name: "t".into(),

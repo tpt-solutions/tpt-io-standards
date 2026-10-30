@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1"
+      xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1">
+  <model id="spatialModel">
+    <listOfCompartments>
+      <compartment id="c" constant="true"/>
+    </listOfCompartments>
+    <spatial:geometry spatial:id="geom" spatial:dimensions="3">
+      <spatial:listOfCoordinateSystems>
+        <spatial:coordinateSystem spatial:id="cs1"/>
+      </spatial:listOfCoordinateSystems>
+      <spatial:listOfDomainTypes>
+        <spatial:domainType spatial:id="dt1"/>
+      </spatial:listOfDomainTypes>
+      <spatial:listOfDomains>
+        <spatial:domain spatial:id="d1" spatial:domainType="dt1"/>
+      </spatial:listOfDomains>
+      <spatial:listOfGeometryDefinitions>
+        <spatial:geometryDefinition spatial:id="gd1" spatial:domainType="dt1"/>
+      </spatial:listOfGeometryDefinitions>
+    </spatial:geometry>
+  </model>
+</sbml>

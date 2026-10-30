@@ -1,458 +1,545 @@
-//! DLIS (Digital Log Interchange Standard, RP66 V1) parser.
+//! DLIS (Digital Log Interchange Standard, RP66 V1) parsing.
 //!
-//! DLIS stores well-log data as a sequence of **Visible Records** (VR), each
-//! holding one or more 1024-byte **Logical Record** (LR) blocks. This module
-//! reassembles logical records from the VR/LR container, then decodes the
-//! set-oriented object records (`CHANNEL`, `FRAME`, `AXIS`, `ZONE`, …) and the
-//! frame-data records (`FD`) into a typed [`DlisFile`].
+//! DLIS stores well-log data in a *frame-based* organization: a Storage Unit
+//! Label is followed by a sequence of Visible Records, each containing Logical
+//! Records. Set objects (`FRAME`, `CHANNEL`, `WELL`, `WELLBORE`, `TOOL`, …)
+//! describe the structure, and `FRAME` objects reference the `CHANNEL`s that
+//! make up each row of data. Actual channel values are carried in per-frame
+//! data records.
 //!
-//! > **Scope:** container reassembly, object/attribute sets, and frame data are
-//! > supported for the common rep-codes (integers, IEEE floats, IDENT/ASCII
-//! > strings, UVARI, STATUS). Multi-frame templates that reference channels by
-//! > name are resolved against the channel list declared in the file (sufficient
-//! > for the usual single-frame log).
-//!
-//! All parsing is allocation-based and operates on a `&[u8]` input.
+//! This implementation parses the full container structure (SUL → Visible
+//! Records → Logical Record Segments), decodes Set objects via the standard
+//! attribute representation (LABEL + REPRESENTATION-CODE + VALUE, terminated by
+//! a zero rep-code), and reads frame data for the common single-precision /
+//! integer explicit and implicit formats (`FSINGL`, `ISINGL`, `FDOUBL`,
+//! `IDOUBL`, `ISLONG`, `ISHORT`). Multi-frame correlation is handled by the
+//! caller via the typed [`Dlis`] model.
 
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use crate::error::WellLogError;
 
-/// A decoded DLIS attribute value.
+/// RP66 V1 Storage Unit Label (first 80 bytes of the file).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct StorageUnitLabel {
+    /// Storage Unit Sequence Number (first 4 bytes, binary).
+    pub sequence_number: u32,
+    /// Storage Unit Structure (should be `"RECORD"`).
+    pub structure: String,
+    /// Maximum Record Length (bytes).
+    pub max_record_length: u32,
+    /// Storage Set Identifier (should be `'S'`).
+    pub set_identifier: u8,
+    /// Version (should be `'V'`).
+    pub version: u8,
+    /// Storage Unit Label flags.
+    pub flags: u16,
+}
+
+/// A value decoded from a DLIS representation code.
 #[derive(Debug, Clone, PartialEq)]
-pub enum DlisValue {
-    /// No value (rep-code 0 or absent).
-    None,
-    /// An `IDENT` string.
+pub enum RepValue {
+    /// String identifier (`IDENT` / `ASCII`).
     Ident(String),
-    /// A free-form ASCII string.
-    String(String),
-    /// A boolean `STATUS`.
-    Status(bool),
-    /// A signed integer (INT1/2/4).
+    /// Signed integer (any width up to 64 bits).
     Int(i64),
-    /// An unsigned integer (UINT1/2/4/8, UVARI).
+    /// 32-bit IEEE float.
+    Float(f32),
+    /// 64-bit IEEE double.
+    Double(f64),
+    /// Unsigned integer (any width up to 64 bits).
     Uint(u64),
-    /// A floating-point value (FSINGL/FDOUBL).
-    Float(f64),
-    /// A value using an unsupported rep-code, kept raw.
+    /// An object name: ident + origin + copy.
+    Obname(Obname),
+    /// Raw, uninterpreted bytes (unknown representation code).
     Raw(Vec<u8>),
 }
 
-/// An object (e.g. a `CHANNEL` or `FRAME`) with its attributes.
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct DlisObject {
-    /// Object type from the set record (e.g. `CHANNEL`).
-    pub object_type: String,
-    /// Object identifier (the OBNAME).
-    pub name: String,
-    /// Attribute (label, value) pairs.
-    pub attributes: Vec<(String, DlisValue)>,
+/// An object name: `IDENT` + origin + copy number.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Obname {
+    /// Identifying string.
+    pub ident: String,
+    /// Origin (typically the file-unique object number space).
+    pub origin: i16,
+    /// Copy number.
+    pub copy: u16,
 }
 
-/// A `CHANNEL` definition: name, data rep-code, optional units.
+/// A parsed Set object (e.g. a `FRAME` or `CHANNEL`).
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct DlisChannel {
-    /// Channel identifier.
+pub struct SetObject {
+    /// Set type, e.g. `"FRAME"`, `"CHANNEL"`, `"WELL"`.
+    pub set_type: String,
+    /// Object name string (ident part of the OBNAME).
     pub name: String,
-    /// DLIS rep-code of the channel's values.
-    pub rep_code: u8,
-    /// Units string, if present.
+    /// Full object name.
+    pub obname: Obname,
+    /// Attribute (label → value) list, in file order.
+    pub attributes: Vec<(String, RepValue)>,
+}
+
+impl SetObject {
+    /// Look up the first attribute value by label (case-insensitive).
+    pub fn attr(&self, label: &str) -> Option<&RepValue> {
+        let l = label.to_ascii_uppercase();
+        self.attributes.iter().find(|(k, _)| k.to_ascii_uppercase() == l).map(|(_, v)| v)
+    }
+}
+
+/// A single row of frame data (one value per channel).
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct FrameSample {
+    /// Frame number within the run.
+    pub frame_number: u32,
+    /// One value per channel, in the frame's channel order.
+    pub values: Vec<f64>,
+}
+
+/// A DLIS `FRAME` object: the column layout plus decoded samples.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Frame {
+    /// Frame name/identifier.
+    pub name: String,
+    /// Channels referenced by this frame (in column order).
+    pub channels: Vec<Obname>,
+    /// Index curve OBNAME, if declared.
+    pub index: Option<Obname>,
+    /// Decoded samples.
+    pub samples: Vec<FrameSample>,
+}
+
+/// A DLIS `CHANNEL` object.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Channel {
+    /// Channel name/identifier (mnemonic-equivalent).
+    pub name: String,
+    /// Long name (human-readable).
+    pub long_name: Option<String>,
+    /// Physical units.
     pub units: Option<String>,
-}
-
-/// Parsed frame data for one `FRAME` object.
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct DlisFrameData {
-    /// `FRAME` object name.
-    pub frame_name: String,
-    /// Channel names, in column order.
-    pub channel_names: Vec<String>,
-    /// One row of values per frame.
-    pub rows: Vec<Vec<DlisValue>>,
+    /// Representation code (RP66 rep-code of stored values).
+    pub rep_code: Option<u16>,
+    /// Dimension (number of values per sample for array channels).
+    pub dimension: Option<u32>,
+    /// Number of samples per frame.
+    pub samples: Option<u32>,
 }
 
 /// A fully parsed DLIS file.
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct DlisFile {
-    /// All object records (CHANNEL, FRAME, AXIS, ZONE, …).
-    pub objects: Vec<DlisObject>,
-    /// Channel definitions.
-    pub channels: Vec<DlisChannel>,
-    /// Frame data records.
-    pub frame_data: Vec<DlisFrameData>,
+pub struct Dlis {
+    /// Storage Unit Label.
+    pub label: StorageUnitLabel,
+    /// Number of logical records seen.
+    pub logical_record_count: usize,
+    /// File header set object, if present.
+    pub file_header: Option<SetObject>,
+    /// Well set objects.
+    pub wells: Vec<SetObject>,
+    /// Wellbore set objects.
+    pub wellbores: Vec<SetObject>,
+    /// Tool set objects.
+    pub tools: Vec<SetObject>,
+    /// Channel set objects (also surfaced as [`Dlis::channels`]).
+    pub channel_objects: Vec<SetObject>,
+    /// Frame set objects (with decoded samples).
+    pub frames: Vec<Frame>,
+    /// Typed channel metadata.
+    pub channels: Vec<Channel>,
 }
 
-const LR_BLOCK: usize = 1024;
+impl Dlis {
+    /// Total number of decoded frame samples across all frames.
+    pub fn sample_count(&self) -> usize {
+        self.frames.iter().map(|f| f.samples.len()).sum()
+    }
+}
 
-/// A forward cursor over a byte slice.
-pub(crate) struct Cur<'a> {
-    data: &'a [u8],
+/// Logical record types that carry Set objects.
+const SET_TYPES: &[u8] = &[0, 1, 2, 3, 9, 49, 50, 51, 52, 53];
+/// Logical record types that carry frame data (explicit/implicit formats).
+/// 1=FSINGL(F), 3=ISINGL(I), 5=FDOUBL(F), 7=IDOUBL(I), 11=ISLONG(I), 15=ISHORT(I).
+const FRAME_DATA_TYPES: &[u8] = &[1, 3, 5, 7, 11, 15];
+
+/// Parse a DLIS (RP66 V1) byte buffer into a [`Dlis`].
+pub fn parse(input: &[u8]) -> Result<Dlis, WellLogError> {
+    let mut dlis = Dlis::default();
+    let mut pos = 80usize;
+
+    // Storage Unit Label (80 bytes).
+    if input.len() < 80 {
+        return Err(WellLogError::Unsupported("DLIS file shorter than 80-byte Storage Unit Label"));
+    }
+    dlis.label = parse_sul(&input[..80])?;
+
+    let mut current_frame: Option<usize> = None;
+
+    while pos + 4 <= input.len() {
+        // Visible Record Header: 2-byte length (excludes header) + 2-byte checksum.
+        let rec_len = u16::from_be_bytes([input[pos], input[pos + 1]]) as usize;
+        // input[pos+2], input[pos+3] = checksum (unused here)
+        pos += 4;
+        if rec_len == 0 {
+            break;
+        }
+        let rec_end = core::cmp::min(pos + rec_len, input.len());
+        let body = &input[pos..rec_end];
+        pos = rec_end;
+
+        // Logical Record Segments within the visible record.
+        let mut seg = 0usize;
+        while seg + 4 <= body.len() {
+            let seg_len = u16::from_be_bytes([body[seg], body[seg + 1]]) as usize;
+            let seg_type = body[seg + 2];
+            // body[seg+3] = attributes (encryption/etc.), ignored.
+            seg += 4;
+            if seg_len == 0 {
+                break;
+            }
+            let seg_end = core::cmp::min(seg + seg_len, body.len());
+            let data = &body[seg..seg_end];
+            seg = seg_end;
+            dlis.logical_record_count += 1;
+
+            if FRAME_DATA_TYPES.contains(&seg_type) {
+                // Frame-data format codes (1,3,5,7,11,15) overlap the Set-type
+                // codes for Originating-Organization (1) and Wellbore (3). We try
+                // the frame-data interpretation first; if it fails we fall back to
+                // the Set interpretation so genuine SET objects are still parsed.
+                match parse_frame_data(&mut dlis, seg_type, data, current_frame) {
+                    Ok(()) => {}
+                    Err(_) if SET_TYPES.contains(&seg_type) => {
+                        parse_set_record(&mut dlis, seg_type, data, &mut current_frame)?;
+                    }
+                    Err(e) => return Err(e),
+                }
+            } else if SET_TYPES.contains(&seg_type) {
+                parse_set_record(&mut dlis, seg_type, data, &mut current_frame)?;
+            }
+            // Other record types (dictionaries, etc.) are skipped.
+        }
+    }
+
+    Ok(dlis)
+}
+
+/// Parse the 80-byte Storage Unit Label.
+fn parse_sul(b: &[u8]) -> Result<StorageUnitLabel, WellLogError> {
+    let sequence_number = u32::from_be_bytes([b[0], b[1], b[2], b[3]]);
+    // bytes 4..64 = 60-byte structure field (ASCII "RECORD").
+    let structure = String::from_utf8_lossy(&b[4..64]).trim_end().to_string();
+    let max_record_length = u32::from_be_bytes([b[64], b[65], b[66], b[67]]);
+    let set_identifier = b[68];
+    let version = b[69];
+    let flags = u16::from_be_bytes([b[70], b[71]]);
+    Ok(StorageUnitLabel {
+        sequence_number,
+        structure,
+        max_record_length,
+        set_identifier,
+        version,
+        flags,
+    })
+}
+
+/// Parse a Set-object logical record: a SET-TYPE (IDENT), a COUNT (ULONG), then
+/// `count` objects each = OBNAME + attribute list terminated by rep-code 0.
+fn parse_set_record(
+    dlis: &mut Dlis,
+    set_type_code: u8,
+    data: &[u8],
+    current_frame: &mut Option<usize>,
+) -> Result<(), WellLogError> {
+    let mut c = Cursor::new(data);
+
+    // SET-TYPE (IDENT) then COUNT (ULONG).
+    let rc_type = c.read_u16()?;
+    if rc_type != 1 {
+        return Err(WellLogError::Unsupported("DLIS SET record missing IDENT set-type"));
+    }
+    let set_type = c.read_value(1)?.into_string();
+
+    let rc_count = c.read_u16()?;
+    if rc_count != 8 {
+        return Err(WellLogError::Unsupported("DLIS SET record missing ULONG count"));
+    }
+    let count = match c.read_value(8)? {
+        RepValue::Uint(n) => n as usize,
+        _ => return Err(WellLogError::Unsupported("DLIS SET count not unsigned")),
+    };
+
+    for _ in 0..count {
+        let rc_name = c.read_u16()?;
+        if rc_name != 12 {
+            return Err(WellLogError::Unsupported("DLIS SET object missing OBNAME"));
+        }
+        let obname = match c.read_value(12)? {
+            RepValue::Obname(o) => o,
+            _ => return Err(WellLogError::Unsupported("DLIS OBNAME decode failed")),
+        };
+        let obj = SetObject {
+            set_type: set_type.clone(),
+            name: obname.ident.clone(),
+            obname: obname.clone(),
+            attributes: parse_attributes(&mut c)?,
+        };
+        classify(dlis, obj, set_type_code, current_frame);
+    }
+    Ok(())
+}
+
+/// Parse an object's attribute list: triples of (LABEL IDENT, REP-CODE, VALUE)
+/// until a zero rep-code terminator.
+fn parse_attributes(c: &mut Cursor<'_>) -> Result<Vec<(String, RepValue)>, WellLogError> {
+    let mut attrs = Vec::new();
+    loop {
+        let rc = c.read_u16()?;
+        if rc == 0 {
+            break; // terminator
+        }
+        // LABEL is an IDENT.
+        if rc != 1 {
+            return Err(WellLogError::Unsupported("DLIS attribute missing IDENT label"));
+        }
+        let label = c.read_value(1)?.into_string();
+        let value_rc = c.read_u16()?;
+        let value = c.read_value(value_rc)?;
+        attrs.push((label, value));
+    }
+    Ok(attrs)
+}
+
+/// Route a parsed Set object into the correct [`Dlis`] collection.
+fn classify(dlis: &mut Dlis, obj: SetObject, set_type_code: u8, current_frame: &mut Option<usize>) {
+    match set_type_code {
+        0 => dlis.file_header = Some(obj),
+        2 => dlis.wells.push(obj),
+        3 => dlis.wellbores.push(obj),
+        9 => dlis.tools.push(obj),
+        50 => {
+            let ch = channel_from_object(&obj);
+            dlis.channels.push(ch);
+            dlis.channel_objects.push(obj);
+        }
+        49 => {
+            let channels = match obj.attr("CHANNELS") {
+                Some(RepValue::Obname(o)) => core::slice::from_ref(o).to_vec(),
+                _ => Vec::new(),
+            };
+            let index = match obj.attr("INDEX") {
+                Some(RepValue::Obname(o)) => Some(o.clone()),
+                _ => None,
+            };
+            let frame = Frame { name: obj.name.clone(), channels, index, samples: Vec::new() };
+            *current_frame = Some(dlis.frames.len());
+            dlis.frames.push(frame);
+        }
+        _ => { /* other set types retained only via raw records */ }
+    }
+}
+
+/// Build typed [`Channel`] metadata from a `CHANNEL` Set object.
+fn channel_from_object(obj: &SetObject) -> Channel {
+    let long_name =
+        obj.attr("LONG-NAME").or_else(|| obj.attr("LONG_NAME")).map(|v| v.clone().into_string());
+    let units = obj.attr("UNITS").map(|v| v.clone().into_string());
+    let rep_code = obj.attr("REPRESENTATION-CODE").and_then(|v| match v {
+        RepValue::Uint(n) => Some(*n as u16),
+        _ => None,
+    });
+    let dimension = obj.attr("DIMENSION").and_then(|v| match v {
+        RepValue::Uint(n) => Some(*n as u32),
+        _ => None,
+    });
+    let samples = obj.attr("SAMPLES").and_then(|v| match v {
+        RepValue::Uint(n) => Some(*n as u32),
+        _ => None,
+    });
+    Channel { name: obj.name.clone(), long_name, units, rep_code, dimension, samples }
+}
+
+/// Parse a frame-data logical record (explicit = one frame, implicit = many).
+fn parse_frame_data(
+    dlis: &mut Dlis,
+    rec_type: u8,
+    data: &[u8],
+    current_frame: Option<usize>,
+) -> Result<(), WellLogError> {
+    let implicit = matches!(rec_type, 3 | 7 | 11 | 15);
+    let elem_size = match rec_type {
+        1 | 3 => 4,   // f32 / i32
+        5 | 7 => 8,   // f64 / i64
+        11 | 15 => 2, // i16 (value slot)
+        _ => 4,
+    };
+
+    let frame_idx = match current_frame {
+        Some(i) => i,
+        None => return Ok(()), // no frame to attach to
+    };
+    let n_channels = dlis.frames[frame_idx].channels.len().max(1);
+
+    let mut c = Cursor::new(data);
+    let read_elem = |c: &mut Cursor<'_>| -> Result<f64, WellLogError> {
+        match rec_type {
+            1 | 5 => {
+                let b = c.take(elem_size)?;
+                if elem_size == 4 {
+                    Ok(f32::from_be_bytes(b.try_into().unwrap()) as f64)
+                } else {
+                    Ok(f64::from_be_bytes(b.try_into().unwrap()))
+                }
+            }
+            3 | 7 => {
+                let b = c.take(elem_size)?;
+                if elem_size == 4 {
+                    Ok(i32::from_be_bytes(b.try_into().unwrap()) as f64)
+                } else {
+                    Ok(i64::from_be_bytes(b.try_into().unwrap()) as f64)
+                }
+            }
+            11 | 15 => {
+                let b = c.take(2)?;
+                Ok(i16::from_be_bytes(b.try_into().unwrap()) as f64)
+            }
+            _ => Err(WellLogError::Unsupported("unsupported DLIS frame format")),
+        }
+    };
+
+    let total_frames = if implicit { (c.read_u16()? as usize).min(1 << 20) } else { 1 };
+
+    for _ in 0..total_frames {
+        let frame_number = c.read_u16()? as u32;
+        let mut values = Vec::with_capacity(n_channels);
+        for _ in 0..n_channels {
+            values.push(read_elem(&mut c)?);
+        }
+        dlis.frames[frame_idx].samples.push(FrameSample { frame_number, values });
+    }
+    Ok(())
+}
+
+impl RepValue {
+    fn into_string(self) -> String {
+        match self {
+            RepValue::Ident(s) => s,
+            RepValue::Int(n) => n.to_string(),
+            RepValue::Uint(n) => n.to_string(),
+            RepValue::Float(f) => f.to_string(),
+            RepValue::Double(d) => d.to_string(),
+            other => format!("{other:?}"),
+        }
+    }
+}
+
+/// A simple bounds-checked byte cursor.
+struct Cursor<'a> {
+    buf: &'a [u8],
     pos: usize,
 }
 
-impl<'a> Cur<'a> {
-    fn new(data: &'a [u8]) -> Self {
-        Cur { data, pos: 0 }
+impl<'a> Cursor<'a> {
+    fn new(buf: &'a [u8]) -> Self {
+        Self { buf, pos: 0 }
     }
-    fn eof(&self) -> bool {
-        self.pos >= self.data.len()
-    }
-    fn u8(&mut self) -> Result<u8, WellLogError> {
-        let b = *self
-            .data
-            .get(self.pos)
-            .ok_or(WellLogError::Unsupported("DLIS: unexpected end of input"))?;
-        self.pos += 1;
-        Ok(b)
-    }
-    fn u16(&mut self) -> Result<u16, WellLogError> {
-        let s = self
-            .data
-            .get(self.pos..self.pos + 2)
-            .ok_or(WellLogError::Unsupported("DLIS: truncated u16"))?;
+
+    fn read_u16(&mut self) -> Result<u16, WellLogError> {
+        if self.pos + 2 > self.buf.len() {
+            return Err(WellLogError::Unsupported("DLIS truncated u16"));
+        }
+        let v = u16::from_be_bytes([self.buf[self.pos], self.buf[self.pos + 1]]);
         self.pos += 2;
-        Ok(u16::from_be_bytes([s[0], s[1]]))
+        Ok(v)
     }
-    fn u32(&mut self) -> Result<u32, WellLogError> {
-        let s = self
-            .data
-            .get(self.pos..self.pos + 4)
-            .ok_or(WellLogError::Unsupported("DLIS: truncated u32"))?;
-        self.pos += 4;
-        Ok(u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
-    }
+
     fn take(&mut self, n: usize) -> Result<&'a [u8], WellLogError> {
-        let s = self
-            .data
-            .get(self.pos..self.pos + n)
-            .ok_or(WellLogError::Unsupported("DLIS: truncated take"))?;
+        if self.pos + n > self.buf.len() {
+            return Err(WellLogError::Unsupported("DLIS truncated value"));
+        }
+        let s = &self.buf[self.pos..self.pos + n];
         self.pos += n;
         Ok(s)
     }
-}
 
-/// Decode one value of the given DLIS rep-code from `cur`.
-pub(crate) fn read_value(rep: u8, cur: &mut Cur<'_>) -> Result<DlisValue, WellLogError> {
-    match rep {
-        0 => Ok(DlisValue::None),
-        1 => {
-            // FSINGL (4-byte IEEE 754 single).
-            let b = cur.take(4)?;
-            Ok(DlisValue::Float(f32::from_be_bytes([b[0], b[1], b[2], b[3]]) as f64))
-        }
-        2 => {
-            // FDOUBL (8-byte IEEE 754 double).
-            let b = cur.take(8)?;
-            Ok(DlisValue::Float(f64::from_be_bytes([
-                b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
-            ])))
-        }
-        8 => Ok(DlisValue::Int(cur.take(1)?[0] as i8 as i64)),
-        9 => {
-            let b = cur.take(2)?;
-            Ok(DlisValue::Int(i16::from_be_bytes([b[0], b[1]]) as i64))
-        }
-        10 => {
-            let b = cur.take(4)?;
-            Ok(DlisValue::Int(i32::from_be_bytes([b[0], b[1], b[2], b[3]]) as i64))
-        }
-        11 => Ok(DlisValue::Uint(cur.take(1)?[0] as u64)),
-        12 => {
-            let b = cur.take(2)?;
-            Ok(DlisValue::Uint(u16::from_be_bytes([b[0], b[1]]) as u64))
-        }
-        13 => Ok(DlisValue::Uint(cur.u32()? as u64)),
-        17 => {
-            // IDENT: 1-byte length + ASCII.
-            let n = cur.u8()? as usize;
-            let b = cur.take(n)?;
-            Ok(DlisValue::Ident(string_lossy(b)))
-        }
-        18 => {
-            // ASCII/STRING: 2-byte length + bytes.
-            let n = cur.u16()? as usize;
-            let b = cur.take(n)?;
-            Ok(DlisValue::String(string_lossy(b)))
-        }
-        24 => Ok(DlisValue::Status(cur.u8()? != 0)),
-        26 => {
-            // UVARI: 1/2/4-byte variable-length unsigned.
-            let first = cur.u8()?;
-            let v = match first & 0xC0 {
-                0x00 => (first & 0x7F) as u64,
-                0x40 => {
-                    let lo = cur.u8()? as u64;
-                    (((first & 0x3F) as u64) << 8) | lo
-                }
-                0x80 | 0xC0 => {
-                    let b = cur.take(3)?;
-                    (((first & 0x3F) as u64) << 24)
-                        | ((b[0] as u64) << 16)
-                        | ((b[1] as u64) << 8)
-                        | (b[2] as u64)
-                }
-                _ => unreachable!(),
-            };
-            Ok(DlisValue::Uint(v))
-        }
-        other => {
-            // Unsupported rep-code: keep the raw bytes (assume 1 for scalars).
-            let len = rep_byte_len(other);
-            let b = if len == 0 { &[][..] } else { cur.take(len)? };
-            Ok(DlisValue::Raw(b.to_vec()))
-        }
-    }
-}
-
-/// Best-effort byte length for an unsupported scalar rep-code (0 ⇒ unknown).
-fn rep_byte_len(rep: u8) -> usize {
-    match rep {
-        3 | 4 => 4,
-        5..=7 => 8,
-        14 | 15 => 8,
-        16 => 1,
-        19 => 8,
-        20 => 2,
-        21 => 10,
-        22 => 13,
-        23 => 15,
-        25 => 2,
-        _ => 0,
-    }
-}
-
-fn string_lossy(b: &[u8]) -> String {
-    alloc::string::String::from_utf8_lossy(b).into_owned()
-}
-
-/// Reassemble logical-record byte buffers from a DLIS byte stream.
-fn reassemble_logical_records(bytes: &[u8]) -> Result<Vec<Vec<u8>>, WellLogError> {
-    let mut records = Vec::new();
-    let mut pos = 0usize;
-    while pos + 80 <= bytes.len() {
-        // Visible Record header: "VR" + 2 reserved + 4-byte BE length.
-        if &bytes[pos..pos + 2] != b"VR" {
-            return Err(WellLogError::Unsupported("DLIS: missing Visible Record header"));
-        }
-        let len =
-            u32::from_be_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]])
-                as usize;
-        pos += 80;
-        let vr_data = bytes
-            .get(pos..pos + len)
-            .ok_or(WellLogError::Unsupported("DLIS: truncated Visible Record"))?;
-        pos += len;
-
-        // Logical record blocks (1024 bytes, last may be shorter).
-        let mut blocks: Vec<&[u8]> = Vec::new();
-        let mut bp = 0usize;
-        while bp < vr_data.len() {
-            let remaining = vr_data.len() - bp;
-            let block_len = remaining.min(LR_BLOCK);
-            blocks.push(&vr_data[bp..bp + block_len]);
-            bp += block_len;
-        }
-        if blocks.is_empty() {
-            continue;
-        }
-        // Each block: [u16 record length][u8 check][u8 type] + payload.
-        let mut payload = Vec::new();
-        let mut first = true;
-        let mut set_len = 0usize;
-        let mut is_lrs = true;
-        for block in &blocks {
-            if block.len() < 4 {
-                return Err(WellLogError::Unsupported("DLIS: short Logical Record block"));
+    /// Decode a value of the given RP66 representation code.
+    fn read_value(&mut self, code: u16) -> Result<RepValue, WellLogError> {
+        match code {
+            1 | 2 => {
+                // IDENT / ASCII: 2-byte length + bytes.
+                let len = self.read_u16()? as usize;
+                let b = self.take(len)?;
+                Ok(RepValue::Ident(String::from_utf8_lossy(b).trim_end().to_string()))
             }
-            let rlen = u16::from_be_bytes([block[0], block[1]]) as usize;
-            let rtype = block[3];
-            let p = &block[4..];
-            if first {
-                set_len = rlen;
-                is_lrs = rtype == 0;
-                first = false;
+            3 => {
+                let b = self.take(4)?;
+                Ok(RepValue::Int(i32::from_be_bytes(b.try_into().unwrap()) as i64))
             }
-            payload.extend_from_slice(p);
-        }
-        if is_lrs {
-            records.push(payload[..set_len.min(payload.len())].to_vec());
-        } else {
-            // VRLR: each block is an independent record of `set_len` bytes.
-            for block in &blocks {
-                let p = &block[4..];
-                let take = set_len.min(p.len());
-                records.push(p[..take].to_vec());
+            4 => {
+                let b = self.take(4)?;
+                Ok(RepValue::Float(f32::from_be_bytes(b.try_into().unwrap())))
             }
-        }
-    }
-    Ok(records)
-}
-
-/// Read an OBNAME (1-byte len, 2-byte origin, identifier, 2-byte copy).
-fn read_obname(cur: &mut Cur<'_>) -> Result<String, WellLogError> {
-    let len = cur.u8()? as usize;
-    let _origin = cur.u16()?;
-    let ident = cur.take(len)?;
-    let _copy = cur.u16()?;
-    Ok(string_lossy(ident))
-}
-
-/// Parse a set-oriented logical record (CHANNEL/FRAME/AXIS/ZONE/…) into objects.
-fn parse_set_record(
-    object_type: &str,
-    body: &[u8],
-    file: &mut DlisFile,
-) -> Result<(), WellLogError> {
-    let mut cur = Cur::new(body);
-    while !cur.eof() {
-        let name = read_obname(&mut cur)?;
-        let nattrs = cur.u16()? as usize;
-        let mut attrs = Vec::new();
-        for _ in 0..nattrs {
-            let label_len = cur.u8()? as usize;
-            let label = string_lossy(cur.take(label_len)?);
-            let rep = cur.u8()?;
-            let has_value = cur.u8()? != 0;
-            let value = if has_value { read_value(rep, &mut cur)? } else { DlisValue::None };
-            attrs.push((label, value));
-        }
-        file.objects.push(DlisObject {
-            object_type: object_type.to_string(),
-            name: name.clone(),
-            attributes: attrs.clone(),
-        });
-        if object_type.eq_ignore_ascii_case("CHANNEL") {
-            let rep_code = attrs
-                .iter()
-                .find(|(l, _)| l.eq_ignore_ascii_case("REPCODE"))
-                .and_then(|(_, v)| match v {
-                    DlisValue::Uint(u) => Some(*u as u8),
-                    DlisValue::Int(i) => Some(*i as u8),
-                    _ => None,
-                })
-                .unwrap_or(2);
-            let units =
-                attrs.iter().find(|(l, _)| l.eq_ignore_ascii_case("UNITS")).and_then(|(_, v)| {
-                    match v {
-                        DlisValue::Ident(s) | DlisValue::String(s) => Some(s.clone()),
-                        _ => None,
-                    }
-                });
-            file.channels.push(DlisChannel { name, rep_code, units });
-        }
-    }
-    Ok(())
-}
-
-/// Parse a frame-data (`FD`, type 58) logical record.
-fn parse_frame_data(
-    frame_name: &str,
-    body: &[u8],
-    file: &mut DlisFile,
-) -> Result<(), WellLogError> {
-    if file.channels.is_empty() {
-        return Ok(());
-    }
-    let mut cur = Cur::new(body);
-    let mut channel_names = Vec::new();
-    let mut reps = Vec::new();
-    for ch in &file.channels {
-        channel_names.push(ch.name.clone());
-        reps.push(ch.rep_code);
-    }
-    let mut rows = Vec::new();
-    while !cur.eof() {
-        let _frame_number = cur.u16()?;
-        let mut row = Vec::new();
-        for &rep in &reps {
-            row.push(read_value(rep, &mut cur)?);
-        }
-        rows.push(row);
-    }
-    file.frame_data.push(DlisFrameData { frame_name: frame_name.to_string(), channel_names, rows });
-    Ok(())
-}
-
-/// Parse a complete DLIS byte stream into a [`DlisFile`].
-pub fn parse_dlis(bytes: &[u8]) -> Result<DlisFile, WellLogError> {
-    let mut file = DlisFile::default();
-    let records = reassemble_logical_records(bytes)?;
-    for rec in records {
-        if rec.len() < 2 {
-            continue;
-        }
-        let rec_type = u16::from_be_bytes([rec[0], rec[1]]);
-        let body = &rec[2..];
-        match rec_type {
-            49 => parse_set_record("CHANNEL", body, &mut file)?,
-            50 => parse_set_record("FRAME", body, &mut file)?,
-            51 => parse_set_record("AXIS", body, &mut file)?,
-            52 => parse_set_record("ZONE", body, &mut file)?,
-            58 => {
-                // FD: bind to the most recently declared FRAME object.
-                let fname = file
-                    .objects
-                    .iter()
-                    .rev()
-                    .find(|o| o.object_type.eq_ignore_ascii_case("FRAME"))
-                    .map(|o| o.name.clone())
-                    .unwrap_or_default();
-                parse_frame_data(&fname, body, &mut file)?;
+            5 => {
+                let b = self.take(8)?;
+                Ok(RepValue::Double(f64::from_be_bytes(b.try_into().unwrap())))
+            }
+            6 => {
+                let b = self.take(2)?;
+                Ok(RepValue::Int(i16::from_be_bytes(b.try_into().unwrap()) as i64))
+            }
+            7 => {
+                let b = self.take(1)?;
+                Ok(RepValue::Int(b[0] as i8 as i64))
+            }
+            8 => {
+                let b = self.take(4)?;
+                Ok(RepValue::Uint(u32::from_be_bytes(b.try_into().unwrap()) as u64))
+            }
+            9 => {
+                let b = self.take(2)?;
+                Ok(RepValue::Uint(u16::from_be_bytes(b.try_into().unwrap()) as u64))
+            }
+            11 => {
+                // ORIGIN: 2-byte signed.
+                let b = self.take(2)?;
+                Ok(RepValue::Int(i16::from_be_bytes(b.try_into().unwrap()) as i64))
+            }
+            12 => {
+                // OBNAME: IDENT + ORIGIN(2) + COPY(2).
+                let ident = match self.read_value(1)? {
+                    RepValue::Ident(s) => s,
+                    _ => String::new(),
+                };
+                let origin = {
+                    let b = self.take(2)?;
+                    i16::from_be_bytes(b.try_into().unwrap())
+                };
+                let copy = {
+                    let b = self.take(2)?;
+                    u16::from_be_bytes(b.try_into().unwrap())
+                };
+                Ok(RepValue::Obname(Obname { ident, origin, copy }))
+            }
+            10 | 13 | 14 | 15 | 16 => {
+                // UVAR / OBJREF / ATTREF / STATUS / TIME: read a fixed small chunk.
+                let len = match code {
+                    10 => 4,
+                    13 | 14 => 8,
+                    15 => 1,
+                    16 => 8,
+                    _ => 4,
+                };
+                let b = self.take(len)?;
+                Ok(RepValue::Raw(b.to_vec()))
             }
             _ => {
-                // 0 = File Header and others: parsed as generic objects when
-                // they follow the set layout; otherwise skipped.
+                // Unknown: capture 4 bytes best-effort.
+                let b = self.take(4).unwrap_or(&[]);
+                Ok(RepValue::Raw(b.to_vec()))
             }
         }
-    }
-    Ok(file)
-}
-
-/// Reader for DLIS files, implementing [`tpt_io_core::Reader`].
-#[derive(Debug, Clone, Default)]
-pub struct DlisReader {
-    validation: tpt_io_core::ValidationSettings,
-}
-
-impl DlisReader {
-    /// Create a reader with default validation.
-    pub fn new() -> Self {
-        Self::default()
-    }
-    /// Set the validation configuration.
-    pub fn with_validation(mut self, validation: tpt_io_core::ValidationSettings) -> Self {
-        self.validation = validation;
-        self
-    }
-}
-
-impl tpt_io_core::Reader<DlisFile> for DlisReader {
-    type Error = WellLogError;
-    fn parse(&self, input: &[u8]) -> Result<DlisFile, WellLogError> {
-        let file = parse_dlis(input)?;
-        self.validation.run(&DlisValidator, &file)?;
-        Ok(file)
-    }
-}
-
-/// Syntactic/semantic validation for a parsed [`DlisFile`].
-#[derive(Debug, Clone, Copy, Default)]
-pub struct DlisValidator;
-
-impl tpt_io_core::Validator<DlisFile> for DlisValidator {
-    type Error = WellLogError;
-    fn validate_syntactic(&self, value: &DlisFile) -> Result<(), WellLogError> {
-        for ch in &value.channels {
-            if ch.rep_code == 0 {
-                return Err(WellLogError::MissingField("channel REPCODE"));
-            }
-        }
-        Ok(())
-    }
-    fn validate_semantic(&self, _value: &DlisFile) -> Result<(), WellLogError> {
-        Ok(())
     }
 }
 
@@ -460,64 +547,96 @@ impl tpt_io_core::Validator<DlisFile> for DlisValidator {
 mod tests {
     use super::*;
 
-    #[test]
-    fn value_int2_and_bool() {
-        let bytes = [0x00, 0x0A, 0x40, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-        let mut cur = Cur::new(&bytes);
-        assert_eq!(read_value(9, &mut cur).unwrap(), DlisValue::Int(10));
-        assert_eq!(read_value(2, &mut cur).unwrap(), DlisValue::Float(2.5));
-    }
+    fn build_minimal_dlis() -> Vec<u8> {
+        let mut b: Vec<u8> = Vec::new();
+        // --- Storage Unit Label (80 bytes) ---
+        b.extend_from_slice(&1u32.to_be_bytes()); // sequence number
+        let mut structure = [b' '; 60];
+        structure[..6].copy_from_slice(b"RECORD");
+        b.extend_from_slice(&structure);
+        b.extend_from_slice(&80u32.to_be_bytes()); // max record length
+        b.push(b'S'); // set identifier
+        b.push(b'V'); // version
+        b.extend_from_slice(&0u16.to_be_bytes()); // flags
+        b.extend_from_slice(&[0u8; 8]); // storage set security
 
-    #[test]
-    fn uvari_7bit() {
-        let mut cur = Cur::new(&[0x2A]);
-        assert_eq!(read_value(26, &mut cur).unwrap(), DlisValue::Uint(42));
-    }
+        // --- Frame set (type 49) logical record ---
+        let mut lr = Vec::new();
+        lr.extend_from_slice(&1u16.to_be_bytes()); // rep code: IDENT
+        lr.extend_from_slice(&5u16.to_be_bytes()); // ident length
+        lr.extend_from_slice(b"FRAME");
+        lr.extend_from_slice(&8u16.to_be_bytes()); // rep code: ULONG
+        lr.extend_from_slice(&1u32.to_be_bytes()); // count = 1
+                                                   // object OBNAME (rep 12)
+        lr.extend_from_slice(&12u16.to_be_bytes());
+        lr.extend_from_slice(&3u16.to_be_bytes()); // ident length
+        lr.extend_from_slice(b"FR1");
+        lr.extend_from_slice(&0i16.to_be_bytes()); // origin
+        lr.extend_from_slice(&1u16.to_be_bytes()); // copy
+                                                   // attributes: LABEL("CHANNELS") = OBNAME DEPT, then terminator 0
+        lr.extend_from_slice(&1u16.to_be_bytes()); // rep: IDENT (label)
+        lr.extend_from_slice(&8u16.to_be_bytes()); // label length
+        lr.extend_from_slice(b"CHANNELS");
+        lr.extend_from_slice(&12u16.to_be_bytes()); // value rep: OBNAME
+        lr.extend_from_slice(&4u16.to_be_bytes()); // ident length
+        lr.extend_from_slice(b"DEPT");
+        lr.extend_from_slice(&0i16.to_be_bytes());
+        lr.extend_from_slice(&1u16.to_be_bytes());
+        lr.extend_from_slice(&0u16.to_be_bytes()); // terminator
 
-    #[test]
-    fn parses_channel_objects() {
-        // Build a minimal DLIS: one VR with a CHANNEL set record.
-        let mut body = Vec::new();
-        body.extend_from_slice(&49u16.to_be_bytes()); // record type CHANNEL
-                                                      // OBNAME: len=4 ident="DEPT" origin=0 copy=0
-        body.push(4);
-        body.extend_from_slice(&0u16.to_be_bytes());
-        body.extend_from_slice(b"DEPT");
-        body.extend_from_slice(&0u16.to_be_bytes());
-        // 1 attribute: REPCODE (rep 13 UINT4) = 2
-        body.extend_from_slice(&1u16.to_be_bytes());
-        body.push(7); // label length
-        body.extend_from_slice(b"REPCODE");
-        body.push(13);
-        body.push(1);
-        body.extend_from_slice(&2u32.to_be_bytes());
-        // The logical-record length field must delimit the real content, not the
-        // padded block. A DLIS LR block is 1024 bytes: a 4-byte header
-        // ([u16 len][u8 check][u8 type]) plus up to 1020 bytes of record. We pad
-        // to a full block but keep `rlen` pointing at the true record length.
-        let rlen = body.len() as u16;
-        while body.len() % (LR_BLOCK - 4) != 0 {
-            body.push(0);
-        }
-        let mut payload = Vec::new();
-        // Block header: record length = rlen, type 0 (LRSET).
-        payload.extend_from_slice(&rlen.to_be_bytes());
-        payload.push(0);
-        payload.push(0);
-        payload.extend_from_slice(&body);
-        // VR header: "VR" + 2 reserved + 4-byte length + pad to 80 bytes.
+        // Wrap the logical record in a segment header (type 49 = FRAME set),
+        // then in a visible record.
+        let mut seg = Vec::new();
+        seg.extend_from_slice(&(lr.len() as u16).to_be_bytes()); // segment length
+        seg.push(49); // segment type
+        seg.push(0); // attributes
+        seg.extend_from_slice(&lr);
+
         let mut vr = Vec::new();
-        vr.extend_from_slice(b"VR");
-        vr.extend_from_slice(&0u16.to_be_bytes());
-        vr.extend_from_slice(&(payload.len() as u32).to_be_bytes());
-        while vr.len() < 80 {
-            vr.push(0);
-        }
-        vr.extend_from_slice(&payload);
+        vr.extend_from_slice(&(seg.len() as u16).to_be_bytes()); // length
+        vr.extend_from_slice(&0u16.to_be_bytes()); // checksum
+        vr.extend_from_slice(&seg);
 
-        let file = parse_dlis(&vr).unwrap();
-        assert_eq!(file.channels.len(), 1);
-        assert_eq!(file.channels[0].name, "DEPT");
-        assert_eq!(file.channels[0].rep_code, 2);
+        b.extend_from_slice(&vr);
+        b
+    }
+
+    #[test]
+    fn parses_sul_and_frame_set() {
+        let dlis = parse(&build_minimal_dlis()).unwrap();
+        assert_eq!(dlis.label.structure, "RECORD");
+        assert_eq!(dlis.label.set_identifier, b'S');
+        assert_eq!(dlis.label.version, b'V');
+        assert_eq!(dlis.logical_record_count, 1);
+        assert_eq!(dlis.frames.len(), 1);
+        assert_eq!(dlis.frames[0].name, "FR1");
+        assert_eq!(dlis.frames[0].channels.len(), 1);
+        assert_eq!(dlis.frames[0].channels[0].ident, "DEPT");
+    }
+
+    #[test]
+    fn reads_fsingl_frame_data() {
+        let mut bytes = build_minimal_dlis();
+        // Append a visible record carrying an FSINGL data record (type 1):
+        // body = frame-number (u16) + one f32 value per channel.
+        let mut lr = Vec::new();
+        lr.extend_from_slice(&1u16.to_be_bytes()); // frame number
+        lr.extend_from_slice(&100.0f32.to_be_bytes()); // value (DEPT=100)
+        let mut seg = Vec::new();
+        seg.extend_from_slice(&(lr.len() as u16).to_be_bytes()); // segment length
+        seg.push(1); // segment type = FSINGL
+        seg.push(0); // attributes
+        seg.extend_from_slice(&lr);
+        let mut vr = Vec::new();
+        vr.extend_from_slice(&(seg.len() as u16).to_be_bytes());
+        vr.extend_from_slice(&0u16.to_be_bytes());
+        vr.extend_from_slice(&seg);
+        bytes.extend_from_slice(&vr);
+
+        let dlis = parse(&bytes).unwrap();
+        let frame = &dlis.frames[0];
+        assert_eq!(frame.samples.len(), 1);
+        assert_eq!(frame.samples[0].frame_number, 1);
+        assert!((frame.samples[0].values[0] - 100.0).abs() < 1e-3);
     }
 }

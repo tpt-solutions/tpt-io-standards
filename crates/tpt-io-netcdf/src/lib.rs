@@ -20,14 +20,14 @@
 //! out.extend_from_slice(&10i32.to_be_bytes()); // TAG_DIMENSION
 //! out.extend_from_slice(&1u32.to_be_bytes());  // 1 dimension
 //! out.extend_from_slice(&1u32.to_be_bytes());  // name length "x"
-//! out.extend_from_slice(b"x\0\0\0");          // "x" + pad to 4 bytes
+//! out.extend_from_slice(b"x\0\0\0");          // "x" + pad to 4
 //! out.extend_from_slice(&4u32.to_be_bytes()); // dim length
 //! out.extend_from_slice(&12i32.to_be_bytes()); // TAG_ATTRIBUTE
 //! out.extend_from_slice(&0u32.to_be_bytes());  // 0 global attrs
 //! out.extend_from_slice(&11i32.to_be_bytes()); // TAG_VARIABLE
 //! out.extend_from_slice(&1u32.to_be_bytes());  // 1 variable
 //! out.extend_from_slice(&1u32.to_be_bytes());  // name length "t"
-//! out.extend_from_slice(b"t\0\0\0");          // "t" + pad to 4 bytes
+//! out.extend_from_slice(b"t\0\0\0");          // "t" + pad to 4
 //! out.extend_from_slice(&5i32.to_be_bytes());  // NC_FLOAT
 //! out.extend_from_slice(&1u32.to_be_bytes());  // 1 dim
 //! out.extend_from_slice(&0u32.to_be_bytes());  // dim id 0
@@ -54,12 +54,14 @@ pub mod error;
 pub mod header;
 pub mod integration;
 pub mod model;
+pub mod netcdf4;
 pub mod parser;
 pub mod writer;
 
 pub use error::NetCdfError;
 pub use header::{Attr, Dim, NcType, Var};
 pub use model::NetCdf;
+pub use netcdf4::{detect_format, parse_hdf5_superblock, FileKind, Hdf5Superblock};
 pub use parser::{parse_netcdf, NetCdfReader, NetCdfValidator};
 pub use writer::{serialize_header, NetCdfWriter};
 

@@ -47,7 +47,8 @@ pub fn serialize_header(nc: &NetCdf) -> Vec<u8> {
     wr_u32(&mut buf, nc.dims.len() as u32);
     for d in &nc.dims {
         wr_str(&mut buf, &d.name);
-        wr_u32(&mut buf, d.len);
+        let raw = if d.unlimited { 0xFFFF_FFFF } else { d.len };
+        wr_u32(&mut buf, raw);
     }
 
     wr_i32(&mut buf, TAG_ATTRIBUTE);

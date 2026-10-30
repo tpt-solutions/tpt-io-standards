@@ -6,6 +6,8 @@
 
 use tpt_io_core::{Reader, Validator};
 use tpt_io_edif::flatten::{flatten, FlatNetlist};
+use tpt_io_edif::geometry::Point;
+use tpt_io_edif::geometry::Shape;
 use tpt_io_edif::model::{
     Cell, Direction, Edif, Instance, Library, Net, Port, PortRef, View, ViewType,
 };
@@ -26,7 +28,7 @@ fn sample_edif() -> Edif {
             instances: vec![],
             nets: vec![],
             properties: vec![],
-            geometry: None,
+            geometry: vec![],
         }],
     };
     let sub = Cell {
@@ -62,7 +64,7 @@ fn sample_edif() -> Edif {
                 },
             ],
             properties: vec![],
-            geometry: None,
+            geometry: vec![],
         }],
     };
     let top = Cell {
@@ -98,7 +100,7 @@ fn sample_edif() -> Edif {
                 },
             ],
             properties: vec![],
-            geometry: None,
+            geometry: vec![],
         }],
     };
 
@@ -179,4 +181,42 @@ fn golden_sample_parses() {
     let edif = reader.parse(data).expect("golden sample parses");
     assert!(!edif.libraries.is_empty());
     let _ = flatten(&edif);
+}
+
+#[test]
+fn golden_geometry_extraction() {
+    let data = include_bytes!("samples/schematic_layout.edif");
+    let reader = EdifReader::new();
+    let edif = reader.parse(data).expect("golden geometry sample parses");
+
+    // Schematic figures: rectangle + label + path.
+    let schematic = edif.geometry_for(ViewType::Schematic);
+    assert_eq!(schematic.len(), 3);
+    assert!(edif.geometry_for(ViewType::Layout).len() == 3);
+
+    // The rect (layout) maps to a Rectangle shape.
+    let layout = edif.find_cell("lib", "inv").unwrap().layout_view().unwrap();
+    assert!(matches!(
+        &layout.geometry[0].shape,
+        Shape::Rectangle { a, b } if *a == Point { x: 0.0, y: 0.0 } && *b == Point { x: 200.0, y: 100.0 }
+    ));
+    // Layout carries a polygon and a circle too.
+    assert!(layout.geometry.iter().any(|f| matches!(f.shape, Shape::Polygon(_))));
+    assert!(layout
+        .geometry
+        .iter()
+        .any(|f| matches!(f.shape, Shape::Circle { diameter, .. } if diameter == 60.0)));
+
+    // Schematic carries a label with text.
+    let schematic_view = edif.find_cell("lib", "inv").unwrap().schematic_view().unwrap();
+    assert!(schematic_view
+        .geometry
+        .iter()
+        .any(|f| matches!(&f.shape, Shape::Label { text, .. } if text == "INV")));
+
+    // Round-trip preserves the geometry.
+    let bytes = serialize(&edif);
+    let reparsed = reader.parse(&bytes).expect("re-parse");
+    assert_eq!(reparsed.geometry_for(ViewType::Schematic).len(), 3);
+    assert_eq!(reparsed.geometry_for(ViewType::Layout).len(), 3);
 }

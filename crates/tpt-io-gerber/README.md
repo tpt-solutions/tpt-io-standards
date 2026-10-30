@@ -73,6 +73,22 @@ The `eng-*` features are integration stubs: they compile and link today so the
 feature flags are stable, but the downstream `tpt-eng-*` crates are not yet
 published. Only the conversion bodies will need to change when they land.
 
+## Testing
+
+```sh
+cargo test -p tpt-io-gerber
+cargo +nightly fuzz run gerber
+```
+
+## Status
+
+Per the workspace `todo.md`, `tpt-io-gerber` implements RS-274X / X2 / X3 Gerber
+parsing, Excellon drill-file parsing, aperture and aperture-macro decoding,
+graphics operations, X2/X3 attribute handling, layer polarity, DRC extraction,
+round-trip serialization, fuzz, golden-file, and property-based tests. `cargo
+publish --dry-run` is blocked until `tpt-io-core` is on crates.io (see §4 publish
+order).
+
 ## License
 
 Licensed under either of [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE)

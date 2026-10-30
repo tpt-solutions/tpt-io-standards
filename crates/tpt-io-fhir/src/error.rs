@@ -5,6 +5,8 @@ compile_error!(
     "tpt-io-fhir requires the `alloc` or `std` feature: its error type owns structured parse data."
 );
 
+use alloc::string::String;
+
 use tpt_io_core::ParseError;
 
 /// Errors produced while parsing FHIR data.
@@ -20,6 +22,18 @@ pub enum FhirError {
     Core(ParseError),
     /// A FHIR-specific feature or construct that is not yet supported.
     Unsupported(&'static str),
+    /// A JSON serialization or deserialization failure.
+    Json(String),
+    /// An XML serialization or deserialization failure.
+    Xml(String),
+    /// A validation failure (profile or compliance).
+    Validation(String),
+    /// A reference could not be resolved.
+    Reference(String),
+    /// A FHIRPath expression parse or evaluation error.
+    FhirPath(String),
+    /// A batch operation error.
+    Batch(String),
 }
 
 impl From<ParseError> for FhirError {
@@ -33,6 +47,12 @@ impl core::fmt::Display for FhirError {
         match self {
             FhirError::Core(e) => write!(f, "{e}"),
             FhirError::Unsupported(feat) => write!(f, "FHIR unsupported feature: {feat}"),
+            FhirError::Json(msg) => write!(f, "FHIR JSON error: {msg}"),
+            FhirError::Xml(msg) => write!(f, "FHIR XML error: {msg}"),
+            FhirError::Validation(msg) => write!(f, "FHIR validation error: {msg}"),
+            FhirError::Reference(msg) => write!(f, "FHIR reference error: {msg}"),
+            FhirError::FhirPath(msg) => write!(f, "FHIRPath error: {msg}"),
+            FhirError::Batch(msg) => write!(f, "FHIR batch error: {msg}"),
         }
     }
 }
@@ -48,5 +68,15 @@ mod tests {
     fn core_error_converts() {
         let e = FhirError::from(ParseError::eof(0));
         assert!(matches!(e, FhirError::Core(_)));
+    }
+
+    #[test]
+    fn display_variants() {
+        let e = FhirError::Json("bad".to_string());
+        assert!(e.to_string().contains("JSON"));
+        let e = FhirError::Validation("missing".to_string());
+        assert!(e.to_string().contains("validation"));
+        let e = FhirError::Reference("unresolved".to_string());
+        assert!(e.to_string().contains("reference"));
     }
 }

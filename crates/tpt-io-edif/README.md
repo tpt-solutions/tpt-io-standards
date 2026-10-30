@@ -3,23 +3,7 @@
 EDIF 2.0.0 / 4.0.0 parser for the `tpt-io` workspace — hierarchical electronic
 design interchange format (netlists, libraries, cells, and views).
 
-## Features
-
-- **Tokenizer** (`token`): balanced-parenthesis S-expression lexer with
-  symbols, integers/reals, double-quoted strings (with escapes), and `;` comments.
-- **Parser** (`parser`): builds a typed [`model::Edif`] documenting libraries,
-  cells, NETLIST/SCHEMATIC/LAYOUT views, interface ports (with direction),
-  instances, and nets. Implements [`tpt_io_core::Reader`] and
-  [`tpt_io_core::Validator`].
-- **Flattening** (`flatten`): walks a hierarchical `(design …)` from its top cell
-  and produces a single flat netlist via a union-find over port references, so a
-  net that meets an instance boundary is correctly merged with the subcell's
-  internal connectivity.
-- **Round-trip** (`writer`): serializes a typed document back to valid EDIF text.
-- **Integration stub**: `em-circuit-integration` feature provides a conversion
-  boundary into the (not-yet-published) `tpt-em-circuit` crate.
-
-## Example
+## Quick start
 
 ```rust
 use tpt_io_core::Reader;
@@ -36,9 +20,30 @@ let flat = tpt_io_edif::flatten::flatten(&edif).unwrap();
 assert_eq!(flat.nets.len(), 1);
 ```
 
+## Features
+
+| Feature | Default | Effect |
+| --- | --- | --- |
+| `std` | yes | `std`-only conveniences |
+| `alloc` | no | `alloc`-based types without `std` |
+| `em-circuit-integration` | no | Stub conversion into a future `tpt-em-circuit` crate |
+
+## Testing
+
+```sh
+cargo test -p tpt-io-edif
+cargo +nightly fuzz run edif
+```
+
 ## Status
 
 Per the workspace `todo.md`, EDIF is implemented for the netlist-relevant subset
 (library/cell/view/interface/instance/net extraction, hierarchical flattening,
-round-trip, fuzz, golden-file, and property tests). `cargo publish --dry-run` is
-blocked until `tpt-io-core` is on crates.io (see §4 publish order).
+schematic & layout geometric extraction, round-trip, fuzz, golden-file, and
+property tests). `cargo publish --dry-run` is blocked until `tpt-io-core` is on
+crates.io (see §4 publish order).
+
+## License
+
+Licensed under either of [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE)
+at your option.

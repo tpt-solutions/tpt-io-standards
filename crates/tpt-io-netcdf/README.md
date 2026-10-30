@@ -1,66 +1,86 @@
 # tpt-io-netcdf
 
-NetCDF-3 classic / 64-bit parser for the `tpt-io` workspace, targeting
-climate, ocean, and atmospheric science data.
+A `no_std`-friendly, dependency-light parser for **NetCDF-3 classic / 64-bit
+offset** files (dimensions, variables, global and per-variable attributes),
+plus **NetCDF-4 (HDF5)** format detection and superblock triage. Part of the
+[`tpt-io-standards`](https://github.com/tpt-solutions/tpt-io-standards)
+workspace.
 
-The crate parses a NetCDF-3 byte stream into a typed [`NetCdf`] model —
-dimensions, global attributes, and variable definitions with their header
-offsets — and round-trips the header back to bytes via a
-[`tpt_io_core::Writer`]. Per-variable data lives in the raw file bytes and is
-addressed through the offset/size helpers on [`NetCdf`].
-
-[`NetCdf`]: https://docs.rs/tpt-io-netcdf/latest/tpt_io_netcdf/header/struct.NetCdf.html
-[`tpt_io_core::Writer`]: https://docs.rs/tpt-io-core/latest/tpt_io_core/trait.Writer.html
-
-> **Scope:** This crate implements the **NetCDF-3 classic and 64-bit offset**
-> formats. NetCDF-4 (HDF5-based) files, chunked/packed data sections, and
-> deflate/shuffle compression are **not** yet supported (see `todo.md`).
-
-## Quick start
+## NetCDF-3 usage
 
 ```rust
 use tpt_io_core::Reader;
+use tpt_io_netcdf::header::{NcType, NetCdf};
+use tpt_io_netcdf::model::NetCdf as _;
 use tpt_io_netcdf::parser::NetCdfReader;
-use tpt_io_netcdf::writer::serialize_header;
-use tpt_io_netcdf::header::{Dim, NetCdf, NcType, Var};
 
-let nc = NetCdf {
-    version: 1,
-    numrecs: Some(1),
-    dims: vec![Dim { name: "time".into(), len: 1 }],
-    global_attrs: vec![],
-    vars: vec![Var {
-        name: "temp".into(),
-        nc_type: NcType::Float,
-        dim_ids: vec![0],
-        attrs: vec![],
-        vlen: 4,
-        begin: 0,
-    }],
-    header_len: 0,
-};
-let bytes = serialize_header(&nc);
-let parsed = NetCdfReader::new().parse(&bytes).unwrap();
-assert_eq!(parsed.dims[0].name, "time");
+let bytes: Vec<u8> = std::fs::read("sample.nc").unwrap();
+let nc: NetCdf = NetCdfReader::new().parse(&bytes).unwrap();
+
+// Dimensions, variables, and attributes.
+let lat = nc.dim("lat").unwrap();
+let temp = nc.var("temp").unwrap();
+let units = temp.attrs.iter().find(|a| a.name == "units");
+
+// Coordinate variables map an index axis to world coordinates.
+let coords: Vec<&str> = nc.coordinate_variables().iter().map(|v| v.name.as_str()).collect();
+
+// Read a hyperslab without materializing the whole array — ideal for
+// `time × depth × lat × lon` grids. Last dimension varies fastest.
+let slab = nc.read_hyperslab(&bytes, temp, &[0, 0, 0], &[1, lat.len as usize, 4]).unwrap();
+```
+
+### Record (unlimited) dimensions
+
+A variable whose first dimension is the unlimited (record) dimension stores its
+records interleaved across all record variables on disk, so a single contiguous
+`var_data` slice is not meaningful. Use `NetCdf::read_hyperslab` (which handles
+the record layout) or `NetCdf::is_record_var` to detect such variables.
+
+## NetCDF-4 (HDF5)
+
+NetCDF-4 files are HDF5 containers. The crate detects them, parses the
+superblock, descends the object tree to enumerate datasets, reads their
+dimensions, types, storage layout, and filter pipeline (deflate/shuffle),
+and can read back both contiguous and chunked+filtered data:
+
+```rust
+use tpt_io_netcdf::netcdf4::{detect_format, parse_hdf5_superblock, FileKind, parse};
+
+let kind = detect_format(&bytes);          // Some(FileKind::NetCdf4)
+if kind == Some(FileKind::NetCdf4) {
+    let f = parse(&bytes).expect("parse netcdf4");
+    for ds in &f.datasets {
+        println!("{}: dims={:?}, type={:?}", ds.name, ds.dims, ds.nc_type);
+        let raw = ds.read_data(&bytes).expect("read data");
+    }
+}
 ```
 
 ## Features
 
-| Feature                | Default | Description                                              |
-| ---------------------- | ------- | -------------------------------------------------------- |
-| `std`                  | yes     | Standard-library support (`Vec`, etc.).                  |
-| `alloc`                | no      | `no_std` + `alloc` only.                                 |
-| `sci-grid-integration` | no      | Stub conversion boundary for the future `tpt-sci-grid`.  |
+| Feature | Default | Effect |
+| --- | --- | --- |
+| `std` | yes | Standard library support |
+| `alloc` | no | `alloc`-based types without `std` |
+| `sci-grid-integration` | no | Stub conversion boundary for future `tpt-sci-grid` crate |
 
-## Validation
+## Testing
 
-[`NetCdfValidator`] checks that every variable references a defined dimension
-(syntactic) and that no variable uses an unknown type code (semantic). It is
-run automatically by [`NetCdfReader`].
+```sh
+cargo test -p tpt-io-netcdf
+cargo +nightly fuzz run netcdf
+```
 
-[`NetCdfValidator`]: https://docs.rs/tpt-io-netcdf/latest/tpt_io_netcdf/parser/struct.NetCdfValidator.html
-[`NetCdfReader`]: https://docs.rs/tpt-io-netcdf/latest/tpt_io_netcdf/parser/struct.NetCdfReader.html
+## Status
+
+Per the workspace `todo.md`, `tpt-io-netcdf` implements NetCDF-3 classic/64-bit
+offset parsing, NetCDF-4 (HDF5) detection and dataset reading, chunked hyperslab
+reading, header round-trip, fuzz, golden-file, and property-based tests. `cargo
+publish --dry-run` is blocked until `tpt-io-core` is on crates.io (see §4 publish
+order).
 
 ## License
 
-Licensed under either of MIT or Apache-2.0 at your option.
+Licensed under either of [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE)
+at your option.

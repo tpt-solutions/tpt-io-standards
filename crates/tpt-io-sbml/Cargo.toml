@@ -7,7 +7,7 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-keywords = ["sbml", "systems-biology", "parser"]
+keywords = ["sbml", "systems-biology", "parser", "mathml"]
 categories = ["parser-implementations", "science"]
 
 [lib]
@@ -15,10 +15,13 @@ name = "tpt_io_sbml"
 
 [dependencies]
 tpt-io-core = { workspace = true }
+# XML parsing for SBML documents. `alloc` + `ns` keeps the crate usable in a
+# `no_std + alloc` build (no `std::io` dependency is taken here).
+quick-xml = { version = "0.37", default-features = false }
 
 [features]
 default = ["std"]
-std = ["tpt-io-core/std"]
+std = ["tpt-io-core/std", "alloc"]
 alloc = ["tpt-io-core/alloc"]
 # Integration with future `tpt-sci-reaction-network` (not yet published).
 sci-reaction-network-integration = []
@@ -26,3 +29,5 @@ sci-reaction-network-integration = []
 sci-ode-integration = []
 
 [dev-dependencies]
+proptest = "1"
+quick-xml = { version = "0.37", default-features = false }
