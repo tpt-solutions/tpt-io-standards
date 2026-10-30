@@ -12,6 +12,7 @@ members = [
     "crates/tpt-io-edif",
     "crates/tpt-io-geo",
     "crates/tpt-io-hdf5",
+    "crates/tpt-io-kicad",
     "crates/tpt-io-netcdf",
     "crates/tpt-io-welllog",
     "crates/tpt-io-capeopen",
@@ -40,6 +41,7 @@ tpt-io-gerber = { path = "crates/tpt-io-gerber", version = "0.1.0" }
 tpt-io-edif = { path = "crates/tpt-io-edif", version = "0.1.0" }
 tpt-io-geo = { path = "crates/tpt-io-geo", version = "0.1.0" }
 tpt-io-hdf5 = { path = "crates/tpt-io-hdf5", version = "0.1.0" }
+tpt-io-kicad = { path = "crates/tpt-io-kicad", version = "0.1.0" }
 tpt-io-netcdf = { path = "crates/tpt-io-netcdf", version = "0.1.0" }
 tpt-io-welllog = { path = "crates/tpt-io-welllog", version = "0.1.0" }
 tpt-io-capeopen = { path = "crates/tpt-io-capeopen", version = "0.1.0" }

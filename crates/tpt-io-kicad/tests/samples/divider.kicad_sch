@@ -1,0 +1,19 @@
+(kicad_sch (version 20211123) (generator eeschema)
+
+  (uuid 7d1f8b2a-0000-4000-8000-000000000001)
+
+  (paper "A4")
+
+  (symbol (lib_id "Device:R") (at 100.33 50.8 0) (unit 1)
+    (property "Reference" "R1" (at 102.87 49.53 0))
+    (property "Value" "10k" (at 102.87 52.07 0))
+    (pin "1" (uuid 7d1f8b2a-0000-4000-8000-000000000002))
+  )
+
+  (symbol (lib_id "Device:C") (at 130 50.8 0) (unit 1)
+    (property "Reference" "C1" (at 132.54 49.53 0))
+    (property "Value" "100n" (at 132.54 52.07 0))
+  )
+
+  (wire (pts (xy 100.33 46.99) (xy 130 46.99)))
+)

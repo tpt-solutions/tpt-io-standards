@@ -1,0 +1,26 @@
+[package]
+name = "tpt-io-kicad"
+description = "KiCad PCB and schematic reader (.kicad_pcb / .kicad_sch S-expressions): nets, footprints, placed symbols."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["kicad", "pcb", "eda", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_kicad"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
+
+[dev-dependencies]
+proptest = "1"

@@ -649,6 +649,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "tpt-io-kicad"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "tpt-io-core",
+]
+
+[[package]]
 name = "tpt-io-netcdf"
 version = "0.1.0"
 dependencies = [
