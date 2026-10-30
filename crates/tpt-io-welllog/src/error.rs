@@ -71,6 +71,8 @@ impl std::error::Error for WellLogError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(feature = "std"))]
+    use alloc::string::ToString;
 
     #[test]
     fn core_error_converts() {
