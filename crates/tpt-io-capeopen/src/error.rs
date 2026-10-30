@@ -11,6 +11,7 @@ compile_error!(
     "tpt-io-capeopen requires the `alloc` or `std` feature: its error type owns structured data."
 );
 
+use alloc::string::String;
 use tpt_io_core::ParseError;
 
 /// Errors produced while working with CAPE-OPEN data.
@@ -61,6 +62,8 @@ impl std::error::Error for CapeOpenError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(feature = "std"))]
+    use alloc::string::ToString;
 
     #[test]
     fn core_error_converts() {

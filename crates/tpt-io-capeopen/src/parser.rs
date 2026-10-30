@@ -6,7 +6,7 @@
 //! [`tpt_io_core::Reader`] and applies the syntactic/semantic split described in
 //! `spec.txt §4`.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use tpt_io_core::{ParseError, Reader, ValidationSettings};
