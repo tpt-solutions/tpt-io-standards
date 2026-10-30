@@ -170,6 +170,8 @@ fn map_ifc4_to_ifc2x3(name: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(feature = "std"))]
+    use alloc::string::ToString;
     use crate::model::IfcHeader;
 
     fn file_with_schema(schema: &str) -> IfcFile {

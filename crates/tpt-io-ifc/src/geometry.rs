@@ -16,7 +16,8 @@
 //! item types are reported via [`IfcError::Unsupported`] so callers can decide
 //! whether to skip or fail.
 
-use alloc::string::String;
+use alloc::boxed::Box;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use crate::error::IfcError;

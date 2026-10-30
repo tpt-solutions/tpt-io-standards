@@ -10,7 +10,7 @@
 //! The tokenizer is zero-copy: every [`Token`] borrows its text from the input
 //! and carries a byte offset so the parser can report precise errors.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use crate::error::IfcError;
