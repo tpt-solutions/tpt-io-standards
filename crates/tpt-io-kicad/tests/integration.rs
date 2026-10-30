@@ -13,7 +13,10 @@ fn pcb_pads_tracks_and_vias() {
     let r1 = &doc.footprints[0];
     assert_eq!(r1.pads.len(), 1);
     let pad = &r1.pads[0];
-    assert_eq!((pad.number.as_str(), pad.kind.as_str(), pad.shape.as_str()), ("1", "smd", "roundrect"));
+    assert_eq!(
+        (pad.number.as_str(), pad.kind.as_str(), pad.shape.as_str()),
+        ("1", "smd", "roundrect")
+    );
     assert_eq!((pad.x, pad.y, pad.width, pad.height), (-0.75, 0.0, 0.8, 0.95));
     assert_eq!(pad.net, Some(2));
     assert!(doc.footprints[1].pads.is_empty());

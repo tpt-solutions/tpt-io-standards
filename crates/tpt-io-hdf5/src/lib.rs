@@ -193,10 +193,7 @@ impl<'a> Reader<'a> {
         read_int(self.data, pos, size)
     }
     fn u8(&self, pos: usize) -> core::result::Result<u8, Hdf5Error> {
-        Ok(*self
-            .data
-            .get(pos)
-            .ok_or_else(|| Hdf5Error::Core(tpt_io_core::ParseError::eof(pos)))?)
+        Ok(*self.data.get(pos).ok_or_else(|| Hdf5Error::Core(tpt_io_core::ParseError::eof(pos)))?)
     }
     fn slice(&self, pos: usize, len: usize) -> core::result::Result<&'a [u8], Hdf5Error> {
         self.data
@@ -266,14 +263,7 @@ fn parse_object_header<'a>(
             return Err(Hdf5Error::Unsupported("bad object header continuation block"));
         }
         // Skip the signature at the start and the checksum at the end.
-        read_messages(
-            r,
-            off + 4,
-            off + len - 4,
-            track_order,
-            &mut messages,
-            &mut continuations,
-        )?;
+        read_messages(r, off + 4, off + len - 4, track_order, &mut messages, &mut continuations)?;
     }
     Ok(messages)
 }
@@ -733,9 +723,7 @@ impl Dataset {
                     .ok_or_else(|| Hdf5Error::Core(tpt_io_core::ParseError::eof(start)))?;
                 Ok(DecodedData::Raw(bytes.to_vec()))
             }
-            Layout::Chunked { btree_addr } => {
-                read_chunked_data(file, self, *btree_addr)
-            }
+            Layout::Chunked { btree_addr } => read_chunked_data(file, self, *btree_addr),
             Layout::Compact { data } => Ok(DecodedData::Raw(data.clone())),
         }
     }
@@ -874,8 +862,7 @@ fn inflate(buf: &[u8]) -> Result<Vec<u8>, Hdf5Error> {
 
     let mut dec = flate2::read::ZlibDecoder::new(buf);
     let mut out = Vec::new();
-    copy(&mut dec, &mut out)
-        .map_err(|_| Hdf5Error::Unsupported("deflate decompression failed"))?;
+    copy(&mut dec, &mut out).map_err(|_| Hdf5Error::Unsupported("deflate decompression failed"))?;
     Ok(out)
 }
 

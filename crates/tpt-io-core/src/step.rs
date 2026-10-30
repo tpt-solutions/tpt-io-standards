@@ -134,8 +134,9 @@ pub fn tokenize(input: &str) -> Result<Vec<StepToken>, ParseError> {
                 return Err(err(start, "entity reference needs digits after '#'"));
             }
             let text = core::str::from_utf8(&bytes[num_start..i]).unwrap_or("");
-            let id: usize =
-                text.parse().map_err(|_| err(start, format!("invalid entity reference #{text}")))?;
+            let id: usize = text
+                .parse()
+                .map_err(|_| err(start, format!("invalid entity reference #{text}")))?;
             tokens.push(StepToken { offset: start, kind: StepKind::Ref(id) });
             continue;
         }

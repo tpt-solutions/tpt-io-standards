@@ -315,9 +315,9 @@ pub fn as_real_list(value: &IfcValue) -> Option<Vec<f64>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::IfcHeader;
     #[cfg(not(feature = "std"))]
     use alloc::string::ToString;
-    use crate::model::IfcHeader;
 
     fn sample_file() -> IfcFile {
         let instances = vec![

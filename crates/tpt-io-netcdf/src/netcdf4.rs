@@ -5,8 +5,8 @@
 //! format detection that tells classic NetCDF-3 files from NetCDF-4 files.
 
 pub use tpt_io_hdf5::{
-    parse, parse_hdf5_superblock, DecodedData, Dataset, Datatype, Filter, Group, H5Attr,
-    Hdf5File, Hdf5Superblock, Layout, Link,
+    parse, parse_hdf5_superblock, Dataset, Datatype, DecodedData, Filter, Group, H5Attr, Hdf5File,
+    Hdf5Superblock, Layout, Link,
 };
 
 /// The high-level kind of a NetCDF file.

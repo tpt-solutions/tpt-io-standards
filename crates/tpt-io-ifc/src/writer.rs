@@ -101,9 +101,9 @@ fn serialize_value(out: &mut String, value: &IfcValue) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parser::parse_str;
     #[cfg(not(feature = "std"))]
     use alloc::string::ToString;
-    use crate::parser::parse_str;
 
     #[test]
     fn round_trips_minimal() {

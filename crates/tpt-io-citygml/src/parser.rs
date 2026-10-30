@@ -155,7 +155,8 @@ impl XmlParser {
 
         // Polygon: create a surface to hold the ring.
         if tag == "Polygon" && self.current_surface.is_none() {
-            self.current_surface = Some(Surface { class: self.surface_class, ..Surface::default() });
+            self.current_surface =
+                Some(Surface { class: self.surface_class, ..Surface::default() });
         }
 
         // Solid.

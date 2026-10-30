@@ -38,6 +38,16 @@ impl core::fmt::Display for NetCdfError {
 #[cfg(feature = "std")]
 impl std::error::Error for NetCdfError {}
 
+impl From<tpt_io_hdf5::Hdf5Error> for NetCdfError {
+    fn from(e: tpt_io_hdf5::Hdf5Error) -> Self {
+        match e {
+            tpt_io_hdf5::Hdf5Error::Core(c) => NetCdfError::Core(c),
+            tpt_io_hdf5::Hdf5Error::Unsupported(s) => NetCdfError::Unsupported(s),
+            _ => NetCdfError::Unsupported("unrecognised HDF5 error"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -46,15 +56,5 @@ mod tests {
     fn core_error_converts() {
         let e = NetCdfError::from(ParseError::eof(0));
         assert!(matches!(e, NetCdfError::Core(_)));
-    }
-}
-
-impl From<tpt_io_hdf5::Hdf5Error> for NetCdfError {
-    fn from(e: tpt_io_hdf5::Hdf5Error) -> Self {
-        match e {
-            tpt_io_hdf5::Hdf5Error::Core(c) => NetCdfError::Core(c),
-            tpt_io_hdf5::Hdf5Error::Unsupported(s) => NetCdfError::Unsupported(s),
-            _ => NetCdfError::Unsupported("unrecognised HDF5 error"),
-        }
     }
 }

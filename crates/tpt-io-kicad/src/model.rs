@@ -303,10 +303,16 @@ fn via(node: &Node) -> Via {
         drill: node.find("drill").and_then(|d| d.arg_f64(0)).unwrap_or(0.0),
         layers: node
             .find("layers")
-            .map(|l| l.items().iter().skip(1).filter_map(|i| match i {
-                crate::tree::Node::Str(s) | crate::tree::Node::Symbol(s) => Some(s.clone()),
-                _ => None,
-            }).collect())
+            .map(|l| {
+                l.items()
+                    .iter()
+                    .skip(1)
+                    .filter_map(|i| match i {
+                        crate::tree::Node::Str(s) | crate::tree::Node::Symbol(s) => Some(s.clone()),
+                        _ => None,
+                    })
+                    .collect()
+            })
             .unwrap_or_default(),
         net: net_of(node),
     }

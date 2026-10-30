@@ -778,10 +778,7 @@ fn write_spatial_model(
         }
 
         if !geometry.geometry_definitions.is_empty() {
-            emit(
-                writer,
-                Event::Start(BytesStart::new("spatial:listOfGeometryDefinitions")),
-            )?;
+            emit(writer, Event::Start(BytesStart::new("spatial:listOfGeometryDefinitions")))?;
             for gd in &geometry.geometry_definitions {
                 let mut gd_start = BytesStart::new("spatial:geometryDefinition");
                 gd_start.extend_attributes([("spatial:id", gd.as_str())]);
