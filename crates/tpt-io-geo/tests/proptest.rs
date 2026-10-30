@@ -26,9 +26,7 @@ fn point_fc(lon: f64, lat: f64) -> FeatureCollection {
 }
 
 fn alloc_vec<T>(item: T) -> Vec<T> {
-    let mut v = Vec::new();
-    v.push(item);
-    v
+    vec![item]
 }
 
 proptest! {

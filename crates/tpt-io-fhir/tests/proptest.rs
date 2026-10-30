@@ -24,7 +24,7 @@ proptest! {
         let patient: Patient = json::parse_patient(&json_str).prop_parse()?;
         prop_assert_eq!(patient.id.as_deref(), Some(id.as_str()));
         prop_assert_eq!(patient.name[0].family.as_deref(), Some(family.as_str()));
-        prop_assert_eq!(&patient.name[0].given, &[g1.clone()]);
+        prop_assert_eq!(&patient.name[0].given, std::slice::from_ref(&g1));
 
         // Round-trip: serialize and re-parse.
         let serialized = serde_json::to_string(&patient).prop_parse()?;

@@ -60,8 +60,5 @@ fn golden_search_bundle_pagination() {
 
     let cursor = BundleCursor::new(bundle, "https://example.com/fhir");
     assert!(cursor.has_next());
-    assert_eq!(
-        cursor.next_url().as_deref(),
-        Some("https://example.com/fhir/Patient?_page=2")
-    );
+    assert_eq!(cursor.next_url().as_deref(), Some("https://example.com/fhir/Patient?_page=2"));
 }
