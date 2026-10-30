@@ -11,6 +11,45 @@ use tpt_io_gerber::parser::{parse_str, GerberReader};
 
 const SAMPLE: &str = include_str!("samples/simple.gbr");
 
+fn file_with_objects(objects: Vec<ObjectKind>) -> GerberFile {
+    let mut file = GerberFile::default();
+    file.apertures.push((10, Aperture::Circle { diameter: 0.5, hole_diameter: None }));
+    for kind in objects {
+        file.objects.push(GraphicObject {
+            kind,
+            aperture: Some(10),
+            attributes: Attributes::new(),
+        });
+    }
+    file.end_of_file = true;
+    file
+}
+
+#[test]
+fn writer_rejects_coordinates_outside_the_format() {
+    // The default 3.6 format covers |value| < 1000 mm.
+    let file = file_with_objects(vec![ObjectKind::Flash { x: 1000.0, y: 0.0 }]);
+    let err = GerberReader::new().serialize(&file).unwrap_err();
+    assert!(matches!(err, tpt_io_gerber::GerberError::CoordinateOutOfRange { axis: 'X', .. }));
+
+    let nan = file_with_objects(vec![ObjectKind::Flash { x: f64::NAN, y: 0.0 }]);
+    assert!(GerberReader::new().serialize(&nan).is_err());
+}
+
+#[test]
+fn writer_accepts_the_largest_representable_value() {
+    let file = file_with_objects(vec![ObjectKind::Flash { x: 999.999999, y: -999.999999 }]);
+    let bytes = GerberReader::new().serialize(&file).expect("in range");
+    let reparsed = parse_str(core::str::from_utf8(&bytes).unwrap()).expect("reparse");
+    assert_eq!(reparsed, file);
+}
+
+#[test]
+fn writer_handles_an_empty_region() {
+    let file = file_with_objects(vec![ObjectKind::Region { points: Vec::new() }]);
+    assert!(GerberReader::new().serialize(&file).is_ok());
+}
+
 #[test]
 fn golden_file_parses() {
     let file = parse_str(SAMPLE).expect("golden sample must parse");

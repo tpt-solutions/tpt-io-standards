@@ -165,6 +165,22 @@ impl CoordinateFormat {
         };
         (value * 10f64.powi(factor_exp)).round() as i64
     }
+
+    /// Whether `value` can be written on `axis` in this format.
+    ///
+    /// The encoded integer has `int + dec` digits, so its magnitude must stay below
+    /// `10^(int + dec)`. Non-finite values never fit.
+    pub fn fits_axis(&self, axis: Axis, value: f64) -> bool {
+        if !value.is_finite() {
+            return false;
+        }
+        let total = match axis {
+            Axis::X => self.x_total(),
+            Axis::Y => self.y_total(),
+        };
+        let limit = 10i64.checked_pow(total as u32).unwrap_or(i64::MAX);
+        self.encode_axis(axis, value).unsigned_abs() < limit as u64
+    }
 }
 
 #[cfg(test)]

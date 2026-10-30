@@ -25,6 +25,13 @@ pub enum GerberError {
         /// The offending command text.
         command: String,
     },
+    /// A value to be written does not fit the file's coordinate format.
+    CoordinateOutOfRange {
+        /// The axis, `'X'` or `'Y'`.
+        axis: char,
+        /// The offending value, as written.
+        token: String,
+    },
     /// A coordinate token could not be interpreted as an integer.
     InvalidCoordinate {
         /// Byte offset of the coordinate token.
@@ -101,6 +108,9 @@ impl core::fmt::Display for GerberError {
             GerberError::Unsupported(feat) => write!(f, "Gerber unsupported feature: {feat}"),
             GerberError::InvalidCommand { offset, command } => {
                 write!(f, "invalid command {command:?} at offset {offset}")
+            }
+            GerberError::CoordinateOutOfRange { axis, token } => {
+                write!(f, "{axis} coordinate {token} does not fit the file's coordinate format")
             }
             GerberError::InvalidCoordinate { offset, token } => {
                 write!(f, "invalid coordinate {token:?} at offset {offset}")

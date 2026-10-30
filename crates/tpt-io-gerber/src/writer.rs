@@ -19,6 +19,12 @@ pub fn serialize(file: &GerberFile) -> Result<Vec<u8>, GerberError> {
     let mut out = String::new();
     let fmt = file.format;
 
+    // Reject values the format cannot hold before writing anything, rather than
+    // emitting digits that would read back as different coordinates.
+    for obj in &file.objects {
+        check_fits(fmt, &obj.kind)?;
+    }
+
     // Header: format, unit, polarity.
     out.push_str(&format!(
         "%FS{}{}X{}{}Y{}{}*%\n",
@@ -123,7 +129,7 @@ pub fn serialize(file: &GerberFile) -> Result<Vec<u8>, GerberError> {
                     out.push_str("D02*");
                     last_pos = Some((*sx, *sy));
                 }
-                for (px, py) in &points[1..] {
+                for (px, py) in points.iter().skip(1) {
                     emit_coord(&mut out, fmt, *px, *py);
                     out.push_str("D01*");
                     last_pos = Some((*px, *py));
@@ -143,6 +149,35 @@ fn mo_code(unit: Unit) -> &'static str {
         Unit::Inch => "IN",
         Unit::Mm => "MM",
     }
+}
+
+/// Check every value an object writes against the coordinate format.
+fn check_fits(fmt: CoordinateFormat, kind: &ObjectKind) -> Result<(), GerberError> {
+    let points: Vec<(f64, f64)> = match kind {
+        ObjectKind::Flash { x, y } => alloc::vec![(*x, *y)],
+        ObjectKind::Line { x0, y0, x1, y1 } => alloc::vec![(*x0, *y0), (*x1, *y1)],
+        // The arc centre offsets `i` and `j` are written with the same format.
+        ObjectKind::Arc { x0, y0, x1, y1, i, j, .. } => {
+            alloc::vec![(*x0, *y0), (*x1, *y1), (*i, *j)]
+        }
+        ObjectKind::Region { points } => points.clone(),
+    };
+    for (x, y) in points {
+        check_axis(fmt, Axis::X, x)?;
+        check_axis(fmt, Axis::Y, y)?;
+    }
+    Ok(())
+}
+
+fn check_axis(fmt: CoordinateFormat, axis: Axis, value: f64) -> Result<(), GerberError> {
+    if fmt.fits_axis(axis, value) {
+        return Ok(());
+    }
+    let axis_char = match axis {
+        Axis::X => 'X',
+        Axis::Y => 'Y',
+    };
+    Err(GerberError::CoordinateOutOfRange { axis: axis_char, token: format!("{value}") })
 }
 
 fn emit_coord(out: &mut String, fmt: CoordinateFormat, x: f64, y: f64) {
