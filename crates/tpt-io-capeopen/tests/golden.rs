@@ -38,5 +38,6 @@ fn golden_file_round_trips_to_identical_text() {
     // Re-encoding yields the canonical form, which reparses to the same model and
     // (because the golden file is already canonical) the same bytes.
     let reencoded = encode_property_package(&pp);
-    assert_eq!(SAMPLE, reencoded);
+    // Git on Windows may check the sample out with CRLF; the canonical form is LF.
+    assert_eq!(SAMPLE.replace("\r\n", "\n"), reencoded);
 }
