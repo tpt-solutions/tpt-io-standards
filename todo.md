@@ -64,19 +64,20 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] `cargo publish --dry-run` clean — *blocked only by dependency order: requires `tpt-io-core` on crates.io first; packaging verified via `cargo package --no-verify`*
 
 #### `tpt-io-fhir` (HL7 FHIR R4/R5)
-- [ ] Cargo.toml + `medical-patient-integration` optional feature (for future `tpt-medical-patient`)
+- [x] Cargo.toml + `medical-patient-integration` optional feature (for future `tpt-medical-patient`)
 - [x] `FhirError` enum
 - [x] JSON resource deserialization
-- [ ] XML resource deserialization
-- [ ] FHIR profile validation (strict)
-- [ ] NZ HIPC 2020 compliance validation hooks
-- [ ] Reference resolution (cross-resource links)
-- [ ] Bundle traversal + pagination
-- [ ] FHIRPath expression evaluator
-- [ ] Batch import/export utilities
-- [ ] Patient → `tpt-medical-patient` conversion (behind feature flag, stub until that crate exists)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] XML resource deserialization
+- [x] FHIR profile validation (strict)
+- [x] NZ HIPC 2020 compliance validation hooks
+- [x] Reference resolution (cross-resource links)
+- [x] Bundle traversal + pagination
+- [x] FHIRPath expression evaluator
+- [x] Batch import/export utilities
+- [x] Patient → `tpt-medical-patient` conversion (behind feature flag, stub until that crate exists)
+- [x] Round-trip, fuzz, golden-file, property tests
+- [x] README + docs pass
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 #### `tpt-io-nifti` (NIfTI-1 / NIfTI-2)
 - [x] Cargo.toml + `sci-image-integration` optional feature

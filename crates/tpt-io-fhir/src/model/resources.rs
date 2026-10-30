@@ -257,6 +257,7 @@ pub struct BundleResponse {
 ///
 /// Custom deserialization dispatches on the `resourceType` field.
 #[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(untagged)]
 #[allow(clippy::large_enum_variant)]
 pub enum Resource {
     Patient(Patient),

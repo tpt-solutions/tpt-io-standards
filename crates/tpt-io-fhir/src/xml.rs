@@ -61,23 +61,33 @@ pub fn parse_resource(xml: &str) -> Result<Resource, FhirError> {
     }
 }
 
+/// Insert `resourceType` from the root element name when the XML omits it,
+/// so typed parses carry the same discriminator as the JSON form.
+fn with_resource_type(mut value: serde_json::Value, kind: &str) -> serde_json::Value {
+    if let serde_json::Value::Object(ref mut map) = value {
+        map.entry("resourceType".to_string())
+            .or_insert_with(|| serde_json::Value::String(kind.to_string()));
+    }
+    value
+}
+
 /// Parse a FHIR Patient from XML.
 pub fn parse_patient(xml: &str) -> Result<Patient, FhirError> {
-    let value = xml_to_json_value(xml)?;
+    let value = with_resource_type(xml_to_json_value(xml)?, "Patient");
     let value = wrap_all_repeating(&value);
     serde_json::from_value(value).map_err(|e| FhirError::Xml(e.to_string()))
 }
 
 /// Parse a FHIR Observation from XML.
 pub fn parse_observation(xml: &str) -> Result<Observation, FhirError> {
-    let value = xml_to_json_value(xml)?;
+    let value = with_resource_type(xml_to_json_value(xml)?, "Observation");
     let value = wrap_all_repeating(&value);
     serde_json::from_value(value).map_err(|e| FhirError::Xml(e.to_string()))
 }
 
 /// Parse a FHIR Bundle from XML.
 pub fn parse_bundle(xml: &str) -> Result<Bundle, FhirError> {
-    let value = xml_to_json_value(xml)?;
+    let value = with_resource_type(xml_to_json_value(xml)?, "Bundle");
     let value = wrap_all_repeating(&value);
     serde_json::from_value(value).map_err(|e| FhirError::Xml(e.to_string()))
 }

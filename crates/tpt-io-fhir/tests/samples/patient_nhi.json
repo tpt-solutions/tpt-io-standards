@@ -1,0 +1,17 @@
+{
+    "resourceType": "Patient",
+    "id": "example",
+    "identifier": [
+        {"system": "https://standards.digital.health.nz/id/nhi", "value": "XYZ1234"}
+    ],
+    "active": true,
+    "name": [
+        {"use": "official", "family": "Chalmers", "given": ["Peter", "James"]},
+        {"use": "maiden", "family": "Windsor", "given": ["Peter", "James"]}
+    ],
+    "gender": "male",
+    "birthDate": "1974-12-25",
+    "address": [
+        {"line": ["534 Erewhon St"], "city": "PleasantVille", "state": "Vic", "postalCode": "3999"}
+    ]
+}

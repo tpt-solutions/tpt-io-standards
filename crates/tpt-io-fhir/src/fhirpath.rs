@@ -15,6 +15,7 @@
 //! The evaluator works over a [`FhirValue`] tree that mirrors the JSON structure
 //! of a FHIR resource.
 
+use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt;

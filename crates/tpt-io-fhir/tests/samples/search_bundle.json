@@ -1,0 +1,14 @@
+{
+    "resourceType": "Bundle",
+    "id": "search-result",
+    "type": "searchset",
+    "total": 2,
+    "link": [
+        {"relation": "self", "url": "https://example.com/fhir/Patient?_page=1"},
+        {"relation": "next", "url": "https://example.com/fhir/Patient?_page=2"}
+    ],
+    "entry": [
+        {"fullUrl": "Patient/1", "resource": {"resourceType": "Patient", "id": "1"}},
+        {"fullUrl": "Patient/2", "resource": {"resourceType": "Patient", "id": "2"}}
+    ]
+}

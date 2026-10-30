@@ -4,7 +4,7 @@
 //! (`next`, `previous`, `first`, `last`, `self`). This module provides
 //! iteration over bundle entries and helpers for following pagination links.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use crate::error::FhirError;

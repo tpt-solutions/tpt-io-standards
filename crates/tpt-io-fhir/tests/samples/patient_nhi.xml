@@ -1,0 +1,28 @@
+<Patient xmlns="http://hl7.org/fhir">
+    <id value="example"/>
+    <identifier>
+        <system value="https://standards.digital.health.nz/id/nhi"/>
+        <value value="XYZ1234"/>
+    </identifier>
+    <active value="true"/>
+    <name>
+        <use value="official"/>
+        <family value="Chalmers"/>
+        <given value="Peter"/>
+        <given value="James"/>
+    </name>
+    <name>
+        <use value="maiden"/>
+        <family value="Windsor"/>
+        <given value="Peter"/>
+        <given value="James"/>
+    </name>
+    <gender value="male"/>
+    <birthDate value="1974-12-25"/>
+    <address>
+        <line value="534 Erewhon St"/>
+        <city value="PleasantVille"/>
+        <state value="Vic"/>
+        <postalCode value="3999"/>
+    </address>
+</Patient>

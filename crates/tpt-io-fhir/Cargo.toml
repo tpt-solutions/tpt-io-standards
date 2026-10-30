@@ -22,7 +22,7 @@ quick-xml = { version = "0.37", features = ["serialize"], optional = true }
 [features]
 default = ["std", "json", "xml", "validation", "reference", "bundle", "fhirpath", "batch"]
 std = ["tpt-io-core/std", "serde", "serde_json"]
-alloc = ["tpt-io-core/alloc"]
+alloc = ["tpt-io-core/alloc", "serde", "serde_json"]
 # JSON deserialization (requires `alloc` for `String`/`Vec`).
 json = ["serde", "serde_json", "alloc"]
 # XML deserialization (requires `std`).
@@ -31,9 +31,9 @@ xml = ["quick-xml", "std"]
 validation = ["alloc"]
 # Reference resolution, bundle traversal, FHIRPath, batch.
 reference = ["alloc"]
-bundle = ["alloc"]
-fhirpath = ["alloc"]
-batch = ["alloc"]
+bundle = ["json"]
+fhirpath = ["json"]
+batch = ["json"]
 # Integration with future `tpt-medical-patient` (not yet published).
 medical-patient-integration = []
 

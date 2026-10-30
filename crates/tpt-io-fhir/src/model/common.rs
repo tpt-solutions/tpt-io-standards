@@ -4,7 +4,8 @@
 //! (Identifier, HumanName, CodeableConcept, Reference, …). They follow the
 //! FHIR R4/R5 base data-type definitions.
 
-use alloc::string::String;
+use alloc::format;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 

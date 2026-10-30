@@ -4,7 +4,7 @@
 //! [`model`](crate::model) structs. The `Resource` enum dispatches on the
 //! `resourceType` field.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use crate::error::FhirError;
