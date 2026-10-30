@@ -112,7 +112,12 @@ mod proptest_roundtrip {
     proptest! {
         #[test]
         fn roundtrip_is_idempotent(
-            coords in proptest::collection::vec(any::<(i64, i64)>(), 1..12),
+            // The file's 3.6 coordinate format covers |value| < 1000 mm, so
+            // generate only micrometre counts inside that range.
+            coords in proptest::collection::vec(
+                (-999_999_999i64..=999_999_999, -999_999_999i64..=999_999_999),
+                1..12,
+            ),
         ) {
             let file = build_file(coords);
             let bytes = GerberReader::new().serialize(&file).expect("serialize");

@@ -9,6 +9,8 @@
 //! * **Leading suppression** (right-justified): `value / 10^decimals`.
 //! * **Trailing suppression** (left-justified): `value / 10^(total - decimals)`.
 
+use alloc::string::ToString;
+
 use crate::error::GerberError;
 
 /// Axis selector for format/coordinate access.

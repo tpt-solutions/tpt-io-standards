@@ -29,6 +29,8 @@ tpt-io-netcdf = { workspace = true, optional = true }
 tpt-io-welllog = { workspace = true, optional = true }
 tpt-io-capeopen = { workspace = true, optional = true }
 tpt-io-sbml = { workspace = true, optional = true }
+tpt-io-hdf5 = { workspace = true, optional = true }
+tpt-io-kicad = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -47,5 +49,7 @@ netcdf = ["tpt-io-netcdf", "tpt-io-netcdf/std"]
 welllog = ["tpt-io-welllog", "tpt-io-welllog/std"]
 capeopen = ["tpt-io-capeopen", "tpt-io-capeopen/std"]
 sbml = ["tpt-io-sbml", "tpt-io-sbml/std"]
+hdf5 = ["tpt-io-hdf5", "tpt-io-hdf5/std"]
+kicad = ["tpt-io-kicad", "tpt-io-kicad/std"]
 
 # Flat feature tree: each domain feature is independent (no transitive deps).

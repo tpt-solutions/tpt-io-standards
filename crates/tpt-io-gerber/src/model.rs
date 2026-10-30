@@ -1,5 +1,6 @@
 //! Strongly-typed data model for a parsed Gerber (RS-274X / X2 / X3) file.
 
+use alloc::string::String;
 use alloc::vec::Vec;
 
 use crate::aperture::{Aperture, ApertureMacro};

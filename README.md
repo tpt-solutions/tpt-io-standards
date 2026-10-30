@@ -28,7 +28,9 @@ errors.
 | `tpt-io-spice` | SPICE (HSPICE/LTSpice/Ngspice/PSpice dialects) | Electronics |
 | `tpt-io-gerber` | Gerber X2/X3 + Excellon | Electronics |
 | `tpt-io-edif` | EDIF 2.0.0 / 4.0.0 | Electronics |
+| `tpt-io-kicad` | KiCad 6+ PCB, schematic and symbol library (S-expression) | Electronics |
 | `tpt-io-geo` | GeoJSON / Shapefile / GeoTIFF | Earth & GIS |
+| `tpt-io-hdf5` | HDF5 reader (superblock, groups, chunked data, deflate/shuffle) | Foundation |
 | `tpt-io-netcdf` | NetCDF-3 / NetCDF-4 (HDF5) | Earth & GIS |
 | `tpt-io-welllog` | LAS 2.0/3.0 + DLIS | Earth & GIS |
 | `tpt-io-capeopen` | CAPE-OPEN 1.1 / 2.0 | Process |

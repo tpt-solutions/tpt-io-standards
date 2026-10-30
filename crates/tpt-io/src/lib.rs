@@ -57,6 +57,10 @@ pub enum IoError {
     CapeOpen(tpt_io_capeopen::CapeOpenError),
     #[cfg(feature = "sbml")]
     Sbml(tpt_io_sbml::SbmlError),
+    #[cfg(feature = "hdf5")]
+    Hdf5(tpt_io_hdf5::Hdf5Error),
+    #[cfg(feature = "kicad")]
+    Kicad(tpt_io_kicad::KicadError),
 }
 
 #[cfg(any(feature = "alloc", feature = "std"))]
@@ -90,6 +94,10 @@ impl core::fmt::Display for IoError {
             IoError::CapeOpen(e) => write!(f, "CAPE-OPEN: {e}"),
             #[cfg(feature = "sbml")]
             IoError::Sbml(e) => write!(f, "SBML: {e}"),
+            #[cfg(feature = "hdf5")]
+            IoError::Hdf5(e) => write!(f, "HDF5: {e}"),
+            #[cfg(feature = "kicad")]
+            IoError::Kicad(e) => write!(f, "KiCad: {e}"),
         }
     }
 }
@@ -112,8 +120,12 @@ pub use tpt_io_fhir as fhir;
 pub use tpt_io_geo as geo;
 #[cfg(feature = "gerber")]
 pub use tpt_io_gerber as gerber;
+#[cfg(feature = "hdf5")]
+pub use tpt_io_hdf5 as hdf5;
 #[cfg(feature = "ifc")]
 pub use tpt_io_ifc as ifc;
+#[cfg(feature = "kicad")]
+pub use tpt_io_kicad as kicad;
 #[cfg(feature = "netcdf")]
 pub use tpt_io_netcdf as netcdf;
 #[cfg(feature = "nifti")]

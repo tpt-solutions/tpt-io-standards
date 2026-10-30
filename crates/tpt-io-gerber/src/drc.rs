@@ -6,7 +6,7 @@
 //! widths, the annular rings (pad − hole)/2, and any explicit design-rule
 //! metadata carried by `%…DR…%` attributes.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use crate::aperture::Aperture;
