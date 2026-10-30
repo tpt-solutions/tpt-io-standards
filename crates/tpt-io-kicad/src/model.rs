@@ -1,9 +1,10 @@
-//! Typed view of a KiCad PCB or schematic.
+//! Typed view of a KiCad PCB, schematic or symbol library.
 //!
 //! The reader targets the KiCad 6 and later S-expression layout: a top-level
-//! `kicad_pcb` or `kicad_sch` list with `version` and `generator` entries, nets
-//! in `(net id "name")` form, footprints as `(footprint "lib:name" …)`, and
-//! placed schematic symbols as `(symbol (lib_id "…") …)`.
+//! `kicad_pcb`, `kicad_sch` or `kicad_symbol_lib` list with `version` and
+//! `generator` entries. PCB files carry nets, footprints (with pads), tracks
+//! (`segment`) and vias. Schematics carry placed symbols and wires. Symbol
+//! libraries list their symbols.
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -18,6 +19,8 @@ pub enum DocKind {
     Pcb,
     /// A schematic (`.kicad_sch`).
     Schematic,
+    /// A symbol library (`.kicad_sym`).
+    SymbolLib,
 }
 
 /// A net declared in a PCB file.
@@ -27,6 +30,27 @@ pub struct Net {
     pub id: u32,
     /// The net name; empty for the unconnected net 0.
     pub name: String,
+}
+
+/// A pad of a footprint.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Pad {
+    /// The pad number or name, e.g. `1`.
+    pub number: String,
+    /// `smd`, `thru_hole`, `np_thru_hole` or `connect`.
+    pub kind: String,
+    /// `rect`, `roundrect`, `circle`, `oval`, …
+    pub shape: String,
+    /// Position relative to the footprint origin, in millimetres.
+    pub x: f64,
+    /// Position relative to the footprint origin, in millimetres.
+    pub y: f64,
+    /// Width in millimetres.
+    pub width: f64,
+    /// Height in millimetres.
+    pub height: f64,
+    /// The net the pad is connected to, if any.
+    pub net: Option<u32>,
 }
 
 /// A placed footprint in a PCB file.
@@ -46,6 +70,38 @@ pub struct Footprint {
     pub reference: Option<String>,
     /// The `Value` property, e.g. `10k`.
     pub value: Option<String>,
+    /// The pads of the footprint.
+    pub pads: Vec<Pad>,
+}
+
+/// A copper track segment in a PCB file.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Track {
+    /// Start point `(x, y)` in millimetres.
+    pub start: (f64, f64),
+    /// End point `(x, y)` in millimetres.
+    pub end: (f64, f64),
+    /// Width in millimetres.
+    pub width: f64,
+    /// The copper layer, e.g. `F.Cu`.
+    pub layer: String,
+    /// The net, if any.
+    pub net: Option<u32>,
+}
+
+/// A via in a PCB file.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Via {
+    /// Position `(x, y)` in millimetres.
+    pub at: (f64, f64),
+    /// Pad diameter in millimetres.
+    pub size: f64,
+    /// Drill diameter in millimetres.
+    pub drill: f64,
+    /// The copper layers the via connects.
+    pub layers: Vec<String>,
+    /// The net, if any.
+    pub net: Option<u32>,
 }
 
 /// A placed symbol in a schematic.
@@ -65,30 +121,57 @@ pub struct Symbol {
     pub value: Option<String>,
 }
 
+/// A schematic wire: a polyline of points.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Wire {
+    /// The points of the polyline, in millimetres.
+    pub points: Vec<(f64, f64)>,
+}
+
+/// A symbol defined in a symbol library.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LibSymbol {
+    /// The symbol name, e.g. `R` or `Device:R` in a library.
+    pub name: String,
+    /// The default `Reference` property, e.g. `R`.
+    pub reference: Option<String>,
+    /// The default `Value` property.
+    pub value: Option<String>,
+}
+
 /// A parsed KiCad document.
 #[derive(Debug, Clone, PartialEq)]
 pub struct KicadDocument {
-    /// PCB or schematic.
+    /// PCB, schematic or symbol library.
     pub kind: DocKind,
     /// The file-format version number, e.g. `20211014`.
     pub version: Option<u32>,
     /// The program that wrote the file, e.g. `pcbnew`.
     pub generator: Option<String>,
-    /// Nets (PCB only; empty for schematics).
+    /// Nets (PCB only).
     pub nets: Vec<Net>,
     /// Footprints (PCB only).
     pub footprints: Vec<Footprint>,
+    /// Copper track segments (PCB only).
+    pub tracks: Vec<Track>,
+    /// Vias (PCB only).
+    pub vias: Vec<Via>,
     /// Placed symbols (schematic only).
     pub symbols: Vec<Symbol>,
+    /// Wires (schematic only).
+    pub wires: Vec<Wire>,
+    /// Symbols defined in a symbol library (library only).
+    pub lib_symbols: Vec<LibSymbol>,
 }
 
-/// Parse a `.kicad_pcb` or `.kicad_sch` file.
+/// Parse a `.kicad_pcb`, `.kicad_sch` or `.kicad_sym` file.
 pub fn parse(input: &[u8]) -> Result<KicadDocument, KicadError> {
     let root = parse_tree(input)?;
     let kind = match root.head() {
         Some("kicad_pcb") => DocKind::Pcb,
         Some("kicad_sch") => DocKind::Schematic,
-        _ => return Err(KicadError::Unsupported("not a kicad_pcb or kicad_sch file")),
+        Some("kicad_symbol_lib") => DocKind::SymbolLib,
+        _ => return Err(KicadError::Unsupported("not a kicad_pcb, kicad_sch or kicad_sym file")),
     };
 
     let version = root.find("version").and_then(|n| n.arg_f64(0)).map(|v| v as u32);
@@ -100,7 +183,11 @@ pub fn parse(input: &[u8]) -> Result<KicadDocument, KicadError> {
         generator,
         nets: Vec::new(),
         footprints: Vec::new(),
+        tracks: Vec::new(),
+        vias: Vec::new(),
         symbols: Vec::new(),
+        wires: Vec::new(),
+        lib_symbols: Vec::new(),
     };
 
     match kind {
@@ -113,10 +200,28 @@ pub fn parse(input: &[u8]) -> Result<KicadDocument, KicadError> {
             for n in root.children("footprint") {
                 doc.footprints.push(footprint(n));
             }
+            for n in root.children("segment") {
+                doc.tracks.push(track(n));
+            }
+            for n in root.children("via") {
+                doc.vias.push(via(n));
+            }
         }
         DocKind::Schematic => {
             for n in root.children("symbol") {
                 doc.symbols.push(symbol(n));
+            }
+            for n in root.children("wire") {
+                doc.wires.push(wire(n));
+            }
+        }
+        DocKind::SymbolLib => {
+            for n in root.children("symbol") {
+                doc.lib_symbols.push(LibSymbol {
+                    name: n.arg_str(0).unwrap_or("").into(),
+                    reference: property(n, "Reference"),
+                    value: property(n, "Value"),
+                });
             }
         }
     }
@@ -131,16 +236,24 @@ fn property(node: &Node, name: &str) -> Option<String> {
         .map(Into::into)
 }
 
+/// The `(x y)` pair at the start of a node's arguments, e.g. from `(start x y)`.
+fn point(node: Option<&Node>) -> (f64, f64) {
+    match node {
+        Some(n) => (n.arg_f64(0).unwrap_or(0.0), n.arg_f64(1).unwrap_or(0.0)),
+        None => (0.0, 0.0),
+    }
+}
+
 /// Position and rotation from `(at x y [rotation])`.
 fn placement(node: &Node) -> (f64, f64, f64) {
-    match node.find("at") {
-        Some(at) => (
-            at.arg_f64(0).unwrap_or(0.0),
-            at.arg_f64(1).unwrap_or(0.0),
-            at.arg_f64(2).unwrap_or(0.0),
-        ),
-        None => (0.0, 0.0, 0.0),
-    }
+    let (x, y) = point(node.find("at"));
+    let rotation = node.find("at").and_then(|at| at.arg_f64(2)).unwrap_or(0.0);
+    (x, y, rotation)
+}
+
+/// The net number from `(net id …)`.
+fn net_of(node: &Node) -> Option<u32> {
+    node.find("net").and_then(|n| n.arg_f64(0)).map(|v| v as u32)
 }
 
 fn footprint(node: &Node) -> Footprint {
@@ -153,6 +266,49 @@ fn footprint(node: &Node) -> Footprint {
         rotation,
         reference: property(node, "Reference"),
         value: property(node, "Value"),
+        pads: node.children("pad").map(pad).collect(),
+    }
+}
+
+fn pad(node: &Node) -> Pad {
+    let (x, y) = point(node.find("at"));
+    let (width, height) = point(node.find("size"));
+    Pad {
+        number: node.arg_str(0).unwrap_or("").into(),
+        kind: node.arg_str(1).unwrap_or("").into(),
+        shape: node.arg_str(2).unwrap_or("").into(),
+        x,
+        y,
+        width,
+        height,
+        net: net_of(node),
+    }
+}
+
+fn track(node: &Node) -> Track {
+    Track {
+        start: point(node.find("start")),
+        end: point(node.find("end")),
+        width: node.find("width").and_then(|w| w.arg_f64(0)).unwrap_or(0.0),
+        layer: node.find("layer").and_then(|l| l.arg_str(0)).unwrap_or("").into(),
+        net: net_of(node),
+    }
+}
+
+fn via(node: &Node) -> Via {
+    let (x, y) = point(node.find("at"));
+    Via {
+        at: (x, y),
+        size: node.find("size").and_then(|s| s.arg_f64(0)).unwrap_or(0.0),
+        drill: node.find("drill").and_then(|d| d.arg_f64(0)).unwrap_or(0.0),
+        layers: node
+            .find("layers")
+            .map(|l| l.items().iter().skip(1).filter_map(|i| match i {
+                crate::tree::Node::Str(s) | crate::tree::Node::Symbol(s) => Some(s.clone()),
+                _ => None,
+            }).collect())
+            .unwrap_or_default(),
+        net: net_of(node),
     }
 }
 
@@ -166,4 +322,12 @@ fn symbol(node: &Node) -> Symbol {
         reference: property(node, "Reference"),
         value: property(node, "Value"),
     }
+}
+
+fn wire(node: &Node) -> Wire {
+    let points = node
+        .find("pts")
+        .map(|pts| pts.children("xy").map(|xy| point(Some(xy))).collect())
+        .unwrap_or_default();
+    Wire { points }
 }

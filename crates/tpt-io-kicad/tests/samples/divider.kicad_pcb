@@ -26,5 +26,10 @@
     (property "Value" "100n" (at 0 -1.43) (layer "B.Fab"))
   )
 
+  (segment (start 10.16 21.6) (end 14 21.6) (width 0.25) (layer "F.Cu") (net 2) (tstamp 0a1b2c3d-0000-4000-8000-000000000010))
+  (segment (start 14 21.6) (end 14 25) (width 0.25) (layer "B.Cu") (net 2) (tstamp 0a1b2c3d-0000-4000-8000-000000000011))
+
+  (via (at 14 21.6) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (net 2) (tstamp 0a1b2c3d-0000-4000-8000-000000000012))
+
   (gr_line (start 0 0) (end 40 0) (layer "Edge.Cuts") (width 0.05))
 )
