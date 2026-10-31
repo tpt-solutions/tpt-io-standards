@@ -420,7 +420,6 @@ pub(crate) fn parse_math(reader: &mut NsReader<&[u8]>) -> Result<MathNode, SbmlE
 /// Convenience: parse a MathML fragment from a string (used by tests).
 #[cfg(feature = "std")]
 pub fn parse_math_str(input: &str) -> Result<MathNode, SbmlError> {
-    use quick_xml::events::Event;
     let mut reader = NsReader::from_str(input);
     let mut buf = Vec::new();
     loop {
