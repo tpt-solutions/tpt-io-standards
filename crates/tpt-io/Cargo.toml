@@ -31,6 +31,59 @@ tpt-io-capeopen = { workspace = true, optional = true }
 tpt-io-sbml = { workspace = true, optional = true }
 tpt-io-hdf5 = { workspace = true, optional = true }
 tpt-io-kicad = { workspace = true, optional = true }
+tpt-io-omex = { workspace = true, optional = true }
+tpt-io-bcf = { workspace = true, optional = true }
+tpt-io-threemf = { workspace = true, optional = true }
+tpt-io-mesh = { workspace = true, optional = true }
+tpt-io-gnss = { workspace = true, optional = true }
+tpt-io-hecras = { workspace = true, optional = true }
+tpt-io-ome = { workspace = true, optional = true }
+tpt-io-tiff = { workspace = true, optional = true }
+tpt-io-pointcloud = { workspace = true, optional = true }
+tpt-io-segy = { workspace = true, optional = true }
+tpt-io-gds = { workspace = true, optional = true }
+tpt-io-edf = { workspace = true, optional = true }
+tpt-io-openehr = { workspace = true, optional = true }
+tpt-io-nrrd = { workspace = true, optional = true }
+tpt-io-cellml = { workspace = true, optional = true }
+tpt-io-dexpi = { workspace = true, optional = true }
+tpt-io-automationml = { workspace = true, optional = true }
+tpt-io-witsml = { workspace = true, optional = true }
+tpt-io-ipc2581 = { workspace = true, optional = true }
+tpt-io-cda = { workspace = true, optional = true }
+tpt-io-gbxml = { workspace = true, optional = true }
+tpt-io-landxml = { workspace = true, optional = true }
+tpt-io-mzml = { workspace = true, optional = true }
+tpt-io-jcamp = { workspace = true, optional = true }
+tpt-io-chem = { workspace = true, optional = true }
+tpt-io-pdb = { workspace = true, optional = true }
+tpt-io-dxf = { workspace = true, optional = true }
+tpt-io-hl7v2 = { workspace = true, optional = true }
+tpt-io-verilog = { workspace = true, optional = true }
+tpt-io-touchstone = { workspace = true, optional = true }
+tpt-io-chemfile = { workspace = true, optional = true }
+tpt-io-cif = { workspace = true, optional = true }
+tpt-io-asterix = { workspace = true, optional = true }
+tpt-io-aixm = { workspace = true, optional = true }
+tpt-io-opcua = { workspace = true, optional = true }
+tpt-io-aas = { workspace = true, optional = true }
+tpt-io-plcopen = { workspace = true, optional = true }
+tpt-io-mtconnect = { workspace = true, optional = true }
+tpt-io-waterml = { workspace = true, optional = true }
+tpt-io-epanet = { workspace = true, optional = true }
+tpt-io-gcode = { workspace = true, optional = true }
+tpt-io-fits = { workspace = true, optional = true }
+tpt-io-ccsds = { workspace = true, optional = true }
+tpt-io-tle = { workspace = true, optional = true }
+tpt-io-arxml = { workspace = true, optional = true }
+tpt-io-openscenario = { workspace = true, optional = true }
+tpt-io-opendrive = { workspace = true, optional = true }
+tpt-io-urdf = { workspace = true, optional = true }
+tpt-io-rosbag = { workspace = true, optional = true }
+tpt-io-mcap = { workspace = true, optional = true }
+tpt-io-gridlabd = { workspace = true, optional = true }
+tpt-io-opendss = { workspace = true, optional = true }
+tpt-io-matpower = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -51,5 +104,58 @@ capeopen = ["tpt-io-capeopen", "tpt-io-capeopen/std"]
 sbml = ["tpt-io-sbml", "tpt-io-sbml/std"]
 hdf5 = ["tpt-io-hdf5", "tpt-io-hdf5/std"]
 kicad = ["tpt-io-kicad", "tpt-io-kicad/std"]
+omex = ["tpt-io-omex", "tpt-io-omex/std"]
+bcf = ["tpt-io-bcf", "tpt-io-bcf/std"]
+threemf = ["tpt-io-threemf", "tpt-io-threemf/std"]
+mesh = ["tpt-io-mesh", "tpt-io-mesh/std"]
+gnss = ["tpt-io-gnss", "tpt-io-gnss/std"]
+hecras = ["tpt-io-hecras", "tpt-io-hecras/std"]
+ome = ["tpt-io-ome", "tpt-io-ome/std"]
+tiff = ["tpt-io-tiff", "tpt-io-tiff/std"]
+pointcloud = ["tpt-io-pointcloud", "tpt-io-pointcloud/std"]
+segy = ["tpt-io-segy", "tpt-io-segy/std"]
+gds = ["tpt-io-gds", "tpt-io-gds/std"]
+edf = ["tpt-io-edf", "tpt-io-edf/std"]
+openehr = ["tpt-io-openehr", "tpt-io-openehr/std"]
+nrrd = ["tpt-io-nrrd", "tpt-io-nrrd/std"]
+cellml = ["tpt-io-cellml", "tpt-io-cellml/std"]
+dexpi = ["tpt-io-dexpi", "tpt-io-dexpi/std"]
+automationml = ["tpt-io-automationml", "tpt-io-automationml/std"]
+witsml = ["tpt-io-witsml", "tpt-io-witsml/std"]
+ipc2581 = ["tpt-io-ipc2581", "tpt-io-ipc2581/std"]
+cda = ["tpt-io-cda", "tpt-io-cda/std"]
+gbxml = ["tpt-io-gbxml", "tpt-io-gbxml/std"]
+landxml = ["tpt-io-landxml", "tpt-io-landxml/std"]
+mzml = ["tpt-io-mzml", "tpt-io-mzml/std"]
+jcamp = ["tpt-io-jcamp", "tpt-io-jcamp/std"]
+chem = ["tpt-io-chem", "tpt-io-chem/std"]
+pdb = ["tpt-io-pdb", "tpt-io-pdb/std"]
+dxf = ["tpt-io-dxf", "tpt-io-dxf/std"]
+hl7v2 = ["tpt-io-hl7v2", "tpt-io-hl7v2/std"]
+verilog = ["tpt-io-verilog", "tpt-io-verilog/std"]
+touchstone = ["tpt-io-touchstone", "tpt-io-touchstone/std"]
+chemfile = ["tpt-io-chemfile", "tpt-io-chemfile/std"]
+cif = ["tpt-io-cif", "tpt-io-cif/std"]
+asterix = ["tpt-io-asterix", "tpt-io-asterix/std"]
+aixm = ["tpt-io-aixm", "tpt-io-aixm/std"]
+opcua = ["tpt-io-opcua", "tpt-io-opcua/std"]
+aas = ["tpt-io-aas", "tpt-io-aas/std"]
+plcopen = ["tpt-io-plcopen", "tpt-io-plcopen/std"]
+mtconnect = ["tpt-io-mtconnect", "tpt-io-mtconnect/std"]
+waterml = ["tpt-io-waterml", "tpt-io-waterml/std"]
+epanet = ["tpt-io-epanet", "tpt-io-epanet/std"]
+gcode = ["tpt-io-gcode", "tpt-io-gcode/std"]
+fits = ["tpt-io-fits", "tpt-io-fits/std"]
+ccsds = ["tpt-io-ccsds", "tpt-io-ccsds/std"]
+tle = ["tpt-io-tle", "tpt-io-tle/std"]
+arxml = ["tpt-io-arxml", "tpt-io-arxml/std"]
+openscenario = ["tpt-io-openscenario", "tpt-io-openscenario/std"]
+opendrive = ["tpt-io-opendrive", "tpt-io-opendrive/std"]
+urdf = ["tpt-io-urdf", "tpt-io-urdf/std"]
+rosbag = ["tpt-io-rosbag", "tpt-io-rosbag/std"]
+mcap = ["tpt-io-mcap", "tpt-io-mcap/std"]
+gridlabd = ["tpt-io-gridlabd", "tpt-io-gridlabd/std"]
+opendss = ["tpt-io-opendss", "tpt-io-opendss/std"]
+matpower = ["tpt-io-matpower", "tpt-io-matpower/std"]
 
 # Flat feature tree: each domain feature is independent (no transitive deps).

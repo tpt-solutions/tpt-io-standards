@@ -17,6 +17,59 @@ members = [
     "crates/tpt-io-welllog",
     "crates/tpt-io-capeopen",
     "crates/tpt-io-sbml",
+    "crates/tpt-io-matpower",
+    "crates/tpt-io-opendss",
+    "crates/tpt-io-gridlabd",
+    "crates/tpt-io-mcap",
+    "crates/tpt-io-rosbag",
+    "crates/tpt-io-urdf",
+    "crates/tpt-io-opendrive",
+    "crates/tpt-io-openscenario",
+    "crates/tpt-io-arxml",
+    "crates/tpt-io-tle",
+    "crates/tpt-io-ccsds",
+    "crates/tpt-io-fits",
+    "crates/tpt-io-gcode",
+    "crates/tpt-io-epanet",
+    "crates/tpt-io-waterml",
+    "crates/tpt-io-mtconnect",
+    "crates/tpt-io-plcopen",
+    "crates/tpt-io-aas",
+    "crates/tpt-io-opcua",
+    "crates/tpt-io-aixm",
+    "crates/tpt-io-asterix",
+    "crates/tpt-io-cif",
+    "crates/tpt-io-chemfile",
+    "crates/tpt-io-touchstone",
+    "crates/tpt-io-verilog",
+    "crates/tpt-io-hl7v2",
+    "crates/tpt-io-dxf",
+    "crates/tpt-io-pdb",
+    "crates/tpt-io-chem",
+    "crates/tpt-io-jcamp",
+    "crates/tpt-io-mzml",
+    "crates/tpt-io-landxml",
+    "crates/tpt-io-gbxml",
+    "crates/tpt-io-cda",
+    "crates/tpt-io-ipc2581",
+    "crates/tpt-io-witsml",
+    "crates/tpt-io-automationml",
+    "crates/tpt-io-dexpi",
+    "crates/tpt-io-cellml",
+    "crates/tpt-io-nrrd",
+    "crates/tpt-io-openehr",
+    "crates/tpt-io-edf",
+    "crates/tpt-io-gds",
+    "crates/tpt-io-segy",
+    "crates/tpt-io-pointcloud",
+    "crates/tpt-io-tiff",
+    "crates/tpt-io-ome",
+    "crates/tpt-io-hecras",
+    "crates/tpt-io-gnss",
+    "crates/tpt-io-mesh",
+    "crates/tpt-io-threemf",
+    "crates/tpt-io-bcf",
+    "crates/tpt-io-omex",
     "crates/tpt-io", "hdf5_test",
 ]
 
@@ -42,6 +95,59 @@ tpt-io-edif = { path = "crates/tpt-io-edif", version = "0.1.0" }
 tpt-io-geo = { path = "crates/tpt-io-geo", version = "0.1.0" }
 tpt-io-hdf5 = { path = "crates/tpt-io-hdf5", version = "0.1.0" }
 tpt-io-kicad = { path = "crates/tpt-io-kicad", version = "0.1.0" }
+tpt-io-omex = { path = "crates/tpt-io-omex", version = "0.1.0" }
+tpt-io-bcf = { path = "crates/tpt-io-bcf", version = "0.1.0" }
+tpt-io-threemf = { path = "crates/tpt-io-threemf", version = "0.1.0" }
+tpt-io-mesh = { path = "crates/tpt-io-mesh", version = "0.1.0" }
+tpt-io-gnss = { path = "crates/tpt-io-gnss", version = "0.1.0" }
+tpt-io-hecras = { path = "crates/tpt-io-hecras", version = "0.1.0" }
+tpt-io-ome = { path = "crates/tpt-io-ome", version = "0.1.0" }
+tpt-io-tiff = { path = "crates/tpt-io-tiff", version = "0.1.0" }
+tpt-io-pointcloud = { path = "crates/tpt-io-pointcloud", version = "0.1.0" }
+tpt-io-segy = { path = "crates/tpt-io-segy", version = "0.1.0" }
+tpt-io-gds = { path = "crates/tpt-io-gds", version = "0.1.0" }
+tpt-io-edf = { path = "crates/tpt-io-edf", version = "0.1.0" }
+tpt-io-openehr = { path = "crates/tpt-io-openehr", version = "0.1.0" }
+tpt-io-nrrd = { path = "crates/tpt-io-nrrd", version = "0.1.0" }
+tpt-io-cellml = { path = "crates/tpt-io-cellml", version = "0.1.0" }
+tpt-io-dexpi = { path = "crates/tpt-io-dexpi", version = "0.1.0" }
+tpt-io-automationml = { path = "crates/tpt-io-automationml", version = "0.1.0" }
+tpt-io-witsml = { path = "crates/tpt-io-witsml", version = "0.1.0" }
+tpt-io-ipc2581 = { path = "crates/tpt-io-ipc2581", version = "0.1.0" }
+tpt-io-cda = { path = "crates/tpt-io-cda", version = "0.1.0" }
+tpt-io-gbxml = { path = "crates/tpt-io-gbxml", version = "0.1.0" }
+tpt-io-landxml = { path = "crates/tpt-io-landxml", version = "0.1.0" }
+tpt-io-mzml = { path = "crates/tpt-io-mzml", version = "0.1.0" }
+tpt-io-jcamp = { path = "crates/tpt-io-jcamp", version = "0.1.0" }
+tpt-io-chem = { path = "crates/tpt-io-chem", version = "0.1.0" }
+tpt-io-pdb = { path = "crates/tpt-io-pdb", version = "0.1.0" }
+tpt-io-dxf = { path = "crates/tpt-io-dxf", version = "0.1.0" }
+tpt-io-hl7v2 = { path = "crates/tpt-io-hl7v2", version = "0.1.0" }
+tpt-io-verilog = { path = "crates/tpt-io-verilog", version = "0.1.0" }
+tpt-io-touchstone = { path = "crates/tpt-io-touchstone", version = "0.1.0" }
+tpt-io-chemfile = { path = "crates/tpt-io-chemfile", version = "0.1.0" }
+tpt-io-cif = { path = "crates/tpt-io-cif", version = "0.1.0" }
+tpt-io-asterix = { path = "crates/tpt-io-asterix", version = "0.1.0" }
+tpt-io-aixm = { path = "crates/tpt-io-aixm", version = "0.1.0" }
+tpt-io-opcua = { path = "crates/tpt-io-opcua", version = "0.1.0" }
+tpt-io-aas = { path = "crates/tpt-io-aas", version = "0.1.0" }
+tpt-io-plcopen = { path = "crates/tpt-io-plcopen", version = "0.1.0" }
+tpt-io-mtconnect = { path = "crates/tpt-io-mtconnect", version = "0.1.0" }
+tpt-io-waterml = { path = "crates/tpt-io-waterml", version = "0.1.0" }
+tpt-io-epanet = { path = "crates/tpt-io-epanet", version = "0.1.0" }
+tpt-io-gcode = { path = "crates/tpt-io-gcode", version = "0.1.0" }
+tpt-io-fits = { path = "crates/tpt-io-fits", version = "0.1.0" }
+tpt-io-ccsds = { path = "crates/tpt-io-ccsds", version = "0.1.0" }
+tpt-io-tle = { path = "crates/tpt-io-tle", version = "0.1.0" }
+tpt-io-arxml = { path = "crates/tpt-io-arxml", version = "0.1.0" }
+tpt-io-openscenario = { path = "crates/tpt-io-openscenario", version = "0.1.0" }
+tpt-io-opendrive = { path = "crates/tpt-io-opendrive", version = "0.1.0" }
+tpt-io-urdf = { path = "crates/tpt-io-urdf", version = "0.1.0" }
+tpt-io-rosbag = { path = "crates/tpt-io-rosbag", version = "0.1.0" }
+tpt-io-mcap = { path = "crates/tpt-io-mcap", version = "0.1.0" }
+tpt-io-gridlabd = { path = "crates/tpt-io-gridlabd", version = "0.1.0" }
+tpt-io-opendss = { path = "crates/tpt-io-opendss", version = "0.1.0" }
+tpt-io-matpower = { path = "crates/tpt-io-matpower", version = "0.1.0" }
 tpt-io-netcdf = { path = "crates/tpt-io-netcdf", version = "0.1.0" }
 tpt-io-welllog = { path = "crates/tpt-io-welllog", version = "0.1.0" }
 tpt-io-capeopen = { path = "crates/tpt-io-capeopen", version = "0.1.0" }

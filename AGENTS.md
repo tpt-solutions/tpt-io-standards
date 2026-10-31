@@ -5,7 +5,7 @@
 - Rust workspace: 15 format crates under `crates/`, plus `hdf5_test` (experimental, not published).
 - `tpt-io-core` is the foundation; every domain crate depends on it.
 - `tpt-io` is the umbrella crate — publish it last.
-- Publish order: `core → geo → citygml → ifc → fhir → dicom → nifti → spice → gerber → edif → netcdf → welllog → capeopen → sbml → umbrella`.
+- Publish order: `core → geo → citygml → ifc → fhir → dicom → nifti → spice → gerber → edif → netcdf → welllog → capeopen → sbml → tpt-io-matpower → umbrella`.
 - MSRV: **1.75**, edition **2021**. `clippy.toml` and `[workspace.package]` enforce this.
 
 ## Commands

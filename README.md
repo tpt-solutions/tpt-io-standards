@@ -35,6 +35,59 @@ errors.
 | `tpt-io-welllog` | LAS 2.0/3.0 + DLIS | Earth & GIS |
 | `tpt-io-capeopen` | CAPE-OPEN 1.1 / 2.0 | Process |
 | `tpt-io-sbml` | SBML Level 2 / 3 | Process |
+| `tpt-io-omex` | COMBINE archives (`.omex`) and SED-ML experiment summaries | Science & Materials |
+| `tpt-io-bcf` | BIM Collaboration Format 2.1 projects: topics, comments and viewpoint references (`.bcf`, `.bcfzip`) | Construction & CAD |
+| `tpt-io-threemf` | 3D Manufacturing Format packages (`.3mf`) | Construction & CAD |
+| `tpt-io-mesh` | Triangle meshes: STL, Wavefront OBJ, PLY | Construction & CAD |
+| `tpt-io-gnss` | GNSS observations (RINEX 3) and precise orbits (SP3), read only | Earth & GIS |
+| `tpt-io-hecras` | HEC-RAS river geometry files (read only) | Water & Hydraulics |
+| `tpt-io-ome` | OME-XML, OME-TIFF and OME-Zarr microscopy metadata | Earth & GIS |
+| `tpt-io-tiff` | TIFF images (uncompressed and LZW strips) | Earth & GIS |
+| `tpt-io-pointcloud` | ASPRS LAS point clouds, uncompressed (`.las`) | Earth & GIS |
+| `tpt-io-segy` | SEG-Y seismic traces (`.sgy`, `.segy`) | Science & Materials |
+| `tpt-io-gds` | GDSII IC layout streams (`.gds`) | Electronics |
+| `tpt-io-edf` | EDF, EDF+ and BDF biosignal recordings | Healthcare |
+| `tpt-io-openehr` | openEHR compositions, RM JSON (read only) | Healthcare |
+| `tpt-io-nrrd` | NRRD raster data (`.nrrd`, `.nhdr`) | Healthcare & Imaging |
+| `tpt-io-cellml` | CellML models (XML, read only) | Science & Materials |
+| `tpt-io-dexpi` | DEXPI P&ID components (XML, read only) | Process & Chemical |
+| `tpt-io-automationml` | AutomationML CAEX plant hierarchies (read only) | Manufacturing |
+| `tpt-io-witsml` | WITSML well trajectories (XML, read only) | Energy & Oil-Gas |
+| `tpt-io-ipc2581` | IPC-2581 PCB design data (XML, read only) | Electronics |
+| `tpt-io-cda` | HL7 Clinical Document Architecture documents (read only) | Healthcare |
+| `tpt-io-gbxml` | gbXML building-energy models (read only) | Construction & CAD |
+| `tpt-io-landxml` | LandXML surfaces, units and alignments (civil) | Construction & CAD |
+| `tpt-io-mzml` | mzML mass spectrometry spectra (read only) | Science & Materials |
+| `tpt-io-jcamp` | JCAMP-DX spectroscopy files (`.jdx`, `.dx`) | Science & Materials |
+| `tpt-io-chem` | MDL molfiles (V2000) and SDF records (`.mol`, `.sdf`) | Science & Materials |
+| `tpt-io-pdb` | Protein Data Bank fixed-column files (`.pdb`) | Science & Materials |
+| `tpt-io-dxf` | AutoCAD DXF drawings (ASCII) | Construction & CAD |
+| `tpt-io-hl7v2` | HL7 v2.x pipe-delimited messages | Healthcare |
+| `tpt-io-verilog` | Structural Verilog netlists (`.v`) | Electronics |
+| `tpt-io-touchstone` | Touchstone network parameter files (`.sNp`) | Electronics |
+| `tpt-io-chemfile` | Molecular and crystal structure files (XYZ, cube, POSCAR, LAMMPS) | Science & Materials |
+| `tpt-io-cif` | Crystallographic CIF 1.1 and mmCIF (STAR syntax) | Science & Materials |
+| `tpt-io-asterix` | ASTERIX surveillance data (binary), CAT048 subset | Aviation & Maritime |
+| `tpt-io-aixm` | AIXM 5.1 aeronautical features (XML, read only) | Aviation & Maritime |
+| `tpt-io-opcua` | OPC UA NodeSet2 XML information models (read only) | Manufacturing |
+| `tpt-io-aas` | Asset Administration Shell environments, JSON (read only) | Manufacturing |
+| `tpt-io-plcopen` | PLCopen XML IEC 61131-3 projects (read only) | Manufacturing |
+| `tpt-io-mtconnect` | MTConnect devices and streams (XML, read only) | Manufacturing |
+| `tpt-io-waterml` | OGC WaterML 2.0 hydrological time series (XML) | Water & Hydraulics |
+| `tpt-io-epanet` | EPANET and SWMM network input files (`.inp`) | Water & Hydraulics |
+| `tpt-io-gcode` | G-code programs for CNC and 3D printers (`.nc`, `.gcode`) | Manufacturing |
+| `tpt-io-fits` | FITS images and HDUs (`.fits`) | Space & Geodesy |
+| `tpt-io-ccsds` | CCSDS orbit data messages in KVN form (`.oem`, `.opm`, `.tdm`) | Space & Geodesy |
+| `tpt-io-tle` | Two-line element sets (TLE orbital elements) | Space & Geodesy |
+| `tpt-io-arxml` | AUTOSAR XML packages and elements (`.arxml`), read-only | Automotive & Robotics |
+| `tpt-io-openscenario` | ASAM OpenSCENARIO 1.x scenarios (`.xosc`), read-only | Automotive & Robotics |
+| `tpt-io-opendrive` | ASAM OpenDRIVE road networks (`.xodr`) | Automotive & Robotics |
+| `tpt-io-urdf` | URDF and SDFormat robot descriptions (`.urdf`, `.sdf`) | Automotive & Robotics |
+| `tpt-io-rosbag` | ROS 1 bags, format 2.0 (`.bag`) | Automotive & Robotics |
+| `tpt-io-mcap` | MCAP robotics logs (`.mcap`) | Automotive & Robotics |
+| `tpt-io-gridlabd` | GridLAB-D models (`.glm`) | Power & Energy |
+| `tpt-io-opendss` | OpenDSS scripts (`.dss`) | Power & Energy |
+| `tpt-io-matpower` | MATPOWER case files (`case*.m`) | Power & Energy |
 | `tpt-io` | umbrella re-export of all formats | umbrella |
 
 ## Using the umbrella crate

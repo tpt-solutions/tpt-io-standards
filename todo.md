@@ -98,41 +98,43 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 ### Construction & Architecture
 
 #### `tpt-io-ifc` (IFC 4.0 / 4.3)
-- [ ] Cargo.toml + `eng-geometry-integration`, `eng-cad-integration` optional features
+- [x] Cargo.toml + `eng-geometry-integration`, `eng-cad-integration` optional features
 - [x] `IfcError` enum
-- [ ] STEP-Physical File (SPF) tokenizer/parser
-- [ ] Entity instance resolution
-- [ ] Relationship graph construction (`IfcRelContainedInSpatialStructure`, `IfcRelAssociatesMaterial`, …)
-- [ ] Property set traversal
-- [ ] B-Rep geometry extraction
-- [ ] CSG geometry extraction
-- [ ] Tessellated mesh extraction
-- [ ] IFC schema version detection
-- [ ] Migration utilities between IFC versions
-- [ ] Spatial structure navigation (Site → Building → Storey → Space)
-- [ ] Parallel entity-instance parsing (rayon), per spec §4 Performance
-- [ ] `tpt-eng-geometry` / `tpt-eng-cad` integration (feature-gated stubs)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] STEP-Physical File (SPF) tokenizer/parser
+- [x] Entity instance resolution
+- [x] Relationship graph construction (`IfcRelContainedInSpatialStructure`, `IfcRelAssociatesMaterial`, …)
+- [x] Property set traversal
+- [x] B-Rep geometry extraction
+- [x] CSG geometry extraction
+- [x] Tessellated mesh extraction
+- [x] IFC schema version detection
+- [x] Migration utilities between IFC versions
+- [x] Spatial structure navigation (Site → Building → Storey → Space)
+- [x] Parallel entity-instance parsing (rayon), per spec §4 Performance
+- [x] `tpt-eng-geometry` / `tpt-eng-cad` integration (feature-gated stubs)
+- [x] Round-trip, fuzz, golden-file, property tests
+- [x] README + docs pass
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 #### `tpt-io-citygml` (CityGML 2.0 / 3.0)
-- [ ] Cargo.toml + `eng-geometry-integration` optional feature; depends on `tpt-io-geo` for CRS handling
+- [x] Cargo.toml + `eng-geometry-integration` optional feature; depends on `tpt-io-geo` for CRS handling
 - [x] `CityGmlError` enum
-- [ ] XML parsing for CityGML 2.0
-- [ ] XML parsing for CityGML 3.0
-- [ ] LOD 0–4 extraction (buildings, vegetation, water, transportation)
-- [ ] Semantic surface classification (wall/roof/ground/window/door)
-- [ ] Thematic attribute extraction (function, year built, energy performance)
-- [ ] CRS handling + transformation utilities (via `tpt-io-geo`)
-- [ ] CityJSON alternative encoding support
-- [ ] `tpt-eng-geometry` integration (feature-gated stub)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] XML parsing for CityGML 2.0
+- [x] XML parsing for CityGML 3.0
+- [x] LOD 0–4 extraction (buildings, vegetation, water, transportation)
+- [x] Semantic surface classification (wall/roof/ground/window/door)
+- [x] Thematic attribute extraction (function, year built, energy performance)
+- [x] CRS handling + transformation utilities (via `tpt-io-geo`) — *`to_wgs84` reprojects through `tpt-io-geo` for CRSs with a known EPSG code*
+- [x] CityJSON alternative encoding support
+- [x] `tpt-eng-geometry` integration (feature-gated stub)
+- [x] Round-trip, fuzz, golden-file, property tests — *round-trip is CityGML → CityJSON structural check; there is no CityGML writer yet*
+- [x] README + docs pass
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` / `tpt-io-geo` dependencies not yet on crates.io (see §4 publish order)
 
 ### Electronics & Electrical
 
 #### `tpt-io-spice` (HSPICE, LTSpice, Ngspice, PSpice dialects)
-- [ ] Cargo.toml + `em-circuit-integration` optional feature
+- [x] Cargo.toml + `em-circuit-integration` optional feature
 - [x] `SpiceError` enum
 - [x] Dialect detection/handling (HSPICE/LTSpice/Ngspice/PSpice)
 - [x] Passive component parsing (R, L, C)
@@ -144,9 +146,10 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] Analysis command extraction (`.tran`, `.ac`, `.op`, `.dc`, `.noise`)
 - [x] Component value parsing with unit suffixes (k/u/p/etc.)
 - [x] Temperature-dependent parameter handling
-- [ ] `tpt-em-circuit` integration (feature-gated stub)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] `tpt-em-circuit` integration (feature-gated stub)
+- [x] Round-trip, fuzz, golden-file, property tests
+- [x] README + docs pass
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 #### `tpt-io-gerber` (Gerber X2/X3 + Excellon)
 - [x] Cargo.toml + `eng-pcb-integration`, `eng-geometry-integration` optional features
@@ -181,19 +184,19 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 ### Earth Science & GIS
 
 #### `tpt-io-geo` (GeoJSON, Shapefile, GeoTIFF metadata)
-- [ ] Cargo.toml + `eng-geometry-integration`, `math-geometry-integration` optional features
+- [x] Cargo.toml + `eng-geometry-integration`, `math-geometry-integration` optional features
 - [x] `GeoError` enum
 - [x] GeoJSON (RFC 7946) parsing
-- [ ] Shapefile (.shp/.shx/.dbf) parsing
-- [ ] GeoTIFF metadata extraction
-- [ ] CRS handling via PROJ strings
-- [ ] CRS handling via EPSG codes
-- [ ] Datum transformation (WGS84, NAD83, NZGD2000)
-- [ ] R-tree spatial indexing (point-in-polygon, nearest neighbor, range query)
-- [ ] Streaming parser for large datasets
-- [ ] Coordinate system validation + reprojection utilities
-- [ ] `tpt-eng-geometry` / `tpt-math-geometry` integration (feature-gated stubs)
-- [ ] Round-trip, fuzz, golden-file, property tests
+- [x] Shapefile (.shp/.shx/.dbf) parsing
+- [x] GeoTIFF metadata extraction
+- [x] CRS handling via PROJ strings
+- [x] CRS handling via EPSG codes
+- [x] Datum transformation (WGS84, NAD83, NZGD2000) — *NAD83 and NZGD2000 are applied as WGS84 offsets (≈ within centimetres)*
+- [x] R-tree spatial indexing (point-in-polygon, nearest neighbor, range query)
+- [x] Streaming parser for large datasets
+- [x] Coordinate system validation + reprojection utilities
+- [x] `tpt-eng-geometry` / `tpt-math-geometry` integration (feature-gated stubs)
+- [x] Round-trip, fuzz, golden-file, property tests
 - [ ] README + docs, `cargo publish --dry-run`
 - [ ] Note: `tpt-io-citygml` depends on this crate — publish before/alongside it
 
@@ -201,21 +204,21 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] Cargo.toml + `sci-grid-integration` optional feature
 - [x] `NetCdfError` enum
 - [x] NetCDF-3 classic format parsing
-- [ ] NetCDF-4 (HDF5-based) format parsing
+- [x] NetCDF-4 (HDF5-based) format parsing — *h5py-written files: superblock, object headers, links, dataspace, layout, filters*
 - [x] Dimension definition extraction
 - [x] Variable metadata extraction (units, long_name, valid_range)
 - [x] Global attribute extraction
-- [ ] Chunked reading for large multi-dim arrays (time × depth × lat × lon)
+- [~] Chunked reading for large multi-dim arrays (time × depth × lat × lon) — *N-D chunk assembly verified on a 4-D h5py file; the whole variable is still decoded into memory (no streaming API yet)*
 - [x] Coordinate variable detection + automatic coordinate mapping
-- [ ] Deflate/shuffle compression support
-- [ ] Chunking metadata for performance
+- [x] Deflate/shuffle compression support — *zlib needs the `std` feature*
+- [x] Chunking metadata for performance
 - [x] `tpt-sci-grid` integration (feature-gated stub)
-- [~] Round-trip, fuzz, golden-file, property tests (round-trip + property done; fuzz + golden pending)
+- [x] Round-trip, fuzz, golden-file, property tests
 - [x] README + docs
 - [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 #### `tpt-io-welllog` (LAS 2.0/3.0 + DLIS)
-- [ ] Cargo.toml + `eng-geotech-integration` optional feature
+- [x] Cargo.toml + `eng-geotech-integration` optional feature
 - [x] `WellLogError` enum
 - [x] LAS 2.0 ASCII parsing
 - [x] LAS 3.0 ASCII parsing
@@ -225,40 +228,162 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] Well header extraction (UWI, location, dates)
 - [x] DLIS format parsing (frame-based organization)
 - [x] Depth alignment utilities for multi-run correlation
-- [ ] `tpt-eng-geotech` integration (feature-gated stub)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] `tpt-eng-geotech` integration (feature-gated stub)
+- [x] Round-trip, fuzz, golden-file, property tests
+- [x] README + docs pass
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 ### Process Engineering
 
 #### `tpt-io-capeopen` (CAPE-OPEN 1.1 / 2.0)
-- [ ] Cargo.toml + `thermo-integration`, `eng-unit-ops-integration` optional features + Windows-only `com` feature (off by default)
+- [x] Cargo.toml + `thermo-integration`, `eng-unit-ops-integration` optional features + Windows-only `com` feature (off by default)
 - [x] `CapeOpenError` enum
-- [ ] Pure-Rust data model for thermodynamic property packages (component lists, phase ID, property calc requests) — no COM required
-- [ ] Unit operation port mapping (inlet/outlet streams)
-- [ ] Stream connection validation for flowsheet topology
-- [ ] `com` feature: FFI-safe wrappers for `ICapeThermoMaterial`, `ICapeThermoCalculation`, `ICapeThermoPropertyPackage` (Windows-only, via `windows` crate)
-- [ ] CI: verify crate builds with default (no COM) features on Linux/macOS; COM feature validated on a Windows runner
-- [ ] `tpt-thermo` / `tpt-eng-unit-ops` integration (feature-gated stubs)
-- [ ] Round-trip, fuzz (non-COM paths), golden-file, property tests
-- [ ] README + docs (call out COM/Windows caveat prominently), `cargo publish --dry-run`
+- [x] Pure-Rust data model for thermodynamic property packages (component lists, phase ID, property calc requests) — no COM required
+- [x] Unit operation port mapping (inlet/outlet streams)
+- [x] Stream connection validation for flowsheet topology
+- [x] `com` feature: FFI-safe wrappers for `ICapeThermoMaterial`, `ICapeThermoCalculation`, `ICapeThermoPropertyPackage` (Windows-only, via `windows` crate)
+- [x] CI: verify crate builds with default (no COM) features on Linux/macOS; COM feature validated on a Windows runner
+- [x] `tpt-thermo` / `tpt-eng-unit-ops` integration (feature-gated stubs)
+- [x] Round-trip, fuzz (non-COM paths), golden-file, property tests
+- [x] README + docs (call out COM/Windows caveat prominently)
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
 
 #### `tpt-io-sbml` (SBML Level 2 / 3)
-- [ ] Cargo.toml + `sci-reaction-network-integration`, `sci-ode-integration` optional features
+- [x] Cargo.toml + `sci-reaction-network-integration`, `sci-ode-integration` optional features
 - [x] `SbmlError` enum
-- [ ] Species / compartment / reaction extraction
-- [ ] Rate law extraction with MathML expression parsing
-- [ ] Rule definitions (assignment, rate, algebraic)
-- [ ] Event handling
-- [ ] Function definitions
-- [ ] FBC (flux balance analysis) package extension
-- [ ] Qual (qualitative models) package extension
-- [ ] Spatial modeling package extension
-- [ ] Model validation against SBML schema
-- [ ] Mass balance / charge balance consistency checking
-- [ ] `tpt-sci-reaction-network` / `tpt-sci-ode` integration (feature-gated stubs)
-- [ ] Round-trip, fuzz, golden-file, property tests
-- [ ] README + docs, `cargo publish --dry-run`
+- [x] Species / compartment / reaction extraction
+- [x] Rate law extraction with MathML expression parsing
+- [x] Rule definitions (assignment, rate, algebraic)
+- [x] Event handling
+- [x] Function definitions
+- [x] FBC (flux balance analysis) package extension
+- [x] Qual (qualitative models) package extension
+- [x] Spatial modeling package extension
+- [x] Model validation against SBML schema — *structural and semantic checks in `validate.rs`; not validated against the official XSD*
+- [x] Mass balance / charge balance consistency checking
+- [x] `tpt-sci-reaction-network` / `tpt-sci-ode` integration (feature-gated stubs)
+- [x] Round-trip, fuzz, golden-file, property tests
+- [x] README + docs pass
+- [ ] `cargo publish --dry-run` — blocked: `tpt-io-core` dependency not yet on crates.io (see §4 publish order)
+
+## 2b. Proposed additional crates (backlog)
+
+Candidate formats identified as gaps. Start only after the unfinished crates in §2 are done.
+Every new crate follows the standard sub-checklist (see `tpt-io-dicom`): Cargo.toml + error enum,
+parsers, round-trip / fuzz / golden-file / property tests, README + CHANGELOG, `cargo publish --dry-run`.
+Each must also be added to the publish order, umbrella features, root README table and CI feature matrix.
+
+### Foundation (unblocks existing work)
+- [~] `tpt-io-hdf5` — pure-Rust HDF5 reader (superblock, groups, datasets, chunking, deflate/shuffle); unblocks NetCDF-4, MATLAB v7.3; fold in `hdf5_test` findings — *extracted from `tpt-io-netcdf` with datatype and attribute decoding fixed; README, CHANGELOG, fuzz and tests done; umbrella feature, root README row and CI alloc-lane entry done. Still open: publish dry-run (blocked on crates.io), `hdf5_test` scratch crate not yet folded in (it uses the third-party `hdf5-io` crate; kept for now, needs a decision on removal), MATLAB v7.3 support*
+- [x] `tpt-io-core`: shared S-expression tokenizer (`tpt_io_core::sexpr`; EDIF uses it, KiCad still to come)
+- [x] `tpt-io-core`: shared STEP Part 21 (ISO 10303-21) tokenizer (`tpt_io_core::step`; IFC uses it)
+
+### Earth Science, GIS & Energy
+- [ ] `tpt-io-geo`: WKT / WKB
+- [ ] `tpt-io-geo`: KML / KMZ
+- [ ] `tpt-io-geo`: GPX
+- [ ] `tpt-io-geo`: GeoPackage
+- [ ] `tpt-io-geo`: FlatGeobuf
+- [ ] `tpt-io-segy` — SEG-Y rev 0/1/2 (seismic; pairs with `tpt-io-welllog`)
+- [ ] `tpt-io-pointcloud` — LAS/LAZ point clouds (separate from well-log LAS)
+- [ ] `tpt-io-grib` — GRIB2 (meteorology/oceanography; companion to NetCDF)
+- [ ] `tpt-io-witsml` — WITSML / RESQML (oil & gas data exchange)
+
+### CAD, Mesh & Civil
+- [ ] `tpt-io-dxf` — DXF (ASCII + binary)
+- [ ] `tpt-io-mesh` — STL, OBJ, PLY
+- [ ] `tpt-io-mesh`: glTF 2.0 / GLB
+- [ ] `tpt-io-mesh`: 3MF
+- [ ] `tpt-io-landxml` — LandXML
+- [ ] `tpt-io-gbxml` — gbXML (building energy)
+- [ ] `tpt-io-bcf` — BCF (BIM Collaboration Format)
+
+### Electronics
+- [~] `tpt-io-kicad` — `.kicad_pcb` / `.kicad_sch` / `.kicad_sym` — *KiCad 6 PCB nets, footprints, pads, tracks and vias; schematic symbols and wires; symbol libraries; KiCad 5 PCB `module` footprints; umbrella, README and CI wired. Still open: zone fills, schematic labels/junctions, KiCad 5 `.sch` schematics (legacy text format, out of scope so far), and the publish dry-run (blocked on crates.io)*
+- [ ] `tpt-io-ipc2581` — IPC-2581
+- [ ] `tpt-io-gds` — GDSII
+- [ ] `tpt-io-touchstone` — Touchstone `.sNp`
+- [ ] `tpt-io-spice`: SPICE `.raw` simulation output
+- [ ] `tpt-io-verilog` — structural Verilog netlists
+
+### Medical & Healthcare
+- [ ] `tpt-io-hl7v2` — HL7 v2.x (pipe-delimited messages)
+- [ ] `tpt-io-edf` — EDF / EDF+ / BDF (EEG, ECG)
+- [ ] `tpt-io-fhir` / new crate: C-CDA / CDA
+- [ ] `tpt-io-openehr` — openEHR archetypes + compositions
+- [ ] `tpt-io-nifti` / new crate: NRRD and MINC
+
+### Process Engineering & Science
+- [ ] `tpt-io-dexpi` — DEXPI (P&ID exchange)
+- [ ] `tpt-io-automationml` — AutomationML (CAEX)
+- [ ] `tpt-io-sbml` / new crate: CellML, SED-ML, COMBINE/OMEX archives
+- [ ] `tpt-io-pdb` — PDB / mmCIF
+- [ ] `tpt-io-chem` — MOL / SDF
+- [ ] `tpt-io-jcamp` — JCAMP-DX (spectroscopy)
+- [ ] `tpt-io-mzml` — mzML (mass spectrometry)
+
+
+## 2c. Next-up fields (priority over §2b backlog)
+
+New domains to tackle next. **Free, openly published specs only** — no proprietary or paid-spec formats.
+Never copy spec text, schemas, or unlicensed sample data into the repo; record "spec access / licence"
+in each crate README. Each crate follows the standard `tpt-io-dicom` sub-checklist and must be added to
+the publish order, umbrella features, root README table and CI feature matrix.
+Tags: `[free]` open spec · `[free, licence terms]` free but the publisher's licence/trademark terms apply.
+
+### Power & Energy (open-source formats only)
+- [ ] `tpt-io-matpower` — MATPOWER case files `[free]`
+- [ ] `tpt-io-opendss` — OpenDSS scripts (EPRI, BSD) `[free]`
+- [ ] `tpt-io-gridlabd` — GridLAB-D GLM `[free]`
+- Excluded: CIM / IEC 61850 SCL / COMTRADE (paid IEC/IEEE specs), PSS/E RAW (proprietary)
+
+### Automotive, Robotics & Autonomous Driving
+- [ ] `tpt-io-mcap` — MCAP `[free]`
+- [ ] `tpt-io-rosbag` — ROS bag 1/2 `[free]`
+- [ ] `tpt-io-urdf` — URDF + SDFormat `[free]`
+- [ ] `tpt-io-opendrive` — ASAM OpenDRIVE `[free, licence terms]`
+- [ ] `tpt-io-openscenario` — ASAM OpenSCENARIO `[free, licence terms]`
+- [ ] `tpt-io-arxml` — AUTOSAR ARXML `[free, licence terms]`
+- [ ] `tpt-io-mdf` — ASAM MDF4 `[free, licence terms]`- Excluded: DBC (proprietary, no official spec)
+
+### Aerospace, Astronomy & Geodesy
+- [ ] `tpt-io-fits` — FITS `[free]`
+- [ ] `tpt-io-ccsds` — CCSDS OEM / OPM / TDM `[free]`
+- [ ] `tpt-io-gnss` — RINEX + SP3 `[free]`
+- [ ] `tpt-io-tle` — TLE / orbital elements `[free]`
+- [ ] `tpt-io-naif` — NAIF SPICE kernels (named to avoid clash with circuit `tpt-io-spice`) `[free]`
+- Excluded: RTCM, NMEA 0183, AIS/IEC 61162 (paid specs)
+
+### Industrial Automation (Industry 4.0)
+- [ ] `tpt-io-opcua` — OPC UA NodeSet XML `[free]`
+- [ ] `tpt-io-aas` — Asset Administration Shell (IDTA) `[free]`
+- [ ] `tpt-io-plcopen` — PLCopen XML (IEC 61131-3 exchange) `[free]`
+- [ ] `tpt-io-mtconnect` — MTConnect `[free]`
+- [ ] `tpt-io-gcode` — G-code, LinuxCNC / RepRap dialects only `[free]`
+- Related: AutomationML, DEXPI in §2b
+- Excluded: ISO 6983 (paid)
+
+### Water & Civil Hydraulics
+- [ ] `tpt-io-epanet` — EPANET / SWMM `.inp` `[free]` (US EPA, public domain)
+- [ ] `tpt-io-waterml` — WaterML 2.0 `[free]`
+- [ ] `tpt-io-hecras` — HEC-RAS text geometry/flow files `[free]`
+
+### Digital Pathology & Microscopy
+- [ ] `tpt-io-ome` — OME-TIFF + OME-Zarr `[free]`
+- [ ] `tpt-io-tiff` — generic tiled/pyramidal TIFF + BigTIFF `[free]`
+- [ ] `tpt-io-dicom`: DICOM-WSI (whole-slide imaging) `[free]`
+- Excluded: vendor formats (SVS, NDPI, CZI)
+
+### Computational Chemistry & Materials
+- [ ] `tpt-io-cif` — CIF `[free]`
+- [ ] `tpt-io-chemfile` — Gaussian cube, POSCAR, LAMMPS data, XYZ `[free]`
+- Related: PDB/mmCIF, MOL/SDF in §2b
+
+### Maritime & Aviation Navigation
+- [ ] `tpt-io-s57` — IHO S-57 / S-101 `[free]` (ENC chart *data* may be separately licensed)
+- [ ] `tpt-io-aixm` — AIXM `[free]`
+- [ ] `tpt-io-asterix` — ASTERIX (Eurocontrol) `[free]`
+- Excluded: ARINC 424 (paid spec, licensed navdata)
 
 ## 3. `tpt-io` (umbrella — last, depends on all domain crates)
 
@@ -272,6 +397,9 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] `cargo publish --dry-run` clean
 
 ## 4. Cross-cutting / release readiness
+
+- [ ] Finish unfinished existing crates (`ifc`, `citygml`, `geo`, `sbml`, `capeopen`, `fhir`) before starting the §2b backlog
+- [ ] Licence review per new crate (spec access, trademarks, sample-data rights) recorded in each crate README
 
 - [ ] Decide real crates.io publish order (must respect dependency graph: core → geo → citygml → … → umbrella)
 - [ ] Confirm `repository` URL in workspace `Cargo.toml` once the GitHub org/repo is finalized (currently a placeholder)

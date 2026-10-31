@@ -53,7 +53,7 @@ jobs:
         run: |
           for c in tpt-io-dicom tpt-io-fhir tpt-io-nifti tpt-io-ifc tpt-io-citygml \
                    tpt-io-spice tpt-io-gerber tpt-io-edif tpt-io-geo tpt-io-netcdf \
-                   tpt-io-hdf5 tpt-io-kicad tpt-io-welllog tpt-io-capeopen tpt-io-sbml; do
+                   tpt-io-hdf5 tpt-io-kicad tpt-io-welllog tpt-io-capeopen tpt-io-sbml tpt-io-matpower; do
             cargo build -p "$c" --no-default-features --features alloc
           done
 
