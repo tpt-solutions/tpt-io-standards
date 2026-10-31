@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-grib"
+description = "Reader and writer for GRIB edition 2 messages (WMO FM 92): latitude/longitude grids with simple packing and bitmaps."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["grib", "grib2", "weather", "meteorology", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_grib"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-mdf"
+description = "Reader for ASAM MDF 4 measurement files: channel groups, channels and their sample values (plain, linked and deflate-compressed data)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["mdf", "asam", "measurement", "automotive", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_mdf"
+
+[dependencies]
+tpt-io-core = { workspace = true, features = ["zip"] }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

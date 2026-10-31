@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-naif"
+description = "Reader for NAIF DAF and SPK kernels: the SPICE binary ephemeris files (`.bsp`), with Chebyshev evaluation for types 2 and 3."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["spice", "naif", "spk", "ephemeris", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_naif"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
