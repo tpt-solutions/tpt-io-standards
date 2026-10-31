@@ -28,6 +28,8 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
+pub mod matlab;
+
 /// Whether `data` starts with the HDF5 file signature.
 pub fn is_hdf5(data: &[u8]) -> bool {
     data.len() >= 8 && &data[0..8] == b"\x89HDF\r\n\x1a\n"
@@ -58,12 +60,16 @@ pub fn parse_hdf5_superblock(data: &[u8]) -> core::result::Result<Hdf5Superblock
     }
     let version = *data.get(8).ok_or_else(|| Hdf5Error::Core(tpt_io_core::ParseError::eof(8)))?;
     let (offset_size, length_size, root_group_addr) = match version {
-        1 => {
+        0 | 1 => {
             let os =
                 *data.get(13).ok_or_else(|| Hdf5Error::Core(tpt_io_core::ParseError::eof(13)))?;
             let ls =
                 *data.get(14).ok_or_else(|| Hdf5Error::Core(tpt_io_core::ParseError::eof(14)))?;
-            let ra = read_int(data, 24, os as usize)?;
+            // Version 1 adds the indexed-storage K and a reserved field before the base address.
+            // The root symbol-table entry follows the base, free-space, end-of-file and driver
+            // addresses, and holds its link-name offset before the object header address.
+            let base = if version == 1 { 28 } else { 24 };
+            let ra = read_int(data, base + 5 * (os as usize), os as usize)?;
             (os, ls, ra)
         }
         2 | 3 => {
@@ -216,6 +222,7 @@ const MSG_FILTER: u16 = 0x000A;
 const MSG_FILTER2: u16 = 0x000B;
 const MSG_ATTRIBUTE: u16 = 0x000C;
 const MSG_OBJHDRCONT: u16 = 0x0010;
+const MSG_SYMBOL_TABLE: u16 = 0x0011;
 
 /// Read the messages of a version-2 object header.
 ///
@@ -231,6 +238,9 @@ fn parse_object_header<'a>(
 ) -> core::result::Result<Vec<Message<'a>>, Hdf5Error> {
     let base = addr as usize;
     if r.slice(base, 4)? != &b"OHDR"[..] {
+        if r.u8(base)? == 1 {
+            return parse_object_header_v1(r, base);
+        }
         return Err(Hdf5Error::Unsupported("expected object header signature"));
     }
     if r.u8(base + 4)? != 2 {
@@ -266,6 +276,138 @@ fn parse_object_header<'a>(
         read_messages(r, off + 4, off + len - 4, track_order, &mut messages, &mut continuations)?;
     }
     Ok(messages)
+}
+
+/// Read the messages of a version-1 object header, the form used by superblock versions 0 and 1.
+///
+/// The header is a version byte, a reserved byte, the message count (2 bytes), the reference count (4 bytes) and the
+/// size of chunk 0 (4 bytes), padded to 16 bytes. Each message header is type (2 bytes), size (2 bytes), flags
+/// (1 byte) and 3 reserved bytes. The message size already includes padding to 8 bytes. A continuation block holds
+/// messages in the same form, with no signature and no checksum.
+fn parse_object_header_v1<'a>(
+    r: &Reader<'a>,
+    base: usize,
+) -> core::result::Result<Vec<Message<'a>>, Hdf5Error> {
+    let chunk0_len = r.rd(base + 8, 4)? as usize;
+    let mut messages = Vec::new();
+    let mut continuations: Vec<(usize, usize)> = Vec::new();
+    read_messages_v1(r, base + 16, base + 16 + chunk0_len, &mut messages, &mut continuations)?;
+    let mut i = 0;
+    while i < continuations.len() {
+        let (off, len) = continuations[i];
+        i += 1;
+        read_messages_v1(r, off, off + len, &mut messages, &mut continuations)?;
+    }
+    Ok(messages)
+}
+
+/// Read version-1 object header messages in `[start, end)`.
+fn read_messages_v1<'a>(
+    r: &Reader<'a>,
+    start: usize,
+    end: usize,
+    out: &mut Vec<Message<'a>>,
+    continuations: &mut Vec<(usize, usize)>,
+) -> core::result::Result<(), Hdf5Error> {
+    let mut p = start;
+    while p + 8 <= end {
+        let mtype = r.rd(p, 2)? as u16;
+        let msize = r.rd(p + 2, 2)? as usize;
+        let mflags = r.u8(p + 4)?;
+        let body = r.slice(p + 8, msize)?;
+        match mtype {
+            0 => {}
+            MSG_OBJHDRCONT => {
+                let off = read_int(body, 0, r.offsz)? as usize;
+                let len = read_int(body, r.offsz, r.lensz)? as usize;
+                continuations.push((off, len));
+            }
+            _ => out.push(Message { mtype, body, shared: mflags & 0x02 != 0 }),
+        }
+        p += 8 + msize;
+    }
+    Ok(())
+}
+
+/// The links of an old-style group. The symbol-table message holds the addresses of the group's B-tree and of its
+/// local heap. The B-tree leads to symbol-table nodes (`SNOD`), whose entries name the members through the heap.
+fn symbol_table_links(r: &Reader, body: &[u8]) -> core::result::Result<Vec<Link>, Hdf5Error> {
+    let btree = read_int(body, 0, r.offsz)? as usize;
+    let heap = read_int(body, r.offsz, r.offsz)? as usize;
+    // Local heap header: "HEAP", version, 3 reserved bytes, data size (lensz), free-list offset (lensz), and the
+    // address of the data segment (offsz).
+    if r.slice(heap, 4)? != &b"HEAP"[..] {
+        return Err(Hdf5Error::Unsupported("expected local heap signature"));
+    }
+    let heap_data = r.rd(heap + 8 + 2 * r.lensz, r.offsz)? as usize;
+    let mut links = Vec::new();
+    walk_group_btree(r, btree, heap_data, &mut links, 0)?;
+    Ok(links)
+}
+
+/// Walk a group B-tree node and collect the entries of the symbol-table nodes beneath it.
+fn walk_group_btree(
+    r: &Reader,
+    addr: usize,
+    heap_data: usize,
+    out: &mut Vec<Link>,
+    depth: usize,
+) -> core::result::Result<(), Hdf5Error> {
+    if depth > 16 {
+        return Err(Hdf5Error::Unsupported("group B-tree is nested too deeply"));
+    }
+    if r.slice(addr, 4)? != &b"TREE"[..] {
+        return Err(Hdf5Error::Unsupported("expected group B-tree signature"));
+    }
+    let level = r.u8(addr + 5)?;
+    let used = r.rd(addr + 6, 2)? as usize;
+    // Keys and children alternate, starting after the fixed header and the two sibling addresses.
+    let mut p = addr + 8 + 2 * r.offsz;
+    for _ in 0..used {
+        let child = r.rd(p + r.lensz, r.offsz)? as usize;
+        if level == 0 {
+            read_symbol_node(r, child, heap_data, out)?;
+        } else {
+            walk_group_btree(r, child, heap_data, out, depth + 1)?;
+        }
+        p += r.lensz + r.offsz;
+    }
+    Ok(())
+}
+
+/// Read one symbol-table node: "SNOD", version, a reserved byte, the entry count (2 bytes), then entries of a name
+/// offset, an object header address, a cache type, and scratch space (2 * offsz + 24 bytes in all).
+fn read_symbol_node(
+    r: &Reader,
+    addr: usize,
+    heap_data: usize,
+    out: &mut Vec<Link>,
+) -> core::result::Result<(), Hdf5Error> {
+    if r.slice(addr, 4)? != &b"SNOD"[..] {
+        return Err(Hdf5Error::Unsupported("expected symbol table node signature"));
+    }
+    let count = r.rd(addr + 6, 2)? as usize;
+    let entry = 2 * r.offsz + 24;
+    for i in 0..count {
+        let e = addr + 8 + i * entry;
+        let name_at = heap_data + r.rd(e, r.offsz)? as usize;
+        let object_addr = r.rd(e + r.offsz, r.offsz)?;
+        let name = heap_string(r, name_at)?;
+        if !name.is_empty() {
+            out.push(Link { name, object_addr });
+        }
+    }
+    Ok(())
+}
+
+/// A NUL-terminated string in the file, starting at `at`.
+fn heap_string(r: &Reader, at: usize) -> core::result::Result<String, Hdf5Error> {
+    let rest = r.data.get(at..).ok_or_else(|| Hdf5Error::Core(tpt_io_core::ParseError::eof(at)))?;
+    let len = rest
+        .iter()
+        .position(|&b| b == 0)
+        .ok_or(Hdf5Error::Unsupported("unterminated name in local heap"))?;
+    Ok(String::from_utf8_lossy(&rest[..len]).into_owned())
 }
 
 /// Read version-2 object header messages in `[start, end)`.
@@ -420,6 +562,9 @@ fn parse_group(
                 if let Ok(l) = parse_link(r, body) {
                     links.push(l);
                 }
+            }
+            MSG_SYMBOL_TABLE => {
+                links.extend(symbol_table_links(r, body)?);
             }
             MSG_ATTRIBUTE => {
                 if let Ok(a) = parse_attribute(r, body) {
