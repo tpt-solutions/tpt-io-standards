@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-pointcloud"
+description = "LAS (ASPRS LiDAR) point cloud reader and writer: header, scale and offset, and point record formats 0 to 3 (uncompressed)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["las", "lidar", "point-cloud", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_pointcloud"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

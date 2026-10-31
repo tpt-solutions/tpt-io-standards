@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-pdb"
+description = "Protein Data Bank (PDB) fixed-column format reader and writer: header, title, ATOM/HETATM records and CONECT."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["pdb", "protein", "molecular", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_pdb"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

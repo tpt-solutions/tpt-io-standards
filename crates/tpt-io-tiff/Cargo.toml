@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-tiff"
+description = "TIFF image reader and writer: both byte orders, IFD chains, strips, uncompressed and LZW decoding, and pixel access."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["tiff", "image", "microscopy", "parser"]
+categories = ["parser-implementations", "multimedia::images"]
+
+[lib]
+name = "tpt_io_tiff"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

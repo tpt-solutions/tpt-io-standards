@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-threemf"
+description = "Reader and writer for 3MF (3D Manufacturing Format) packages: objects, triangle meshes, build items and transforms."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["3mf", "3d-printing", "mesh", "zip", "parser"]
+categories = ["parser-implementations", "graphics"]
+
+[lib]
+name = "tpt_io_threemf"
+
+[dependencies]
+tpt-io-core = { workspace = true, features = ["zip"] }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

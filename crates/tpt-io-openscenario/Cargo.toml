@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-openscenario"
+description = "ASAM OpenSCENARIO 1.x reader: header, parameters, catalogs, road network, entities and storyboard structure."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["openscenario", "asam", "autonomous-driving", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_openscenario"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

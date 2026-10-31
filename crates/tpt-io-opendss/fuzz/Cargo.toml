@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-opendss-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-opendss = { path = ".." }
+
+[[bin]]
+name = "opendss"
+path = "fuzz_targets/opendss.rs"
+test = false
+doc = false

@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-plcopen"
+description = "PLCopen XML (IEC 61131-3 exchange) reader: POUs, variable interfaces, and ST/IL bodies."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["plcopen", "iec61131", "plc", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_plcopen"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

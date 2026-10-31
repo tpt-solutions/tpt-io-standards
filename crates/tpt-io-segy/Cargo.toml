@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-segy"
+description = "SEG-Y seismic trace reader and writer: textual and binary file headers, trace headers, and sample formats (IBM, IEEE, int32, int16, int8)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["segy", "seismic", "geophysics", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_segy"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

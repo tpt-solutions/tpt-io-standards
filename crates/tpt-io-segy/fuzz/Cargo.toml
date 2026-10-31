@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-segy-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-segy = { path = ".." }
+
+[[bin]]
+name = "segy"
+path = "fuzz_targets/segy.rs"
+test = false
+doc = false

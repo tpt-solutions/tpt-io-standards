@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-tle"
+description = "Two-line element set (TLE) reader and writer: fixed-width orbital elements with checksum verification."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["tle", "satellite", "orbit", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_tle"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

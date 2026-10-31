@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-openehr"
+description = "openEHR composition reader (RM JSON form): identity, archetype and template references, and top-level entries (read only)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["openehr", "ehr", "healthcare", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_openehr"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

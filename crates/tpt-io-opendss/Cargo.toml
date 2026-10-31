@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-opendss"
+description = "OpenDSS script reader and writer: New/Edit/More commands, object.name identifiers and key=value properties."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["opendss", "distribution", "grid", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_opendss"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

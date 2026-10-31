@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-opendrive"
+description = "ASAM OpenDRIVE road network reader and writer: roads, plan-view geometry, lane sections and lanes."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["opendrive", "asam", "road", "autonomous-driving", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_opendrive"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
