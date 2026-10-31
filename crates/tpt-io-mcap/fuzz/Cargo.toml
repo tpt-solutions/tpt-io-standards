@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-mcap-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-mcap = { path = ".." }
+
+[[bin]]
+name = "mcap"
+path = "fuzz_targets/mcap.rs"
+test = false
+doc = false

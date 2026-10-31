@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-opcua"
+description = "OPC UA NodeSet2 XML reader: namespaces, aliases, and typed nodes with their references."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["opcua", "industry4", "nodeset", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_opcua"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

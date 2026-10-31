@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-omex"
+description = "Reader and writer for COMBINE archives (OMEX) and a summary reader for SED-ML simulation experiment descriptions."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["omex", "combine", "sedml", "sbml", "systems-biology", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_omex"
+
+[dependencies]
+tpt-io-core = { workspace = true, features = ["zip"] }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

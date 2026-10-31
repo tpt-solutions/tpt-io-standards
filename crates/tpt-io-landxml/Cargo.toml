@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-landxml"
+description = "LandXML (civil engineering) reader and writer: units, project, TIN surfaces with points and faces, and alignment names."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["landxml", "civil", "surveying", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_landxml"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

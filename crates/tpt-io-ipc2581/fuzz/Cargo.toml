@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-ipc2581-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-ipc2581 = { path = ".." }
+
+[[bin]]
+name = "ipc2581"
+path = "fuzz_targets/ipc2581.rs"
+test = false
+doc = false

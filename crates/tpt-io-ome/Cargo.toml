@@ -1,0 +1,24 @@
+[package]
+name = "tpt-io-ome"
+description = "OME microscopy metadata: OME-XML from OME-TIFF image descriptions, and OME-Zarr multiscale and array metadata (read)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["ome", "microscopy", "ome-tiff", "ome-zarr", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_ome"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+tpt-io-tiff = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std", "tpt-io-tiff/std"]
+alloc = ["tpt-io-core/alloc", "tpt-io-tiff/alloc"]

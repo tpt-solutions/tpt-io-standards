@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-nrrd"
+description = "NRRD (Nearly Raw Raster Data) reader and writer: header fields and inline raw or ASCII data, with typed sample decoding."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["nrrd", "raster", "medical", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_nrrd"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

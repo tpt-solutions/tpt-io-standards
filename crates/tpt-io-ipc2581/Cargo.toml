@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-ipc2581"
+description = "IPC-2581 PCB design data (XML) reader: revision, units, layers, steps, components and logical nets (read only)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["ipc2581", "pcb", "eda", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_ipc2581"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

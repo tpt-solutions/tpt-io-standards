@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-mesh"
+description = "Triangle mesh readers and writers: STL (ASCII and binary), Wavefront OBJ, and PLY (ASCII and binary little-endian)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["stl", "obj", "ply", "mesh", "3d", "parser"]
+categories = ["parser-implementations", "graphics"]
+
+[lib]
+name = "tpt_io_mesh"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
