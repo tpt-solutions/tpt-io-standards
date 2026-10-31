@@ -60,7 +60,10 @@ fn stl_binary_and_ascii_round_trips() {
     let back = stl::parse(&bin).unwrap();
     assert_eq!(back.triangles.len(), 4);
     assert_eq!(back.normals, m.normals);
-    assert_eq!(back.vertices[back.triangles[2][1] as usize], m.vertices[m.triangles[2][1] as usize]);
+    assert_eq!(
+        back.vertices[back.triangles[2][1] as usize],
+        m.vertices[m.triangles[2][1] as usize]
+    );
     let ascii = stl::write_ascii(&m);
     let from_ascii = stl::parse(&ascii).unwrap();
     assert_eq!(from_ascii.triangles.len(), 4);
@@ -91,4 +94,77 @@ fn arbitrary_bytes_never_panic() {
         let _ = obj::parse(&bytes);
         let _ = ply::parse(&bytes);
     }
+}
+
+#[test]
+fn glb_round_trip_keeps_triangles_and_vertices() {
+    let m = tetra();
+    let back = tpt_io_mesh::gltf::parse_glb(&tpt_io_mesh::gltf::write_glb(&m)).unwrap();
+    assert_eq!(back.vertices, m.vertices);
+    assert_eq!(back.triangles, m.triangles);
+}
+
+/// Build a GLB file from a JSON chunk and a binary chunk, padding both to four bytes.
+fn glb(json: &str, bin: &[u8]) -> Vec<u8> {
+    let mut json = json.as_bytes().to_vec();
+    while json.len() % 4 != 0 {
+        json.push(b' ');
+    }
+    let mut bin = bin.to_vec();
+    while bin.len() % 4 != 0 {
+        bin.push(0);
+    }
+    let total = 12 + 8 + json.len() + 8 + bin.len();
+    let mut out = b"glTF".to_vec();
+    out.extend_from_slice(&2u32.to_le_bytes());
+    out.extend_from_slice(&(total as u32).to_le_bytes());
+    out.extend_from_slice(&(json.len() as u32).to_le_bytes());
+    out.extend_from_slice(&0x4E4F_534Au32.to_le_bytes());
+    out.extend_from_slice(&json);
+    out.extend_from_slice(&(bin.len() as u32).to_le_bytes());
+    out.extend_from_slice(&0x004E_4942u32.to_le_bytes());
+    out.extend_from_slice(&bin);
+    out
+}
+
+#[test]
+fn glb_reads_u16_indices_with_a_byte_stride_and_skips_lines() {
+    let json = r#"{"asset":{"version":"2.0"},
+        "meshes":[{"primitives":[{"attributes":{"POSITION":0},"indices":1}]},
+                  {"primitives":[{"attributes":{"POSITION":0},"mode":1}]}],
+        "buffers":[{"byteLength":42}],
+        "bufferViews":[{"buffer":0,"byteOffset":0,"byteLength":36,"byteStride":12},
+                       {"buffer":0,"byteOffset":36,"byteLength":6}],
+        "accessors":[{"bufferView":0,"componentType":5126,"count":3,"type":"VEC3"},
+                     {"bufferView":1,"componentType":5123,"count":3,"type":"SCALAR"}]}"#;
+    let mut bin = Vec::new();
+    for v in [[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]] {
+        for c in v {
+            bin.extend_from_slice(&c.to_le_bytes());
+        }
+    }
+    for i in [0u16, 1, 2] {
+        bin.extend_from_slice(&i.to_le_bytes());
+    }
+    let m = tpt_io_mesh::gltf::parse_glb(&glb(json, &bin)).unwrap();
+    assert_eq!(m.vertices.len(), 3);
+    assert_eq!(m.triangles, vec![[0, 1, 2]]);
+}
+
+#[test]
+fn glb_rejects_bad_magic_and_out_of_range_indices() {
+    assert!(matches!(
+        tpt_io_mesh::gltf::parse_glb(b"not a glb file at all"),
+        Err(MeshError::Invalid(_))
+    ));
+
+    let json = r#"{"meshes":[{"primitives":[{"attributes":{"POSITION":0},"indices":1}]}],
+        "bufferViews":[{"buffer":0,"byteOffset":0,"byteLength":12},{"buffer":0,"byteOffset":12,"byteLength":12}],
+        "accessors":[{"bufferView":0,"componentType":5126,"count":1,"type":"VEC3"},
+                     {"bufferView":1,"componentType":5125,"count":3,"type":"SCALAR"}]}"#;
+    let mut bin = vec![0u8; 12];
+    for i in [0u32, 1, 2] {
+        bin.extend_from_slice(&i.to_le_bytes());
+    }
+    assert!(matches!(tpt_io_mesh::gltf::parse_glb(&glb(json, &bin)), Err(MeshError::Invalid(_))));
 }

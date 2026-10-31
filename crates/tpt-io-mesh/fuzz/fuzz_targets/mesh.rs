@@ -15,4 +15,5 @@ fuzz_target!(|data: &[u8]| {
     let _ = tpt_io_mesh::stl::parse(data);
     let _ = tpt_io_mesh::obj::parse(data);
     let _ = tpt_io_mesh::ply::parse(data);
+    let _ = tpt_io_mesh::gltf::parse_glb(data);
 });

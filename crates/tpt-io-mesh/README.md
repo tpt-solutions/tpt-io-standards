@@ -16,12 +16,15 @@ specification text or model is copied into this crate; test meshes are built in 
   from the end; faces are fan-triangulated.
 - **PLY**: ASCII and binary little-endian, with `vertex` x/y/z properties and `face` lists named
   `vertex_indices` or `vertex_index`.
+- **GLB** (glTF 2.0 binary): the `POSITION` and `indices` accessors of every `TRIANGLES` primitive. Other
+  primitive modes are skipped; buffers other than the binary chunk are rejected.
 
 ## What it writes
 
 - STL: ASCII (`write_ascii`) and binary (`write_binary`), with facet normals.
 - OBJ: vertices and triangular faces.
 - PLY: ASCII, with `vertex` and `face` elements.
+- GLB: one node, one `TRIANGLES` primitive, with float `POSITION` and `u32` indices.
 
 Parsing the output gives back the same triangles and vertices.
 
@@ -29,4 +32,5 @@ Parsing the output gives back the same triangles and vertices.
 
 - Normals, texture coordinates, colours and materials are not read from OBJ or PLY.
 - Binary big-endian PLY is not read.
-- glTF and GLB are not read by this crate.
+- Normals, texture coordinates and materials in glTF are not read; glTF JSON files with external buffers are
+  not supported (GLB only).

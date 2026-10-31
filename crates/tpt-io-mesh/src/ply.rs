@@ -51,12 +51,17 @@ struct Element {
 
 /// Parse a PLY file (ASCII or binary little-endian) with `vertex` and `face` elements.
 pub fn parse(input: &[u8]) -> Result<Mesh, MeshError> {
-    let header_end = find(input, b"end_header").ok_or_else(|| ParseError::custom(0, "missing end_header"))?;
+    let header_end =
+        find(input, b"end_header").ok_or_else(|| ParseError::custom(0, "missing end_header"))?;
     let after = header_end + b"end_header".len();
     let body_start = match input.get(after) {
         Some(b'\r') if input.get(after + 1) == Some(&b'\n') => after + 2,
         Some(b'\n') => after + 1,
-        _ => return Err(ParseError::custom(after, "end_header is not followed by a line break").into()),
+        _ => {
+            return Err(
+                ParseError::custom(after, "end_header is not followed by a line break").into()
+            )
+        }
     };
     let header = core::str::from_utf8(&input[..header_end])
         .map_err(|e| ParseError::custom(e.valid_up_to(), "PLY header is not text"))?;
@@ -69,17 +74,27 @@ pub fn parse(input: &[u8]) -> Result<Mesh, MeshError> {
                 kind = match *fmt {
                     "ascii" => Kind::Ascii,
                     "binary_little_endian" => Kind::BinaryLe,
-                    _ => return Err(MeshError::Invalid("only ascii and binary_little_endian PLY are read".to_string())),
+                    _ => {
+                        return Err(MeshError::Invalid(
+                            "only ascii and binary_little_endian PLY are read".to_string(),
+                        ))
+                    }
                 }
             }
             ["element", name, count] => elements.push(Element {
                 name: name.to_string(),
-                count: count.parse().map_err(|_| MeshError::Invalid("bad element count".to_string()))?,
+                count: count
+                    .parse()
+                    .map_err(|_| MeshError::Invalid("bad element count".to_string()))?,
                 props: Vec::new(),
             }),
             ["property", "list", count_ty, item_ty, name] => {
                 if let Some(e) = elements.last_mut() {
-                    e.props.push((name.to_string(), item_ty.to_string(), Some(count_ty.to_string())));
+                    e.props.push((
+                        name.to_string(),
+                        item_ty.to_string(),
+                        Some(count_ty.to_string()),
+                    ));
                 }
             }
             ["property", ty, name] => {
@@ -112,14 +127,35 @@ pub fn parse(input: &[u8]) -> Result<Mesh, MeshError> {
             for (name, ty, list) in &e.props {
                 let values: Vec<f64> = match list {
                     Some(count_ty) => {
-                        let n = read_value(kind, count_ty, input, &ascii_tokens, &mut next_ascii, &mut pos)? as usize;
+                        let n = read_value(
+                            kind,
+                            count_ty,
+                            input,
+                            &ascii_tokens,
+                            &mut next_ascii,
+                            &mut pos,
+                        )? as usize;
                         let mut v = Vec::with_capacity(n);
                         for _ in 0..n {
-                            v.push(read_value(kind, ty, input, &ascii_tokens, &mut next_ascii, &mut pos)?);
+                            v.push(read_value(
+                                kind,
+                                ty,
+                                input,
+                                &ascii_tokens,
+                                &mut next_ascii,
+                                &mut pos,
+                            )?);
                         }
                         v
                     }
-                    None => alloc::vec![read_value(kind, ty, input, &ascii_tokens, &mut next_ascii, &mut pos)?],
+                    None => alloc::vec![read_value(
+                        kind,
+                        ty,
+                        input,
+                        &ascii_tokens,
+                        &mut next_ascii,
+                        &mut pos
+                    )?],
                 };
                 if e.name == "vertex" {
                     match (name.as_str(), values.first()) {
@@ -136,7 +172,9 @@ pub fn parse(input: &[u8]) -> Result<Mesh, MeshError> {
                 mesh.vertices.push([x, y, z]);
             } else if e.name == "face" {
                 if indices.len() < 3 {
-                    return Err(MeshError::Invalid("face has fewer than three corners".to_string()));
+                    return Err(MeshError::Invalid(
+                        "face has fewer than three corners".to_string(),
+                    ));
                 }
                 for k in 1..indices.len() - 1 {
                     mesh.triangles.push([indices[0], indices[k], indices[k + 1]]);
@@ -165,9 +203,7 @@ fn read_value(
         }
         Kind::BinaryLe => {
             let size = scalar_size(ty)?;
-            let bytes = input
-                .get(*pos..*pos + size)
-                .ok_or_else(|| ParseError::eof(*pos))?;
+            let bytes = input.get(*pos..*pos + size).ok_or_else(|| ParseError::eof(*pos))?;
             let v = read_binary(ty, bytes);
             *pos += size;
             Ok(v)

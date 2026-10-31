@@ -1,4 +1,4 @@
-//! Triangle meshes: readers and writers for STL, Wavefront OBJ and PLY.
+//! Triangle meshes: readers and writers for STL, Wavefront OBJ, PLY and glTF binary (GLB).
 //!
 //! All three formats describe triangle surfaces. This crate reads them into a common [`Mesh`]: a list of
 //! vertices and a list of triangles that index into it. STL has no shared vertices, so each STL triangle
@@ -26,6 +26,7 @@
 extern crate alloc;
 
 pub mod error;
+pub mod gltf;
 pub mod obj;
 pub mod ply;
 pub mod stl;
