@@ -48,6 +48,7 @@ errors.
 | `tpt-io-tiff` | TIFF images (uncompressed and LZW strips) | Earth & GIS |
 | `tpt-io-pointcloud` | ASPRS LAS point clouds, uncompressed (`.las`) | Earth & GIS |
 | `tpt-io-segy` | SEG-Y seismic traces (`.sgy`, `.segy`) | Science & Materials |
+| `tpt-io-s57` | IHO S-57 electronic navigational charts (ISO 8211 cells), read only | Maritime & Aviation |
 | `tpt-io-gds` | GDSII IC layout streams (`.gds`) | Electronics |
 | `tpt-io-edf` | EDF, EDF+ and BDF biosignal recordings | Healthcare |
 | `tpt-io-openehr` | openEHR compositions, RM JSON (read only) | Healthcare |

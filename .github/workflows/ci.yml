@@ -63,7 +63,7 @@ jobs:
                   tpt-io-netcdf tpt-io-nifti tpt-io-nrrd tpt-io-ome tpt-io-omex \
                   tpt-io-opcua tpt-io-opendrive tpt-io-opendss tpt-io-openehr \
                   tpt-io-openscenario tpt-io-pdb tpt-io-plcopen tpt-io-pointcloud \
-                  tpt-io-rosbag tpt-io-sbml tpt-io-segy tpt-io-spice tpt-io-threemf \
+                  tpt-io-rosbag tpt-io-s57 tpt-io-sbml tpt-io-segy tpt-io-spice tpt-io-threemf \
                   tpt-io-tiff tpt-io-tle tpt-io-touchstone tpt-io-urdf tpt-io-verilog \
                   tpt-io-waterml tpt-io-welllog tpt-io-witsml; do
             cargo build -p "$c" --no-default-features --features alloc
