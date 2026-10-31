@@ -25,6 +25,12 @@ pub mod sexpr;
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub mod step;
 pub mod traits;
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub mod xml;
+#[cfg(all(feature = "zip", any(feature = "alloc", feature = "std")))]
+pub mod inflate;
+#[cfg(all(feature = "zip", any(feature = "alloc", feature = "std")))]
+pub mod zip;
 
 pub use encoding::Encoding;
 #[cfg(feature = "alloc")]

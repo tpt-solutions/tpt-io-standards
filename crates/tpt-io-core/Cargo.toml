@@ -24,5 +24,6 @@ default = ["std"]
 std = ["alloc"]
 alloc = []
 checksums = ["dep:crc32fast", "dep:md-5", "dep:sha2"]
+zip = ["checksums"]
 
 [dev-dependencies]
