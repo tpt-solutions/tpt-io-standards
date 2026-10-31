@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-epanet"
+description = "EPANET water distribution network (.inp) reader and writer, with typed junction, pipe and node views."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["epanet", "water", "hydraulics", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_epanet"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

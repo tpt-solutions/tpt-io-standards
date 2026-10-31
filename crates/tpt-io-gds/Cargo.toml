@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-gds"
+description = "GDSII (Calma stream) IC layout reader and writer: libraries, structures, boundaries, paths, text and structure references."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["gdsii", "gds", "ic", "layout", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_gds"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

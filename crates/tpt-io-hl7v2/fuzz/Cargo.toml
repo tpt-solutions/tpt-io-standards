@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-hl7v2-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-hl7v2 = { path = ".." }
+
+[[bin]]
+name = "hl7v2"
+path = "fuzz_targets/hl7v2.rs"
+test = false
+doc = false

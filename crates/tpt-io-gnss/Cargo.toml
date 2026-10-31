@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-gnss"
+description = "GNSS data reader: RINEX 3 observation files and SP3 precise orbit files."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["gnss", "rinex", "sp3", "gps", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_gnss"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

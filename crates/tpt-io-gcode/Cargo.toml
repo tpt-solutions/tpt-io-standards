@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-gcode"
+description = "G-code reader and writer for LinuxCNC and RepRap dialects: blocks, words, comments, and motion summaries."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["gcode", "cnc", "3d-printing", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_gcode"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

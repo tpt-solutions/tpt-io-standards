@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-dexpi"
+description = "DEXPI P&ID (process and instrumentation diagram) XML reader: components with their identifiers and classes (read only)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["dexpi", "p&id", "process", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_dexpi"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

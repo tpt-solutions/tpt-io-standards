@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-gbxml-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-gbxml = { path = ".." }
+
+[[bin]]
+name = "gbxml"
+path = "fuzz_targets/gbxml.rs"
+test = false
+doc = false

@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-fits"
+description = "FITS (Flexible Image Transport System) reader and writer: header cards, primary and extension HDUs, and image pixels."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["fits", "astronomy", "image", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_fits"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

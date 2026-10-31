@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-hecras"
+description = "HEC-RAS text geometry files (.g0x): river reaches, centrelines and cross-section station/elevation data (read only)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["hec-ras", "hydraulics", "river", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_hecras"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-gridlabd"
+description = "GridLAB-D GLM model reader and writer: modules, clocks, objects with nested children, and property values."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["gridlabd", "glm", "power-systems", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_gridlabd"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

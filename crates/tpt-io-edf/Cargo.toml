@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-edf"
+description = "EDF, EDF+ and BDF biosignal recordings (EEG, ECG, polysomnography): header, signal definitions, raw samples and physical scaling."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["edf", "bdf", "eeg", "biosignal", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_edf"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

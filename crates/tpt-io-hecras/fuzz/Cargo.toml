@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-hecras-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-hecras = { path = ".." }
+
+[[bin]]
+name = "hecras"
+path = "fuzz_targets/hecras.rs"
+test = false
+doc = false
