@@ -49,6 +49,10 @@ pub mod json;
 pub mod shapefile;
 pub mod spatial_index;
 pub mod stream;
+pub mod gpx;
+pub mod kml;
+pub mod wkb;
+pub mod wkt;
 
 #[cfg(any(feature = "eng-geometry-integration", feature = "math-geometry-integration"))]
 pub mod integration;

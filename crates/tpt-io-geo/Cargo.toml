@@ -20,6 +20,8 @@ tpt-io-core = { workspace = true }
 default = ["std"]
 std = ["tpt-io-core/std"]
 alloc = ["tpt-io-core/alloc"]
+# KMZ (zipped KML) reading and writing, via the core ZIP reader and writer.
+kmz = ["tpt-io-core/zip"]
 # Integration with future `tpt-eng-geometry` (not yet published).
 eng-geometry-integration = []
 # Integration with future `tpt-math-geometry` (not yet published).
