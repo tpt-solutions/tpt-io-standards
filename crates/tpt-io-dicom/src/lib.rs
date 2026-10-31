@@ -36,6 +36,7 @@ pub mod sci_image;
 pub mod tag;
 pub mod uid;
 pub mod vr;
+pub mod wsi;
 
 pub use dataset::{Dataset, Encoding};
 pub use element::{DataElement, Item, Value};
