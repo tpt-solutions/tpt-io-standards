@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-urdf"
+description = "URDF and SDFormat robot description reader and writer: links, joints, poses and joint limits."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["urdf", "sdformat", "robotics", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_urdf"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-touchstone"
+description = "Touchstone (.sNp) network parameter files: S, Y, Z, H and G data in MA, DB and RI formats, with a writer."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["touchstone", "s-parameters", "rf", "microwave", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_touchstone"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

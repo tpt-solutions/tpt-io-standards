@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-waterml-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-waterml = { path = ".." }
+
+[[bin]]
+name = "waterml"
+path = "fuzz_targets/waterml.rs"
+test = false
+doc = false

@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-waterml"
+description = "OGC WaterML 2.0 time-series reader and writer: measurement time-value pairs with units and observed property."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["waterml", "hydrology", "ogc", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_waterml"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

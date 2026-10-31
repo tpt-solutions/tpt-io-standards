@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-witsml-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-witsml = { path = ".." }
+
+[[bin]]
+name = "witsml"
+path = "fuzz_targets/witsml.rs"
+test = false
+doc = false

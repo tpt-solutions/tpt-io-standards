@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-verilog"
+description = "Structural Verilog netlist reader and writer: modules, ports, nets, instances and continuous assignments."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["verilog", "netlist", "eda", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_verilog"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
