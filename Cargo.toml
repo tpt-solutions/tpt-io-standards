@@ -61,6 +61,7 @@ members = [
     "crates/tpt-io-edf",
     "crates/tpt-io-gds",
     "crates/tpt-io-segy",
+    "crates/tpt-io-s57",
     "crates/tpt-io-pointcloud",
     "crates/tpt-io-tiff",
     "crates/tpt-io-ome",
@@ -108,6 +109,7 @@ tpt-io-ome = { path = "crates/tpt-io-ome", version = "0.1.0" }
 tpt-io-tiff = { path = "crates/tpt-io-tiff", version = "0.1.0" }
 tpt-io-pointcloud = { path = "crates/tpt-io-pointcloud", version = "0.1.0" }
 tpt-io-segy = { path = "crates/tpt-io-segy", version = "0.1.0" }
+tpt-io-s57 = { path = "crates/tpt-io-s57", version = "0.1.0" }
 tpt-io-gds = { path = "crates/tpt-io-gds", version = "0.1.0" }
 tpt-io-edf = { path = "crates/tpt-io-edf", version = "0.1.0" }
 tpt-io-openehr = { path = "crates/tpt-io-openehr", version = "0.1.0" }

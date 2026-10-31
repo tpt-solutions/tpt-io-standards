@@ -1026,6 +1026,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "tpt-io-s57"
+version = "0.1.0"
+dependencies = [
+ "tpt-io-core",
+]
+
+[[package]]
 name = "tpt-io-sbml"
 version = "0.1.0"
 dependencies = [

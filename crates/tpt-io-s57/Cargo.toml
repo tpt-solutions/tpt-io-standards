@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-s57"
+description = "IHO S-57 electronic navigational chart reader: ISO 8211 framing, dataset parameters, features and their geometry."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["s57", "enc", "chart", "maritime", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_s57"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
