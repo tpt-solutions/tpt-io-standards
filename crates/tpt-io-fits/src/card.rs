@@ -53,7 +53,8 @@ impl Card {
         if image.len() != 80 || !image.is_ascii() {
             return Err(FitsError::Invalid("card must be 80 ASCII bytes".into()));
         }
-        let text = core::str::from_utf8(image).map_err(|_| FitsError::Invalid("card is not ASCII".into()))?;
+        let text = core::str::from_utf8(image)
+            .map_err(|_| FitsError::Invalid("card is not ASCII".into()))?;
         let keyword = text[..8].trim_end().to_string();
         let has_value = text.as_bytes()[8] == b'=' && text.as_bytes()[9] == b' ';
         if keyword == "END" || !has_value {
@@ -80,7 +81,10 @@ impl Card {
         match &self.value {
             None => {
                 if let Some(c) = &self.comment {
-                    if self.keyword == "COMMENT" || self.keyword == "HISTORY" || self.keyword.is_empty() {
+                    if self.keyword == "COMMENT"
+                        || self.keyword == "HISTORY"
+                        || self.keyword.is_empty()
+                    {
                         s.push_str(c);
                     }
                 }
@@ -135,11 +139,14 @@ fn split_value(field: &str) -> Result<(Value, Option<String>), FitsError> {
             Some(e) => &rest[e..],
             None => return Err(FitsError::Invalid("unterminated string value".into())),
         };
-        let comment = after.find('/').map(|i| after[i + 1..].trim().to_string()).filter(|c| !c.is_empty());
+        let comment =
+            after.find('/').map(|i| after[i + 1..].trim().to_string()).filter(|c| !c.is_empty());
         return Ok((Value::Text(out.trim_end().to_string()), comment));
     }
     let (token, comment) = match field.find('/') {
-        Some(i) => (field[..i].trim(), Some(field[i + 1..].trim().to_string()).filter(|c| !c.is_empty())),
+        Some(i) => {
+            (field[..i].trim(), Some(field[i + 1..].trim().to_string()).filter(|c| !c.is_empty()))
+        }
         None => (field.trim(), None),
     };
     let value = match token {
@@ -148,9 +155,13 @@ fn split_value(field: &str) -> Result<(Value, Option<String>), FitsError> {
         "" => return Err(FitsError::Invalid("empty value".into())),
         t if t.contains(['.', 'E', 'e', 'D', 'd']) => {
             let norm = t.replace(['D', 'd'], "E");
-            Value::Real(norm.parse::<f64>().map_err(|_| FitsError::Invalid("bad real value".into()))?)
+            Value::Real(
+                norm.parse::<f64>().map_err(|_| FitsError::Invalid("bad real value".into()))?,
+            )
         }
-        t => Value::Integer(t.parse::<i64>().map_err(|_| FitsError::Invalid("bad integer value".into()))?),
+        t => Value::Integer(
+            t.parse::<i64>().map_err(|_| FitsError::Invalid("bad integer value".into()))?,
+        ),
     };
     Ok((value, comment))
 }

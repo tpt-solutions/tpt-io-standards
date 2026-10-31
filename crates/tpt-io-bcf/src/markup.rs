@@ -22,9 +22,8 @@ pub(crate) fn topic(root: &Element) -> Result<Topic, BcfError> {
     let t = root
         .child("Topic")
         .ok_or_else(|| BcfError::Invalid("markup part has no <Topic>".to_string()))?;
-    let guid = t
-        .attr("Guid")
-        .ok_or_else(|| BcfError::Invalid("<Topic> has no Guid".to_string()))?;
+    let guid =
+        t.attr("Guid").ok_or_else(|| BcfError::Invalid("<Topic> has no Guid".to_string()))?;
     let mut topic = Topic {
         guid: guid.to_string(),
         title: text(t, "Title").unwrap_or_default(),

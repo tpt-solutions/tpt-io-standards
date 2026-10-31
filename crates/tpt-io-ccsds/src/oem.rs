@@ -90,7 +90,9 @@ pub fn parse(input: &[u8]) -> Result<Oem, CcsdsError> {
             Line::Keyword("META_STOP") => in_meta = false,
             Line::Keyword("COVARIANCE_START") => in_cov = true,
             Line::Pair(k, v) if in_meta => {
-                let seg = current.as_mut().ok_or_else(|| CcsdsError::Invalid("metadata outside a segment".into()))?;
+                let seg = current
+                    .as_mut()
+                    .ok_or_else(|| CcsdsError::Invalid("metadata outside a segment".into()))?;
                 set_meta(&mut seg.meta, k, v);
             }
             Line::Other(text) => {
@@ -166,7 +168,8 @@ pub fn write(oem: &Oem) -> Vec<u8> {
         for s in &seg.states {
             let p = s.position;
             let v = s.velocity;
-            let _ = writeln!(out, "{} {} {} {} {} {} {}", s.epoch, p[0], p[1], p[2], v[0], v[1], v[2]);
+            let _ =
+                writeln!(out, "{} {} {} {} {} {} {}", s.epoch, p[0], p[1], p[2], v[0], v[1], v[2]);
         }
     }
     out.into_bytes()

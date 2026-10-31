@@ -111,14 +111,15 @@ fn records(category: u8, body: &[u8], at: usize) -> Result<Vec<Record>, AsterixE
         pos += fspec_len;
         if category != 48 {
             // Without item lengths for this category, the record boundary is unknown.
-            return Err(AsterixError::UnsupportedItem { category, frn: frns.first().copied().unwrap_or(1) });
+            return Err(AsterixError::UnsupportedItem {
+                category,
+                frn: frns.first().copied().unwrap_or(1),
+            });
         }
         let mut rec = Cat048Record::default();
         for frn in frns {
             let len = cat048_length(frn).ok_or(AsterixError::UnsupportedItem { category, frn })?;
-            let field = body
-                .get(pos..pos + len)
-                .ok_or_else(|| ParseError::eof(at + pos))?;
+            let field = body.get(pos..pos + len).ok_or_else(|| ParseError::eof(at + pos))?;
             set(&mut rec, frn, field);
             pos += len;
         }

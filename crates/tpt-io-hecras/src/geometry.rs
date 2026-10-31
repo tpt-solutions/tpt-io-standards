@@ -52,7 +52,10 @@ impl<'a> Numbers<'a> {
                     HecRasError::Invalid("keyword count runs past the end of the file".to_string())
                 })?;
                 self.offset += line.len() + 1;
-                self.pending = line.split(|c: char| c.is_whitespace() || c == ',').filter(|t| !t.is_empty()).collect();
+                self.pending = line
+                    .split(|c: char| c.is_whitespace() || c == ',')
+                    .filter(|t| !t.is_empty())
+                    .collect();
                 self.pending.reverse();
                 continue;
             }
@@ -92,17 +95,18 @@ pub fn parse(input: &[u8]) -> Result<GeometryFile, HecRasError> {
                 .split_once('=')
                 .and_then(|(_, rhs)| rhs.split(',').nth(1))
                 .and_then(|s| s.trim().parse::<f64>().ok())
-                .ok_or_else(|| HecRasError::Invalid("cross section has no river station".to_string()))?;
+                .ok_or_else(|| {
+                    HecRasError::Invalid("cross section has no river station".to_string())
+                })?;
             let reach = current(&mut g)?;
             reach.cross_sections.push(CrossSection { river_station: station, points: Vec::new() });
         } else if let Some(rest) = t.strip_prefix("#Sta/Elev=") {
             let count = count_of(rest)?;
             let values = numbers.take(count * 2)?;
             let reach = current(&mut g)?;
-            let section = reach
-                .cross_sections
-                .last_mut()
-                .ok_or_else(|| HecRasError::Invalid("#Sta/Elev outside a cross section".to_string()))?;
+            let section = reach.cross_sections.last_mut().ok_or_else(|| {
+                HecRasError::Invalid("#Sta/Elev outside a cross section".to_string())
+            })?;
             section.points = values.chunks_exact(2).map(|c| (c[0], c[1])).collect();
         }
     }

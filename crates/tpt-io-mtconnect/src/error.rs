@@ -29,7 +29,9 @@ impl core::fmt::Display for MtConnectError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             MtConnectError::Core(e) => write!(f, "{e}"),
-            MtConnectError::UnknownDataItem(id) => write!(f, "observation refers to unknown data item '{id}'"),
+            MtConnectError::UnknownDataItem(id) => {
+                write!(f, "observation refers to unknown data item '{id}'")
+            }
             MtConnectError::Invalid(what) => write!(f, "invalid MTConnect document: {what}"),
         }
     }

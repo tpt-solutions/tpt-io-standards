@@ -58,7 +58,10 @@ fn geometry(out: &mut String, g: &Geometry) {
             let _ = writeln!(out, "        <arc curvature=\"{curvature}\"/>");
         }
         GeometryKind::Spiral { curv_start, curv_end } => {
-            let _ = writeln!(out, "        <spiral curvStart=\"{curv_start}\" curvEnd=\"{curv_end}\"/>");
+            let _ = writeln!(
+                out,
+                "        <spiral curvStart=\"{curv_start}\" curvEnd=\"{curv_end}\"/>"
+            );
         }
         GeometryKind::Poly3 { a, b, c, d } => {
             let _ = writeln!(out, "        <poly3 a=\"{a}\" b=\"{b}\" c=\"{c}\" d=\"{d}\"/>");

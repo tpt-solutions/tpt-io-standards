@@ -59,9 +59,17 @@ fn several_series_survive_a_round_trip() {
         id: "a".into(),
         observed_property: "p".into(),
         uom: "m".into(),
-        points: vec![Point { time: "t0".into(), value: 1.0 }, Point { time: "t1".into(), value: 2.5 }],
+        points: vec![
+            Point { time: "t0".into(), value: 1.0 },
+            Point { time: "t1".into(), value: 2.5 },
+        ],
     };
-    let b = TimeSeries { id: "b & <c>".into(), observed_property: "q".into(), uom: "mm".into(), points: vec![] };
+    let b = TimeSeries {
+        id: "b & <c>".into(),
+        observed_property: "q".into(),
+        uom: "mm".into(),
+        points: vec![],
+    };
     assert_eq!(parse(&write(&[a.clone(), b.clone()])).unwrap(), vec![a, b]);
 }
 

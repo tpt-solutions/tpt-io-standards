@@ -62,7 +62,8 @@ fn ansi_headers_and_escaped_names_read() {
     assert!(matches!(err, Err(VerilogError::Unsupported(_))) || err.is_ok());
     let n = parse(b"module m (input clk, output q); endmodule").unwrap();
     assert_eq!(n.modules[0].ports.len(), 2);
-    let esc = parse(b"module m (\\a+b , y); output y; INV \\u$1 (.A(\\a+b ), .Y(y)); endmodule").unwrap();
+    let esc =
+        parse(b"module m (\\a+b , y); output y; INV \\u$1 (.A(\\a+b ), .Y(y)); endmodule").unwrap();
     assert_eq!(esc.modules[0].instances[0].name, "\\u$1");
 }
 

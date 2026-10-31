@@ -49,7 +49,9 @@ fn surface(el: &Element) -> Result<Surface, LandXmlError> {
             let v = numbers(p.text_trimmed(), p.offset)?;
             match v.as_slice() {
                 [x, y, z] => s.points.push((id, [*x, *y, *z])),
-                _ => return Err(LandXmlError::Invalid("point needs three coordinates".to_string())),
+                _ => {
+                    return Err(LandXmlError::Invalid("point needs three coordinates".to_string()))
+                }
             }
         }
     }
@@ -58,7 +60,10 @@ fn surface(el: &Element) -> Result<Surface, LandXmlError> {
             let ids: Vec<u32> = f
                 .text_trimmed()
                 .split_whitespace()
-                .map(|t| t.parse::<u32>().map_err(|_| LandXmlError::Invalid("face id is not an integer".to_string())))
+                .map(|t| {
+                    t.parse::<u32>()
+                        .map_err(|_| LandXmlError::Invalid("face id is not an integer".to_string()))
+                })
                 .collect::<Result<_, _>>()?;
             match ids.as_slice() {
                 [a, b, c] => s.faces.push([*a, *b, *c]),

@@ -36,12 +36,17 @@ impl LandXml {
             let mut ids: Vec<u32> = s.points.iter().map(|(id, _)| *id).collect();
             ids.sort_unstable();
             if ids.windows(2).any(|w| w[0] == w[1]) {
-                return Err(LandXmlError::Invalid(alloc::format!("duplicate point id in surface {}", s.name)));
+                return Err(LandXmlError::Invalid(alloc::format!(
+                    "duplicate point id in surface {}",
+                    s.name
+                )));
             }
             for f in &s.faces {
                 for id in f {
                     if ids.binary_search(id).is_err() {
-                        return Err(LandXmlError::Invalid(alloc::format!("face refers to unknown point {id}")));
+                        return Err(LandXmlError::Invalid(alloc::format!(
+                            "face refers to unknown point {id}"
+                        )));
                     }
                 }
                 if f[0] == f[1] || f[1] == f[2] || f[0] == f[2] {

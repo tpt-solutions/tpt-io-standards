@@ -63,7 +63,8 @@ fn motion_summary_tracks_modal_state() {
     //   G91 G1 X5 -> (5,0,-1): 5
     //   G20 G90 G1 X0.5 Y0.5 -> inches, so (12.7,12.7,-1): sqrt(7.7^2 + 12.7^2)
     let inch = 25.4;
-    let len = 5.0 + 6.0 + 30.0 + 5.0 + ((0.5 * inch - 5.0_f64).powi(2) + (0.5 * inch).powi(2)).sqrt();
+    let len =
+        5.0 + 6.0 + 30.0 + 5.0 + ((0.5 * inch - 5.0_f64).powi(2) + (0.5 * inch).powi(2)).sqrt();
     assert!((s.path_length_mm - len).abs() < 1e-6, "got {} expected {}", s.path_length_mm, len);
     let b = s.xy_bounds.unwrap();
     assert_eq!(b[0], 0.0);

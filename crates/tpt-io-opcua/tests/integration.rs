@@ -41,7 +41,10 @@ fn reads_namespaces_and_aliases() {
 fn reads_typed_nodes_with_references() {
     let set = parse(NODESET).unwrap();
     let kinds: Vec<&NodeKind> = set.nodes.iter().map(|n| &n.kind).collect();
-    assert_eq!(kinds, [&NodeKind::Object, &NodeKind::Variable, &NodeKind::Method, &NodeKind::ObjectType]);
+    assert_eq!(
+        kinds,
+        [&NodeKind::Object, &NodeKind::Variable, &NodeKind::Method, &NodeKind::ObjectType]
+    );
     let plant = &set.nodes[0];
     assert_eq!(plant.browse_name, "1:Plant");
     assert_eq!(plant.display_name.as_deref(), Some("Plant"));
@@ -71,6 +74,8 @@ fn malformed_nodesets_are_errors() {
 
 #[test]
 fn unknown_elements_are_ignored() {
-    let set = parse(b"<UANodeSet><Extensions/><UAObject NodeId=\"i=1\" BrowseName=\"x\"/></UANodeSet>").unwrap();
+    let set =
+        parse(b"<UANodeSet><Extensions/><UAObject NodeId=\"i=1\" BrowseName=\"x\"/></UANodeSet>")
+            .unwrap();
     assert_eq!(set.nodes.len(), 1);
 }

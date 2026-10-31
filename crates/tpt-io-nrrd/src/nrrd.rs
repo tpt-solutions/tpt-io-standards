@@ -31,10 +31,7 @@ impl Nrrd {
 
     /// The `sizes` field as axis lengths.
     pub fn sizes(&self) -> Option<Vec<usize>> {
-        self.field("sizes")?
-            .split_whitespace()
-            .map(|t| t.parse::<usize>().ok())
-            .collect()
+        self.field("sizes")?.split_whitespace().map(|t| t.parse::<usize>().ok()).collect()
     }
 
     /// The number of samples implied by the sizes.
@@ -53,7 +50,9 @@ impl Nrrd {
                 .map_err(|_| NrrdError::Invalid("ASCII data is not text".to_string()))?;
             return text
                 .split_whitespace()
-                .map(|t| t.parse::<f64>().map_err(|_| NrrdError::Invalid("bad ASCII sample".to_string())))
+                .map(|t| {
+                    t.parse::<f64>().map_err(|_| NrrdError::Invalid("bad ASCII sample".to_string()))
+                })
                 .collect();
         }
         if encoding != "raw" {
@@ -86,7 +85,11 @@ impl Nrrd {
             "double" => (8, |b, big| {
                 let mut a = [0u8; 8];
                 a.copy_from_slice(&b[..8]);
-                if big { f64::from_be_bytes(a) } else { f64::from_le_bytes(a) }
+                if big {
+                    f64::from_be_bytes(a)
+                } else {
+                    f64::from_le_bytes(a)
+                }
             }),
             other => return Err(NrrdError::Unsupported(other.to_string())),
         };
@@ -94,10 +97,7 @@ impl Nrrd {
         if self.data.len() < count * width {
             return Err(NrrdError::Invalid("data is shorter than its sizes".to_string()));
         }
-        Ok(self.data[..count * width]
-            .chunks_exact(width)
-            .map(|c| decode(c, big))
-            .collect())
+        Ok(self.data[..count * width].chunks_exact(width).map(|c| decode(c, big)).collect())
     }
 }
 
@@ -108,7 +108,8 @@ pub fn parse(input: &[u8]) -> Result<Nrrd, NrrdError> {
         let end = rest.iter().position(|&b| b == b'\n')?;
         Some((&rest[..end], pos + end + 1))
     };
-    let (magic, next) = line_at(0).ok_or_else(|| ParseError::custom(0, "missing NRRD magic line"))?;
+    let (magic, next) =
+        line_at(0).ok_or_else(|| ParseError::custom(0, "missing NRRD magic line"))?;
     let magic = core::str::from_utf8(magic)
         .map_err(|_| ParseError::custom(0, "magic is not text"))?
         .to_string();
@@ -121,7 +122,8 @@ pub fn parse(input: &[u8]) -> Result<Nrrd, NrrdError> {
         let Some((line, next)) = line_at(pos) else {
             return Err(NrrdError::Invalid("header is not terminated by a blank line".to_string()));
         };
-        let text = core::str::from_utf8(line).map_err(|_| ParseError::custom(pos, "header is not text"))?;
+        let text = core::str::from_utf8(line)
+            .map_err(|_| ParseError::custom(pos, "header is not text"))?;
         pos = next;
         if text.is_empty() {
             break;

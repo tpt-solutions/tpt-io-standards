@@ -41,4 +41,4 @@ pub mod error;
 pub mod molfile;
 
 pub use error::ChemError;
-pub use molfile::{parse_mol, parse_sdf, write_mol, write_sdf, Bond, Molecule, MolAtom};
+pub use molfile::{parse_mol, parse_sdf, write_mol, write_sdf, Bond, MolAtom, Molecule};

@@ -29,11 +29,7 @@ pub(crate) fn package(model: &Model) -> Vec<u8> {
 
 pub(crate) fn model_xml(model: &Model) -> String {
     let mut s = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    let _ = writeln!(
-        s,
-        "<model unit=\"{}\" xmlns=\"{NAMESPACE}\">",
-        xml::escape_attr(&model.unit)
-    );
+    let _ = writeln!(s, "<model unit=\"{}\" xmlns=\"{NAMESPACE}\">", xml::escape_attr(&model.unit));
     s.push_str("<resources>\n");
     for o in &model.objects {
         let _ = write!(s, "<object id=\"{}\" type=\"model\"", o.id);

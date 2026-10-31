@@ -37,7 +37,8 @@ impl Signal {
         if span == 0.0 {
             return self.physical_min;
         }
-        (f64::from(raw) - f64::from(self.digital_min)) * (self.physical_max - self.physical_min) / span
+        (f64::from(raw) - f64::from(self.digital_min)) * (self.physical_max - self.physical_min)
+            / span
             + self.physical_min
     }
 }
@@ -83,9 +84,7 @@ fn field(bytes: &[u8], at: usize, len: usize) -> Result<&str, ParseError> {
 }
 
 fn number<T: core::str::FromStr>(s: &str, at: usize) -> Result<T, EdfError> {
-    s.trim()
-        .parse::<T>()
-        .map_err(|_| ParseError::custom(at, "header field is not a number").into())
+    s.trim().parse::<T>().map_err(|_| ParseError::custom(at, "header field is not a number").into())
 }
 
 /// Parse an EDF or BDF file.
@@ -150,7 +149,11 @@ pub fn parse(input: &[u8]) -> Result<Edf, EdfError> {
                 let raw = if bdf {
                     let b = &input[pos..pos + 3];
                     let v = i32::from(b[0]) | (i32::from(b[1]) << 8) | (i32::from(b[2]) << 16);
-                    if v & 0x80_0000 != 0 { v - 0x100_0000 } else { v }
+                    if v & 0x80_0000 != 0 {
+                        v - 0x100_0000
+                    } else {
+                        v
+                    }
                 } else {
                     i32::from(i16::from_le_bytes([input[pos], input[pos + 1]]))
                 };
@@ -222,7 +225,8 @@ pub fn write(e: &Edf) -> Result<Vec<u8>, EdfError> {
         for (i, s) in e.signals.iter().enumerate() {
             for k in 0..s.samples_per_record {
                 let v = e.samples[i].get(r * s.samples_per_record + k).copied().unwrap_or(0);
-                let v = i16::try_from(v).map_err(|_| EdfError::Invalid("sample does not fit in 16 bits".into()))?;
+                let v = i16::try_from(v)
+                    .map_err(|_| EdfError::Invalid("sample does not fit in 16 bits".into()))?;
                 out.extend_from_slice(&v.to_le_bytes());
             }
         }

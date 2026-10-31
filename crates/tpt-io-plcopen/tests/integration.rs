@@ -78,7 +78,10 @@ fn bodies_carry_text_for_textual_languages_only() {
 
 #[test]
 fn a_pou_without_a_body_has_none() {
-    let p = parse(b"<project><types><pous><pou name=\"Empty\" pouType=\"program\"/></pous></types></project>").unwrap();
+    let p = parse(
+        b"<project><types><pous><pou name=\"Empty\" pouType=\"program\"/></pous></types></project>",
+    )
+    .unwrap();
     assert!(p.pous[0].body.is_none());
     assert!(p.pous[0].variables.is_empty());
 }
@@ -95,7 +98,9 @@ fn malformed_projects_are_errors() {
 
 #[test]
 fn unknown_pou_type_is_kept() {
-    let p = parse(b"<project><types><pous><pou name=\"c\" pouType=\"class\"/></pous></types></project>").unwrap();
+    let p = parse(
+        b"<project><types><pous><pou name=\"c\" pouType=\"class\"/></pous></types></project>",
+    )
+    .unwrap();
     assert_eq!(p.pous[0].kind, PouKind::Other("class".into()));
 }
-

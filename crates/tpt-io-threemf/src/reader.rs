@@ -44,8 +44,9 @@ pub(crate) fn parse_model(input: &[u8]) -> Result<Model, ThreeMfError> {
 }
 
 fn attr<'a>(el: &'a xml::Element, name: &str) -> Result<&'a str, ThreeMfError> {
-    el.attr(name)
-        .ok_or_else(|| ThreeMfError::Invalid(alloc::format!("<{}> has no {name} attribute", el.name)))
+    el.attr(name).ok_or_else(|| {
+        ThreeMfError::Invalid(alloc::format!("<{}> has no {name} attribute", el.name))
+    })
 }
 
 fn number<T: core::str::FromStr>(el: &xml::Element, name: &str) -> Result<T, ThreeMfError> {
@@ -90,7 +91,9 @@ fn item(el: &xml::Element) -> Result<Item, ThreeMfError> {
                 .split_whitespace()
                 .map(|t| t.parse::<f32>())
                 .collect::<Result<Vec<f32>, _>>()
-                .map_err(|_| ThreeMfError::Core(ParseError::custom(el.offset, "malformed transform")))?;
+                .map_err(|_| {
+                    ThreeMfError::Core(ParseError::custom(el.offset, "malformed transform"))
+                })?;
             let mut m = [0.0f32; 12];
             if values.len() != 12 {
                 return Err(ThreeMfError::Invalid("transform needs exactly 12 values".to_string()));
@@ -99,8 +102,5 @@ fn item(el: &xml::Element) -> Result<Item, ThreeMfError> {
             Some(m)
         }
     };
-    Ok(Item {
-        object_id: number(el, "objectid")?,
-        transform,
-    })
+    Ok(Item { object_id: number(el, "objectid")?, transform })
 }

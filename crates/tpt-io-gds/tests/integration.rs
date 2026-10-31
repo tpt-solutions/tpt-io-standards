@@ -11,7 +11,11 @@ fn sample() -> Library {
             Structure {
                 name: "LEAF".into(),
                 elements: vec![
-                    Element::Boundary { layer: 1, datatype: 0, xy: vec![(0, 0), (100, 0), (100, 50), (0, 0)] },
+                    Element::Boundary {
+                        layer: 1,
+                        datatype: 0,
+                        xy: vec![(0, 0), (100, 0), (100, 50), (0, 0)],
+                    },
                     Element::Path { layer: 2, datatype: 1, width: 10, xy: vec![(0, 0), (0, 500)] },
                     Element::Text { layer: 3, texttype: 0, at: (5, 5), string: "VDD".into() },
                 ],

@@ -139,6 +139,54 @@ pub struct LibSymbol {
     pub value: Option<String>,
 }
 
+/// The kind of a schematic label. Local labels apply to one sheet; global and hierarchical labels connect sheets.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LabelKind {
+    /// A `label`: a net name on one sheet.
+    Local,
+    /// A `global_label`: a net name shared by every sheet.
+    Global,
+    /// A `hierarchical_label`: a net name that connects to a sheet pin.
+    Hierarchical,
+}
+
+/// A schematic label: the net name placed on a wire.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Label {
+    /// Which kind of label this is.
+    pub kind: LabelKind,
+    /// The label text (the net name).
+    pub text: String,
+    /// The label position.
+    pub at: (f64, f64),
+    /// The rotation in degrees.
+    pub rotation: f64,
+}
+
+/// A schematic junction: the dot drawn where wires join.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Junction {
+    /// The junction position.
+    pub at: (f64, f64),
+    /// The dot diameter; 0 means the default size.
+    pub diameter: f64,
+}
+
+/// A PCB copper zone (pour): its net, layer, outline, and the filled areas KiCad computed for it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Zone {
+    /// The net number, if the zone is connected to one.
+    pub net: Option<u32>,
+    /// The net name, if given.
+    pub net_name: Option<String>,
+    /// The layer the zone is on.
+    pub layer: Option<String>,
+    /// The zone outline, from its `polygon` child.
+    pub outline: Vec<(f64, f64)>,
+    /// The filled areas, from its `filled_polygon` children, each a list of points.
+    pub fills: Vec<Vec<(f64, f64)>>,
+}
+
 /// A parsed KiCad document.
 #[derive(Debug, Clone, PartialEq)]
 pub struct KicadDocument {
@@ -162,6 +210,12 @@ pub struct KicadDocument {
     pub wires: Vec<Wire>,
     /// Symbols defined in a symbol library (library only).
     pub lib_symbols: Vec<LibSymbol>,
+    /// Copper zones (PCB only): outlines and the filled areas KiCad computed.
+    pub zones: Vec<Zone>,
+    /// Schematic labels (schematic only): local, global and hierarchical.
+    pub labels: Vec<Label>,
+    /// Schematic junctions (schematic only): dots where wires join.
+    pub junctions: Vec<Junction>,
 }
 
 /// Parse a `.kicad_pcb`, `.kicad_sch` or `.kicad_sym` file.
@@ -193,6 +247,9 @@ pub fn parse(input: &[u8]) -> Result<KicadDocument, KicadError> {
         symbols: Vec::new(),
         wires: Vec::new(),
         lib_symbols: Vec::new(),
+        zones: Vec::new(),
+        labels: Vec::new(),
+        junctions: Vec::new(),
     };
 
     match kind {
@@ -212,6 +269,9 @@ pub fn parse(input: &[u8]) -> Result<KicadDocument, KicadError> {
             for n in root.children("via") {
                 doc.vias.push(via(n));
             }
+            for n in root.children("zone") {
+                doc.zones.push(zone(n));
+            }
         }
         DocKind::Schematic => {
             for n in root.children("symbol") {
@@ -219,6 +279,18 @@ pub fn parse(input: &[u8]) -> Result<KicadDocument, KicadError> {
             }
             for n in root.children("wire") {
                 doc.wires.push(wire(n));
+            }
+            for n in root.children("label") {
+                doc.labels.push(label(n, LabelKind::Local));
+            }
+            for n in root.children("global_label") {
+                doc.labels.push(label(n, LabelKind::Global));
+            }
+            for n in root.children("hierarchical_label") {
+                doc.labels.push(label(n, LabelKind::Hierarchical));
+            }
+            for n in root.children("junction") {
+                doc.junctions.push(junction(n));
             }
         }
         DocKind::SymbolLib => {
@@ -232,6 +304,36 @@ pub fn parse(input: &[u8]) -> Result<KicadDocument, KicadError> {
         }
     }
     Ok(doc)
+}
+
+fn label(node: &Node, kind: LabelKind) -> Label {
+    let (x, y, rotation) = placement(node);
+    Label { kind, text: node.arg_str(0).unwrap_or("").into(), at: (x, y), rotation }
+}
+
+fn junction(node: &Node) -> Junction {
+    let (x, y, _) = placement(node);
+    Junction {
+        at: (x, y),
+        diameter: node.find("diameter").and_then(|d| d.arg_f64(0)).unwrap_or(0.0),
+    }
+}
+
+fn zone(node: &Node) -> Zone {
+    Zone {
+        net: node.find("net").and_then(|n| n.arg_f64(0)).map(|v| v as u32),
+        net_name: node.find("net_name").and_then(|n| n.arg_str(0)).map(Into::into),
+        layer: node.find("layer").and_then(|n| n.arg_str(0)).map(Into::into),
+        outline: node.find("polygon").map(points).unwrap_or_default(),
+        fills: node.children("filled_polygon").map(points).collect(),
+    }
+}
+
+/// The points of the `(pts (xy x y) …)` child of `node`.
+fn points(node: &Node) -> Vec<(f64, f64)> {
+    node.find("pts")
+        .map(|pts| pts.children("xy").map(|xy| point(Some(xy))).collect())
+        .unwrap_or_default()
 }
 
 /// The value of the `(property "name" "value" …)` child named `name`.

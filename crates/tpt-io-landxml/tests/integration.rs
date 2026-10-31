@@ -1,6 +1,6 @@
 //! Integration tests for the LandXML reader and writer.
 
-use tpt_io_landxml::{parse, write, LandXmlError, LandXml, Surface};
+use tpt_io_landxml::{parse, write, LandXml, LandXmlError, Surface};
 
 const SURVEY: &[u8] = br#"<?xml version="1.0"?>
 <LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2">

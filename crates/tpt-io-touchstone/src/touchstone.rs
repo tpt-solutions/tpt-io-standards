@@ -119,14 +119,18 @@ pub fn parse(input: &[u8], ports: usize) -> Result<Touchstone, TouchstoneError> 
                         "RI" => format = Format::Ri,
                         "R" => {
                             i += 1;
-                            let r = tokens
-                                .get(i)
-                                .ok_or_else(|| TouchstoneError::Invalid("R needs a value".to_string()))?;
+                            let r = tokens.get(i).ok_or_else(|| {
+                                TouchstoneError::Invalid("R needs a value".to_string())
+                            })?;
                             reference_ohm = r
                                 .parse::<f64>()
                                 .map_err(|_| ParseError::custom(0, "bad reference impedance"))?;
                         }
-                        _ => return Err(TouchstoneError::Invalid(alloc::format!("unknown option '{t}'"))),
+                        _ => {
+                            return Err(TouchstoneError::Invalid(alloc::format!(
+                                "unknown option '{t}'"
+                            )))
+                        }
                     }
                 }
                 i += 1;
@@ -134,9 +138,8 @@ pub fn parse(input: &[u8], ports: usize) -> Result<Touchstone, TouchstoneError> 
             continue;
         }
         for tok in code.split_whitespace() {
-            let v = tok
-                .parse::<f64>()
-                .map_err(|_| ParseError::custom(lineno, "expected a number"))?;
+            let v =
+                tok.parse::<f64>().map_err(|_| ParseError::custom(lineno, "expected a number"))?;
             numbers.push(v);
         }
         while numbers.len() >= per_point {

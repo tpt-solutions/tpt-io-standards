@@ -103,14 +103,18 @@ fn surface(el: &Element) -> Result<Surface, GbXmlError> {
             let coords: Vec<f64> = p
                 .children_named("Coordinate")
                 .map(|c| {
-                    c.text_trimmed()
-                        .parse::<f64>()
-                        .map_err(|_| GbXmlError::Core(ParseError::custom(c.offset, "expected a number")))
+                    c.text_trimmed().parse::<f64>().map_err(|_| {
+                        GbXmlError::Core(ParseError::custom(c.offset, "expected a number"))
+                    })
                 })
                 .collect::<Result<_, _>>()?;
             match coords.as_slice() {
                 [x, y, z] => out.points.push([*x, *y, *z]),
-                _ => return Err(GbXmlError::Invalid("CartesianPoint needs three coordinates".to_string())),
+                _ => {
+                    return Err(GbXmlError::Invalid(
+                        "CartesianPoint needs three coordinates".to_string(),
+                    ))
+                }
             }
         }
     }

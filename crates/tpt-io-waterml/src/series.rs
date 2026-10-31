@@ -70,12 +70,8 @@ fn series(el: &Element, observed_property: &str) -> Result<TimeSeries, WaterMlEr
         .ok_or_else(|| ParseError::custom(el.offset, "time series has no gml:id"))?
         .to_string();
     let observed_property = observed_property.to_string();
-    let uom = el
-        .descendants_named("uom")
-        .first()
-        .and_then(|u| u.attr("code"))
-        .unwrap_or("")
-        .to_string();
+    let uom =
+        el.descendants_named("uom").first().and_then(|u| u.attr("code")).unwrap_or("").to_string();
     let mut points = Vec::new();
     for p in el.children_named("point") {
         let tvp = p
@@ -115,7 +111,11 @@ pub fn write(series: &[TimeSeries]) -> Vec<u8> {
             escape_attr(&ts.observed_property)
         );
         out.push_str("      <om:result>\n");
-        let _ = writeln!(out, "        <wml2:MeasurementTimeseries gml:id=\"{}\">", escape_attr(&ts.id));
+        let _ = writeln!(
+            out,
+            "        <wml2:MeasurementTimeseries gml:id=\"{}\">",
+            escape_attr(&ts.id)
+        );
         let _ = writeln!(
             out,
             "          <wml2:defaultPointMetadata><wml2:DefaultTVPMeasurementMetadata>\

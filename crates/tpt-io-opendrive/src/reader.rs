@@ -81,7 +81,12 @@ fn segment(el: &Element) -> Result<Geometry, OpenDriveError> {
             u: coefficients(kind_el, "U")?,
             v: coefficients(kind_el, "V")?,
         },
-        _ => return Err(OpenDriveError::Core(ParseError::custom(kind_el.offset, "unsupported geometry shape"))),
+        _ => {
+            return Err(OpenDriveError::Core(ParseError::custom(
+                kind_el.offset,
+                "unsupported geometry shape",
+            )))
+        }
     };
     Ok(Geometry {
         s: num(el, "s")?.unwrap_or(0.0),
@@ -129,9 +134,8 @@ fn lane_section(el: &Element) -> Result<LaneSection, OpenDriveError> {
 
 fn lane(el: &Element) -> Result<Lane, OpenDriveError> {
     let id = required(el, "id")?;
-    let id: i32 = id
-        .parse()
-        .map_err(|_| ParseError::custom(el.offset, "lane id is not an integer"))?;
+    let id: i32 =
+        id.parse().map_err(|_| ParseError::custom(el.offset, "lane id is not an integer"))?;
     let mut widths = Vec::new();
     for w in el.children_named("width") {
         widths.push(Width {

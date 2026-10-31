@@ -66,7 +66,8 @@ impl ArxmlFile {
                 return Err(ArxmlError::Invalid("duplicate package short name".to_string()));
             }
             for p in packages {
-                let mut elems: Vec<&str> = p.elements.iter().map(|e| e.short_name.as_str()).collect();
+                let mut elems: Vec<&str> =
+                    p.elements.iter().map(|e| e.short_name.as_str()).collect();
                 elems.sort_unstable();
                 if elems.windows(2).any(|w| w[0] == w[1]) {
                     return Err(ArxmlError::Invalid(alloc::format!(

@@ -17,7 +17,10 @@ pub fn parse(input: &[u8]) -> Result<Project, PlcOpenError> {
     }
     let mut project = Project {
         name: root.path(&["contentHeader"]).and_then(|h| h.attr("name")).map(|s| s.to_string()),
-        product: root.path(&["fileHeader"]).and_then(|h| h.attr("productName")).map(|s| s.to_string()),
+        product: root
+            .path(&["fileHeader"])
+            .and_then(|h| h.attr("productName"))
+            .map(|s| s.to_string()),
         ..Project::default()
     };
     if let Some(types) = root.child("types") {

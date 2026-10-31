@@ -32,4 +32,4 @@ pub mod zarr;
 
 pub use error::OmeError;
 pub use ome_xml::{from_tiff, parse_xml, Pixels};
-pub use zarr::{parse_zarray, parse_zattrs, ZArray, Multiscales};
+pub use zarr::{parse_zarray, parse_zattrs, Multiscales, ZArray};

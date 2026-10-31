@@ -42,7 +42,11 @@ fn write_then_parse_is_identity() {
 #[test]
 fn records_have_fixed_widths_when_written() {
     let p = Pdb {
-        header: Some(Header { classification: "X".into(), deposition_date: "01-JAN-24".into(), id_code: "9XYZ".into() }),
+        header: Some(Header {
+            classification: "X".into(),
+            deposition_date: "01-JAN-24".into(),
+            id_code: "9XYZ".into(),
+        }),
         title: "HELLO".into(),
         atoms: vec![Atom {
             hetero: false,

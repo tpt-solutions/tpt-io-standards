@@ -1,6 +1,6 @@
 //! Integration tests for the CCSDS OEM, OPM and TDM readers.
 
-use tpt_io_ccsds::{parse_opm, parse_oem, parse_tdm, write_oem, CcsdsError, OemMeta, StateVector};
+use tpt_io_ccsds::{parse_oem, parse_opm, parse_tdm, write_oem, CcsdsError, OemMeta, StateVector};
 
 const OEM: &[u8] = b"CCSDS_OEM_VERS = 2.0
 CREATION_DATE = 2024-01-01T00:00:00
@@ -49,7 +49,10 @@ fn reads_two_segments_with_states_and_covariance_skipped() {
     assert_eq!(first.states[1].position, [6999.5, 450.1, 0.0]);
     assert_eq!(first.states[1].velocity, [-0.5, 7.4, 0.0]);
     let second = &oem.segments[1];
-    assert_eq!(second.meta.extra, [("USEABLE_START_TIME".to_string(), "2024-01-01T00:02:30".to_string())]);
+    assert_eq!(
+        second.meta.extra,
+        [("USEABLE_START_TIME".to_string(), "2024-01-01T00:02:30".to_string())]
+    );
     assert_eq!(second.states[0].epoch, "2024-01-01T00:02:00");
 }
 
@@ -68,7 +71,11 @@ fn oem_writer_builds_a_message_from_values() {
         originator: None,
         segments: vec![tpt_io_ccsds::OemSegment {
             meta: OemMeta { object_name: "X".into(), ..OemMeta::default() },
-            states: vec![StateVector { epoch: "t0".into(), position: [1.5, -2.25, 0.0], velocity: [0.0; 3] }],
+            states: vec![StateVector {
+                epoch: "t0".into(),
+                position: [1.5, -2.25, 0.0],
+                velocity: [0.0; 3],
+            }],
         }],
     };
     let back = parse_oem(&write_oem(&oem)).unwrap();

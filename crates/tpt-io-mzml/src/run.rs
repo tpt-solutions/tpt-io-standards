@@ -41,9 +41,7 @@ pub fn parse(input: &[u8]) -> Result<Run, MzmlError> {
     if root.local_name() != "mzML" {
         return Err(ParseError::custom(root.offset, "root element is not <mzML>").into());
     }
-    let run = root
-        .child("run")
-        .ok_or_else(|| MzmlError::Invalid("no <run> element".into()))?;
+    let run = root.child("run").ok_or_else(|| MzmlError::Invalid("no <run> element".into()))?;
     let mut out = Run { id: run.attr("id").map(|s| s.to_string()), spectra: Vec::new() };
     if let Some(list) = run.child("spectrumList") {
         for s in list.children_named("spectrum") {
@@ -59,26 +57,25 @@ fn cv<'a>(el: &'a Element, accession: &str) -> Option<&'a Element> {
 }
 
 fn spectrum(el: &Element) -> Result<Spectrum, MzmlError> {
-    let id = el
-        .attr("id")
-        .ok_or_else(|| MzmlError::Invalid("spectrum has no id".into()))?
-        .to_string();
-    let index = el
-        .attr("index")
-        .and_then(|i| i.parse::<usize>().ok())
-        .unwrap_or(0);
-    let ms_level = cv(el, "MS:1000511")
-        .and_then(|c| c.attr("value"))
-        .and_then(|v| v.parse::<u32>().ok());
+    let id =
+        el.attr("id").ok_or_else(|| MzmlError::Invalid("spectrum has no id".into()))?.to_string();
+    let index = el.attr("index").and_then(|i| i.parse::<usize>().ok()).unwrap_or(0);
+    let ms_level =
+        cv(el, "MS:1000511").and_then(|c| c.attr("value")).and_then(|v| v.parse::<u32>().ok());
     // The scan start time is found in the scan list; its unit decides the scale.
-    let retention_time = el.descendants_named("cvParam").into_iter().find(|c| c.attr("accession") == Some("MS:1000016")).and_then(|c| {
-        let v = c.attr("value")?.parse::<f64>().ok()?;
-        match c.attr("unitName") {
-            Some("minute") => Some(v * 60.0),
-            _ => Some(v),
-        }
-    });
-    let mut out = Spectrum { index, id, ms_level, retention_time, mz: Vec::new(), intensity: Vec::new() };
+    let retention_time = el
+        .descendants_named("cvParam")
+        .into_iter()
+        .find(|c| c.attr("accession") == Some("MS:1000016"))
+        .and_then(|c| {
+            let v = c.attr("value")?.parse::<f64>().ok()?;
+            match c.attr("unitName") {
+                Some("minute") => Some(v * 60.0),
+                _ => Some(v),
+            }
+        });
+    let mut out =
+        Spectrum { index, id, ms_level, retention_time, mz: Vec::new(), intensity: Vec::new() };
     if let Some(list) = el.child("binaryDataArrayList") {
         for arr in list.children_named("binaryDataArray") {
             let values = array(arr)?;
@@ -102,14 +99,13 @@ fn array(arr: &Element) -> Result<Vec<f64>, MzmlError> {
     if !bits64 && !bits32 {
         return Err(MzmlError::Unsupported("array precision other than 32 or 64 bits".into()));
     }
-    let text = arr
-        .child("binary")
-        .map(|b| b.text_trimmed())
-        .unwrap_or("");
+    let text = arr.child("binary").map(|b| b.text_trimmed()).unwrap_or("");
     let bytes = decode(text)?;
     let width = if bits64 { 8 } else { 4 };
     if bytes.len() % width != 0 {
-        return Err(ParseError::custom(arr.offset, "array length is not a whole number of values").into());
+        return Err(
+            ParseError::custom(arr.offset, "array length is not a whole number of values").into()
+        );
     }
     Ok(bytes
         .chunks_exact(width)

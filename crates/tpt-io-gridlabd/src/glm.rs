@@ -81,7 +81,9 @@ impl Glm {
         }
         for p in parents {
             if !names.contains(&p) {
-                return Err(GlmError::Invalid(alloc::format!("parent '{p}' is not a named object")));
+                return Err(GlmError::Invalid(alloc::format!(
+                    "parent '{p}' is not a named object"
+                )));
             }
         }
         Ok(())
@@ -118,7 +120,8 @@ pub fn parse(input: &[u8]) -> Result<Glm, GlmError> {
             }
             _ => {
                 let at = p.pos;
-                let head = p.word().ok_or_else(|| ParseError::custom(at, "expected a statement"))?;
+                let head =
+                    p.word().ok_or_else(|| ParseError::custom(at, "expected a statement"))?;
                 match head {
                     "object" => items.push(Item::Object(p.object()?)),
                     "module" => {
@@ -133,7 +136,9 @@ pub fn parse(input: &[u8]) -> Result<Glm, GlmError> {
                         let (_, props) = p.named_block()?;
                         items.push(Item::Clock { props });
                     }
-                    _ => return Err(ParseError::custom(at, "unexpected top-level statement").into()),
+                    _ => {
+                        return Err(ParseError::custom(at, "unexpected top-level statement").into())
+                    }
                 }
             }
         }
@@ -316,7 +321,14 @@ fn object(out: &mut String, o: &Object, depth: usize) {
     block(out, "object", &o.class, &o.props, &o.children, depth);
 }
 
-fn block(out: &mut String, keyword: &str, name: &str, props: &[Property], children: &[Object], depth: usize) {
+fn block(
+    out: &mut String,
+    keyword: &str,
+    name: &str,
+    props: &[Property],
+    children: &[Object],
+    depth: usize,
+) {
     let indent = "\t".repeat(depth);
     if name.is_empty() {
         let _ = writeln!(out, "{indent}{keyword} {{");
@@ -351,7 +363,10 @@ mod tests {
 
     #[test]
     fn values_with_spaces_and_complex_numbers() {
-        let glm = parse(b"object load { name l; constant_power_A 100+50j; startime '2000-01-01 0:00:00'; }").unwrap();
+        let glm = parse(
+            b"object load { name l; constant_power_A 100+50j; startime '2000-01-01 0:00:00'; }",
+        )
+        .unwrap();
         let Item::Object(o) = &glm.items[0] else { panic!() };
         assert_eq!(o.prop("constant_power_A"), Some("100+50j"));
         assert_eq!(o.prop("startime"), Some("'2000-01-01 0:00:00'"));

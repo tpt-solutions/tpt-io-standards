@@ -1,6 +1,6 @@
 //! Integration tests for MCAP: a hand-built chunked file, round trips, and corruption.
 
-use tpt_io_mcap::{parse, write, Channel, McapError, Mcap, Message, Schema};
+use tpt_io_mcap::{parse, write, Channel, Mcap, McapError, Message, Schema};
 
 /// Build a file by hand with one chunk holding a schema, a channel and two messages.
 fn chunked_file() -> Vec<u8> {
@@ -101,11 +101,23 @@ fn metadata_and_empty_file_round_trip() {
             message_encoding: "json".into(),
             metadata: vec![("k".into(), "v".into()), ("".into(), "x".into())],
         }],
-        messages: vec![Message { channel_id: 3, sequence: 0, log_time: 0, publish_time: 0, data: vec![] }],
+        messages: vec![Message {
+            channel_id: 3,
+            sequence: 0,
+            log_time: 0,
+            publish_time: 0,
+            data: vec![],
+        }],
     };
     assert_eq!(parse(&write(&m)).unwrap(), m);
 
-    let empty = Mcap { profile: String::new(), library: String::new(), schemas: vec![], channels: vec![], messages: vec![] };
+    let empty = Mcap {
+        profile: String::new(),
+        library: String::new(),
+        schemas: vec![],
+        channels: vec![],
+        messages: vec![],
+    };
     assert_eq!(parse(&write(&empty)).unwrap(), empty);
 }
 

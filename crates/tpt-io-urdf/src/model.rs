@@ -145,13 +145,22 @@ impl Robot {
         let mut children: Vec<&str> = Vec::new();
         for j in &self.joints {
             if names.binary_search(&j.parent.as_str()).is_err() {
-                return Err(UrdfError::Invalid(alloc::format!("joint '{}' has unknown parent", j.name)));
+                return Err(UrdfError::Invalid(alloc::format!(
+                    "joint '{}' has unknown parent",
+                    j.name
+                )));
             }
             if names.binary_search(&j.child.as_str()).is_err() {
-                return Err(UrdfError::Invalid(alloc::format!("joint '{}' has unknown child", j.name)));
+                return Err(UrdfError::Invalid(alloc::format!(
+                    "joint '{}' has unknown child",
+                    j.name
+                )));
             }
             if children.contains(&j.child.as_str()) {
-                return Err(UrdfError::Invalid(alloc::format!("link '{}' has two parents", j.child)));
+                return Err(UrdfError::Invalid(alloc::format!(
+                    "link '{}' has two parents",
+                    j.child
+                )));
             }
             children.push(&j.child);
         }

@@ -2,7 +2,8 @@
 
 use tpt_io_gnss::{parse_rinex_obs, parse_sp3, GnssError};
 
-const RINEX: &[u8] = b"     3.04           OBSERVATION DATA    M                   RINEX VERSION / TYPE
+const RINEX: &[u8] =
+    b"     3.04           OBSERVATION DATA    M                   RINEX VERSION / TYPE
 STATION1                                                    MARKER NAME
 1111111.1111  2222222.2222  3333333.3333                    APPROX POSITION XYZ
 G    3 C1C L1C S1C                                            SYS / # / OBS TYPES
@@ -41,7 +42,10 @@ fn satellites_carry_values_with_missing_entries() {
 
 #[test]
 fn rinex_without_end_of_header_is_an_error() {
-    assert!(matches!(parse_rinex_obs(b"     3.04           OBSERVATION DATA\n"), Err(GnssError::Invalid(_))));
+    assert!(matches!(
+        parse_rinex_obs(b"     3.04           OBSERVATION DATA\n"),
+        Err(GnssError::Invalid(_))
+    ));
     assert!(parse_rinex_obs(b"     3.04\n                  END OF HEADER\nG01 1.0\n").is_err());
 }
 

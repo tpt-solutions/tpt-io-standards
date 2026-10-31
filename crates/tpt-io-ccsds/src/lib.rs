@@ -45,6 +45,6 @@ pub mod opm;
 pub mod tdm;
 
 pub use error::CcsdsError;
-pub use oem::{parse as parse_oem, write as write_oem, Oem, OemSegment, OemMeta, StateVector};
+pub use oem::{parse as parse_oem, write as write_oem, Oem, OemMeta, OemSegment, StateVector};
 pub use opm::{parse as parse_opm, Opm};
 pub use tdm::{parse as parse_tdm, Tdm, TdmBlock};

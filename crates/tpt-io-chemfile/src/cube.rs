@@ -62,7 +62,8 @@ pub fn parse(input: &[u8]) -> Result<Cube, ChemError> {
         if c.len() < 4 {
             return Err(ChemError::Invalid("cube axis line needs a count and a step".into()));
         }
-        let count = c[0].parse::<usize>().map_err(|_| ChemError::Invalid("bad voxel count".into()))?;
+        let count =
+            c[0].parse::<usize>().map_err(|_| ChemError::Invalid("bad voxel count".into()))?;
         axes.push(Axis { count, step: [number(c[1], 0)?, number(c[2], 0)?, number(c[3], 0)?] });
     }
     let mut atoms = Vec::with_capacity(natoms_abs);
@@ -90,9 +91,8 @@ pub fn parse(input: &[u8]) -> Result<Cube, ChemError> {
             values.len()
         )));
     }
-    let [a0, a1, a2]: [Axis; 3] = axes
-        .try_into()
-        .map_err(|_| ChemError::Invalid("cube needs three axes".into()))?;
+    let [a0, a1, a2]: [Axis; 3] =
+        axes.try_into().map_err(|_| ChemError::Invalid("cube needs three axes".into()))?;
     Ok(Cube { comment, origin, axes: [a0, a1, a2], atoms, data: values })
 }
 
@@ -102,14 +102,7 @@ pub fn write(c: &Cube) -> Vec<u8> {
     let mut comments = c.comment.splitn(2, '\n');
     let _ = writeln!(out, "{}", comments.next().unwrap_or(""));
     let _ = writeln!(out, "{}", comments.next().unwrap_or(""));
-    let _ = writeln!(
-        out,
-        "{} {} {} {}",
-        c.atoms.len(),
-        c.origin[0],
-        c.origin[1],
-        c.origin[2]
-    );
+    let _ = writeln!(out, "{} {} {} {}", c.atoms.len(), c.origin[0], c.origin[1], c.origin[2]);
     for a in &c.axes {
         let _ = writeln!(out, "{} {} {} {}", a.count, a.step[0], a.step[1], a.step[2]);
     }

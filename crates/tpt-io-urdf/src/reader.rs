@@ -107,17 +107,11 @@ fn joint(el: &Element, dialect: Dialect) -> Result<Joint, UrdfError> {
 
     let limit = match dialect {
         Dialect::Urdf => match el.child("limit") {
-            Some(l) => Some(limit_from(
-                |n| l.attr(n),
-                l.offset,
-            )?),
+            Some(l) => Some(limit_from(|n| l.attr(n), l.offset)?),
             None => None,
         },
         Dialect::Sdf => match axis_el.and_then(|a| a.child("limit")) {
-            Some(l) => Some(limit_from(
-                |n| l.child(n).map(|c| c.text_trimmed()),
-                l.offset,
-            )?),
+            Some(l) => Some(limit_from(|n| l.child(n).map(|c| c.text_trimmed()), l.offset)?),
             None => None,
         },
     };
@@ -143,17 +137,12 @@ fn required_attr(el: &Element, name: &str) -> Result<String, UrdfError> {
 }
 
 fn number(s: &str, at: usize) -> Result<f64, UrdfError> {
-    s.trim()
-        .parse::<f64>()
-        .map_err(|_| ParseError::custom(at, "expected a number").into())
+    s.trim().parse::<f64>().map_err(|_| ParseError::custom(at, "expected a number").into())
 }
 
 /// Three whitespace-separated numbers.
 fn vector(s: &str, at: usize) -> Result<[f64; 3], UrdfError> {
-    let v: Vec<f64> = s
-        .split_whitespace()
-        .map(|t| number(t, at))
-        .collect::<Result<_, _>>()?;
+    let v: Vec<f64> = s.split_whitespace().map(|t| number(t, at)).collect::<Result<_, _>>()?;
     match v.as_slice() {
         [a, b, c] => Ok([*a, *b, *c]),
         _ => Err(ParseError::custom(at, "expected three numbers").into()),
@@ -162,10 +151,7 @@ fn vector(s: &str, at: usize) -> Result<[f64; 3], UrdfError> {
 
 /// An SDFormat pose: six numbers `x y z roll pitch yaw`.
 fn sdf_pose(s: &str, at: usize) -> Result<Pose, UrdfError> {
-    let v: Vec<f64> = s
-        .split_whitespace()
-        .map(|t| number(t, at))
-        .collect::<Result<_, _>>()?;
+    let v: Vec<f64> = s.split_whitespace().map(|t| number(t, at)).collect::<Result<_, _>>()?;
     match v.as_slice() {
         [] => Ok(Pose::default()),
         [x, y, z, r, p, yaw] => Ok(Pose { xyz: [*x, *y, *z], rpy: [*r, *p, *yaw] }),

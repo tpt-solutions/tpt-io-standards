@@ -59,10 +59,7 @@ fn image_hdu_round_trips_through_write_and_parse() {
     hdu.cards.push(Card::new("EXPTIME", Value::Real(12.5)));
     hdu.cards.push(Card::new("TELESCOP", Value::Text("Test 'Scope'".into())));
     hdu.cards.push(Card::commentary("HISTORY", "made by a test"));
-    hdu.data = [1.5f32, -2.0, 0.25, 1e10]
-        .iter()
-        .flat_map(|v| v.to_be_bytes())
-        .collect();
+    hdu.data = [1.5f32, -2.0, 0.25, 1e10].iter().flat_map(|v| v.to_be_bytes()).collect();
     let file = Fits { hdus: vec![hdu] };
     let bytes = write(&file);
     assert_eq!(bytes.len() % 2880, 0);
@@ -95,7 +92,10 @@ fn truncated_and_unsupported_inputs_are_errors() {
     let mut odd = Hdu::image(12, &[1]);
     odd.data = vec![0; 2];
     let f = Fits { hdus: vec![odd] };
-    assert!(matches!(parse(&write(&f)).unwrap().hdus[0].pixels(), Err(FitsError::UnsupportedBitpix(12))));
+    assert!(matches!(
+        parse(&write(&f)).unwrap().hdus[0].pixels(),
+        Err(FitsError::UnsupportedBitpix(12))
+    ));
 }
 
 #[test]

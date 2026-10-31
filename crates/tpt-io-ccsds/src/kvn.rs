@@ -25,7 +25,9 @@ pub fn classify(line: &str) -> Option<Line<'_>> {
     }
     if let Some((k, v)) = t.split_once('=') {
         let k = k.trim();
-        if !k.is_empty() && k.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_') {
+        if !k.is_empty()
+            && k.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_')
+        {
             return Some(Line::Pair(k, v.trim()));
         }
     }

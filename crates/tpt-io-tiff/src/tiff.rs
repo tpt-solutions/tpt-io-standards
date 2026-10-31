@@ -54,7 +54,11 @@ struct Reader<'a> {
 impl Reader<'_> {
     fn u16(&self, at: usize) -> Result<u16, ParseError> {
         let s = self.b.get(at..at + 2).ok_or_else(|| ParseError::eof(at))?;
-        Ok(if self.big { u16::from_be_bytes([s[0], s[1]]) } else { u16::from_le_bytes([s[0], s[1]]) })
+        Ok(if self.big {
+            u16::from_be_bytes([s[0], s[1]])
+        } else {
+            u16::from_le_bytes([s[0], s[1]])
+        })
     }
 
     fn u32(&self, at: usize) -> Result<u32, ParseError> {
@@ -74,11 +78,19 @@ impl Reader<'_> {
 
     /// The four bytes of an entry's value field, in file order.
     fn inline(&self, e: Entry) -> [u8; 4] {
-        if self.big { e.value.to_be_bytes() } else { e.value.to_le_bytes() }
+        if self.big {
+            e.value.to_be_bytes()
+        } else {
+            e.value.to_le_bytes()
+        }
     }
 
     fn short_at(&self, s: &[u8]) -> u32 {
-        if self.big { u16::from_be_bytes([s[0], s[1]]) as u32 } else { u16::from_le_bytes([s[0], s[1]]) as u32 }
+        if self.big {
+            u16::from_be_bytes([s[0], s[1]]) as u32
+        } else {
+            u16::from_le_bytes([s[0], s[1]]) as u32
+        }
     }
 
     /// The values of an entry as unsigned integers (SHORT or LONG), in order.
@@ -98,7 +110,13 @@ impl Reader<'_> {
         }
         let base = e.value as usize;
         (0..count)
-            .map(|i| if size == 2 { self.u16(base + 2 * i).map(u32::from) } else { self.u32(base + 4 * i) })
+            .map(|i| {
+                if size == 2 {
+                    self.u16(base + 2 * i).map(u32::from)
+                } else {
+                    self.u32(base + 4 * i)
+                }
+            })
             .collect()
     }
 }
@@ -144,8 +162,10 @@ fn single(r: &Reader<'_>, entries: &[Entry], tag: u16) -> Result<Option<u32>, Pa
 }
 
 fn image(r: &Reader<'_>, entries: &[Entry]) -> Result<Image, TiffError> {
-    let width = single(r, entries, TAG_IMAGE_WIDTH)?.ok_or_else(|| TiffError::Invalid("no ImageWidth".into()))?;
-    let height = single(r, entries, TAG_IMAGE_LENGTH)?.ok_or_else(|| TiffError::Invalid("no ImageLength".into()))?;
+    let width = single(r, entries, TAG_IMAGE_WIDTH)?
+        .ok_or_else(|| TiffError::Invalid("no ImageWidth".into()))?;
+    let height = single(r, entries, TAG_IMAGE_LENGTH)?
+        .ok_or_else(|| TiffError::Invalid("no ImageLength".into()))?;
     let spp = single(r, entries, TAG_SAMPLES_PER_PIXEL)?.unwrap_or(1) as u16;
     let bits = match entries.iter().find(|e| e.tag == TAG_BITS_PER_SAMPLE) {
         Some(e) => r.values(*e)?.first().copied().unwrap_or(1) as u16,
@@ -153,18 +173,15 @@ fn image(r: &Reader<'_>, entries: &[Entry]) -> Result<Image, TiffError> {
     };
     let format = single(r, entries, TAG_SAMPLE_FORMAT)?.unwrap_or(1) as u16;
     let compression = single(r, entries, TAG_COMPRESSION)?.unwrap_or(1);
-    let description = entries
-        .iter()
-        .find(|e| e.tag == TAG_IMAGE_DESCRIPTION)
-        .map(|e| {
-            let bytes = if e.count as usize <= 4 {
-                r.inline(*e)[..e.count as usize].to_vec()
-            } else {
-                r.b.get(e.value as usize..e.value as usize + e.count as usize).unwrap_or(&[]).to_vec()
-            };
-            let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
-            String::from_utf8_lossy(&bytes[..end]).to_string()
-        });
+    let description = entries.iter().find(|e| e.tag == TAG_IMAGE_DESCRIPTION).map(|e| {
+        let bytes = if e.count as usize <= 4 {
+            r.inline(*e)[..e.count as usize].to_vec()
+        } else {
+            r.b.get(e.value as usize..e.value as usize + e.count as usize).unwrap_or(&[]).to_vec()
+        };
+        let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
+        String::from_utf8_lossy(&bytes[..end]).to_string()
+    });
     let offsets = match entries.iter().find(|e| e.tag == TAG_STRIP_OFFSETS) {
         Some(e) => r.values(*e)?,
         None => return Err(TiffError::Unsupported("tiled images".into())),
@@ -185,10 +202,9 @@ fn image(r: &Reader<'_>, entries: &[Entry]) -> Result<Image, TiffError> {
     let expected = width as usize * height as usize * spp as usize * bytes_per_sample;
     let mut raw = Vec::with_capacity(expected);
     for (off, cnt) in offsets.iter().zip(&counts) {
-        let strip = r
-            .b
-            .get(*off as usize..*off as usize + *cnt as usize)
-            .ok_or_else(|| ParseError::eof(*off as usize))?;
+        let strip =
+            r.b.get(*off as usize..*off as usize + *cnt as usize)
+                .ok_or_else(|| ParseError::eof(*off as usize))?;
         match compression {
             1 => raw.extend_from_slice(strip),
             5 => raw.extend(lzw(strip)?),
@@ -233,7 +249,10 @@ pub fn write(images: &[Image]) -> Result<Vec<u8>, TiffError> {
             32 => 4,
             other => return Err(TiffError::Unsupported(alloc::format!("{other} bits per sample"))),
         };
-        let expected = img.width as usize * img.height as usize * img.samples_per_pixel as usize * bytes_per_sample;
+        let expected = img.width as usize
+            * img.height as usize
+            * img.samples_per_pixel as usize
+            * bytes_per_sample;
         if img.pixels.len() != expected {
             return Err(TiffError::Invalid("pixel count does not match the image size".into()));
         }
@@ -241,11 +260,15 @@ pub fn write(images: &[Image]) -> Result<Vec<u8>, TiffError> {
         if out.len() % 2 == 1 {
             out.push(0);
         }
-        let desc_bytes: Vec<u8> = img.description.as_deref().map(|d| {
-            let mut v = d.as_bytes().to_vec();
-            v.push(0);
-            v
-        }).unwrap_or_default();
+        let desc_bytes: Vec<u8> = img
+            .description
+            .as_deref()
+            .map(|d| {
+                let mut v = d.as_bytes().to_vec();
+                v.push(0);
+                v
+            })
+            .unwrap_or_default();
         let desc_at = out.len();
         out.extend_from_slice(&desc_bytes);
         if out.len() % 2 == 1 {

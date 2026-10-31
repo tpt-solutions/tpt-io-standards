@@ -45,7 +45,9 @@ pub fn parse(input: &[u8]) -> Result<Composition, OpenEhrError> {
     let details = root.get("archetype_details");
     let mut c = Composition {
         name: text(root.get("name").and_then(|n| n.get("value"))),
-        archetype_id: text(details.and_then(|d| d.get("archetype_id")).and_then(|a| a.get("value"))),
+        archetype_id: text(
+            details.and_then(|d| d.get("archetype_id")).and_then(|a| a.get("value")),
+        ),
         template_id: text(details.and_then(|d| d.get("template_id")).and_then(|t| t.get("value"))),
         rm_version: text(details.and_then(|d| d.get("rm_version"))),
         language: text(root.get("language").and_then(|l| l.get("code_string"))),

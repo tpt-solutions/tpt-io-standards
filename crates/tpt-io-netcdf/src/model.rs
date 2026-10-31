@@ -180,11 +180,32 @@ impl NetCdf {
                 }
                 pos[i] = 0;
             }
-            if i == 0 && pos[0] == 0 {
+            if nd == 0 || (i == 0 && pos[0] == 0) {
                 break;
             }
         }
         Ok(out)
+    }
+
+    /// Iterate over a variable's slabs along its first dimension, `rows_per_slab` rows at a time. Each slab is read
+    /// with [`NetCdf::read_hyperslab`], so a large variable can be processed without loading it whole.
+    pub fn slabs<'a>(
+        &'a self,
+        file: &'a [u8],
+        v: &'a Var,
+        rows_per_slab: usize,
+    ) -> core::result::Result<Slabs<'a>, NetCdfError> {
+        let shape = self.var_shape(v);
+        if shape.is_empty() {
+            return Err(NetCdfError::Unsupported("scalar variables have no slabs"));
+        }
+        if rows_per_slab == 0 {
+            return Err(NetCdfError::Core(ParseError::custom(
+                0,
+                "rows per slab must be at least 1",
+            )));
+        }
+        Ok(Slabs { nc: self, file, var: v, shape, rows_per_slab, next: 0 })
     }
 
     /// Variables whose name matches a dimension name are "coordinate
@@ -209,4 +230,48 @@ impl NetCdf {
 /// Helper to build an attribute value from a slice of `f64` (for tests/writers).
 pub fn attr_from_f64(_name: &str, _vals: &[f64]) -> Attr {
     Attr { name: String::new(), nc_type: NcType::Double, value: Vec::new() }
+}
+
+/// One slab of a variable along its first dimension.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Slab {
+    /// The first index along dimension 0 that the slab covers.
+    pub start: usize,
+    /// The number of rows along dimension 0 in the slab.
+    pub rows: usize,
+    /// The values, in the same order as [`NetCdf::read_hyperslab`].
+    pub values: Vec<f64>,
+}
+
+/// An iterator over the slabs of a variable, produced by [`NetCdf::slabs`].
+pub struct Slabs<'a> {
+    nc: &'a NetCdf,
+    file: &'a [u8],
+    var: &'a Var,
+    shape: Vec<usize>,
+    rows_per_slab: usize,
+    next: usize,
+}
+
+impl Iterator for Slabs<'_> {
+    type Item = core::result::Result<Slab, NetCdfError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let total = self.shape[0];
+        if self.next >= total {
+            return None;
+        }
+        let start = self.next;
+        let rows = self.rows_per_slab.min(total - start);
+        self.next += rows;
+        let mut at = vec![0usize; self.shape.len()];
+        at[0] = start;
+        let mut count = self.shape.clone();
+        count[0] = rows;
+        Some(self.nc.read_hyperslab(self.file, self.var, &at, &count).map(|values| Slab {
+            start,
+            rows,
+            values,
+        }))
+    }
 }

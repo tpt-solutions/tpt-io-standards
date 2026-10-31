@@ -130,8 +130,10 @@ fn rejects_other_roots_and_malformed_numbers() {
 
 #[test]
 fn unknown_joint_types_are_kept() {
-    let r = parse(br#"<robot name="r"><link name="a"/><link name="b"/>
-        <joint name="ball" type="ball"><parent link="a"/><child link="b"/></joint></robot>"#)
+    let r = parse(
+        br#"<robot name="r"><link name="a"/><link name="b"/>
+        <joint name="ball" type="ball"><parent link="a"/><child link="b"/></joint></robot>"#,
+    )
     .unwrap();
     assert_eq!(r.joints[0].kind, JointKind::Other("ball".into()));
     assert_eq!(r.joints[0].kind.as_str(), "ball");

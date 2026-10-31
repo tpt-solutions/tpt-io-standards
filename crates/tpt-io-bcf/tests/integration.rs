@@ -51,7 +51,8 @@ fn written_archive_has_version_part_and_one_markup_per_topic() {
 
 #[test]
 fn reads_version_and_ignores_other_parts() {
-    let markup = br#"<Markup><Topic Guid="t1" TopicStatus="Closed"><Title>Hello</Title></Topic></Markup>"#;
+    let markup =
+        br#"<Markup><Topic Guid="t1" TopicStatus="Closed"><Title>Hello</Title></Topic></Markup>"#;
     let package = zip::write_stored(&[
         ("bcf.version", br#"<Version VersionId="2.1"/>"#.as_slice()),
         ("t1/markup.bcfxml", markup.as_slice()),
@@ -67,7 +68,10 @@ fn reads_version_and_ignores_other_parts() {
 
 #[test]
 fn missing_version_part_defaults_to_2_1() {
-    let package = zip::write_stored(&[("t/markup.bcfxml", b"<Markup><Topic Guid=\"t\"/></Markup>".as_slice())]);
+    let package = zip::write_stored(&[(
+        "t/markup.bcfxml",
+        b"<Markup><Topic Guid=\"t\"/></Markup>".as_slice(),
+    )]);
     assert_eq!(parse(&package).unwrap().version, "2.1");
 }
 

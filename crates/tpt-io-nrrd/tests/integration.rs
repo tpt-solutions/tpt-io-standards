@@ -22,7 +22,9 @@ fn decodes_big_endian_signed_samples() {
 
 #[test]
 fn ascii_data_is_parsed_as_numbers() {
-    let n = parse(b"NRRD0004\ntype: float\ndimension: 1\nsizes: 3\nencoding: ascii\n\n1.5 2.5\n-3\n").unwrap();
+    let n =
+        parse(b"NRRD0004\ntype: float\ndimension: 1\nsizes: 3\nencoding: ascii\n\n1.5 2.5\n-3\n")
+            .unwrap();
     assert_eq!(n.values().unwrap(), vec![1.5, 2.5, -3.0]);
 }
 
@@ -38,10 +40,7 @@ fn key_value_pairs_and_external_data_are_handled() {
     let n = parse(b"NRRD0004\nsome:=value\ndimension: 1\nsizes: 1\n\nX").unwrap();
     assert_eq!(n.field("some:="), Some("value"));
     assert!(matches!(parse(b"NRRD0004\ndata file: x.raw\n\n"), Err(NrrdError::Unsupported(_))));
-    assert!(matches!(
-        parse(b"NRRD0004\nencoding: gzip\n\nxx"),
-        Err(NrrdError::Unsupported(_))
-    ));
+    assert!(matches!(parse(b"NRRD0004\nencoding: gzip\n\nxx"), Err(NrrdError::Unsupported(_))));
 }
 
 #[test]
@@ -49,7 +48,8 @@ fn malformed_files_are_errors() {
     assert!(parse(b"PNG\n\n").is_err());
     assert!(parse(b"NRRD0004\ntype uchar\n\n").is_err());
     assert!(parse(b"NRRD0004\ntype: uchar\n").is_err());
-    let short = parse(b"NRRD0004\ntype: uchar\ndimension: 1\nsizes: 4\nencoding: raw\n\nab").unwrap();
+    let short =
+        parse(b"NRRD0004\ntype: uchar\ndimension: 1\nsizes: 4\nencoding: raw\n\nab").unwrap();
     assert!(matches!(short.values(), Err(NrrdError::Invalid(_))));
 }
 

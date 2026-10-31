@@ -63,7 +63,15 @@ fn write_then_parse_is_identity() {
     let contents = |s: &tpt_io_opendss::Script| -> Vec<_> {
         s.commands
             .iter()
-            .map(|c| (c.verb.clone(), c.object.clone(), c.name.clone(), c.positional.clone(), c.props.clone()))
+            .map(|c| {
+                (
+                    c.verb.clone(),
+                    c.object.clone(),
+                    c.name.clone(),
+                    c.positional.clone(),
+                    c.props.clone(),
+                )
+            })
             .collect()
     };
     assert_eq!(contents(&again), contents(&s));

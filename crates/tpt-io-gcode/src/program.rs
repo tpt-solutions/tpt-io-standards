@@ -145,7 +145,10 @@ impl Program {
                 next[i] = if absolute { v } else { pos[i] + v };
             }
             if mode <= 1 {
-                let d = ((next[0] - pos[0]).powi(2) + (next[1] - pos[1]).powi(2) + (next[2] - pos[2]).powi(2)).sqrt();
+                let d = ((next[0] - pos[0]).powi(2)
+                    + (next[1] - pos[1]).powi(2)
+                    + (next[2] - pos[2]).powi(2))
+                .sqrt();
                 s.path_length_mm += d;
             }
             pos = next;
@@ -218,10 +221,9 @@ fn block(line: &str, offset: usize) -> Result<Block, GcodeError> {
             }
         }
         first = false;
-        let value = number_text.parse::<f64>().map_err(|_| GcodeError::BadNumber {
-            offset,
-            text: tok.to_string(),
-        })?;
+        let value = number_text
+            .parse::<f64>()
+            .map_err(|_| GcodeError::BadNumber { offset, text: tok.to_string() })?;
         b.words.push(Word { letter, value, text: tok.to_string() });
     }
     b.comment = match (semi, paren) {

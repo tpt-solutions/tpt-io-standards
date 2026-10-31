@@ -97,7 +97,9 @@ impl OpenScenario {
     /// names, and unique story names.
     pub fn validate(&self) -> Result<(), OpenScenarioError> {
         if self.header.rev_major != 1 {
-            return Err(OpenScenarioError::Invalid("only OpenSCENARIO 1.x files are supported".to_string()));
+            return Err(OpenScenarioError::Invalid(
+                "only OpenSCENARIO 1.x files are supported".to_string(),
+            ));
         }
         let mut names: Vec<&str> = self.entities.iter().map(|e| e.name.as_str()).collect();
         names.sort_unstable();

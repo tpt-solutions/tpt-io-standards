@@ -1,7 +1,9 @@
 //! Error type for the AutomationML reader, built on [`tpt_io_core::ParseError`].
 
 #[cfg(not(any(feature = "alloc", feature = "std")))]
-compile_error!("tpt-io-automationml requires the `alloc` or `std` feature: its error type owns text.");
+compile_error!(
+    "tpt-io-automationml requires the `alloc` or `std` feature: its error type owns text."
+);
 
 use tpt_io_core::ParseError;
 

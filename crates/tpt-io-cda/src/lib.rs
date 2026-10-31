@@ -33,8 +33,8 @@
 #[macro_use]
 extern crate alloc;
 
-pub mod error;
 pub mod document;
+pub mod error;
 
 pub use document::{parse, ClinicalDocument, Section};
 pub use error::CdaError;

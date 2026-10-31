@@ -16,7 +16,8 @@ fn grey(width: u32, height: u32, bits: u16, pixels: Vec<u8>) -> Image {
 
 #[test]
 fn write_then_parse_keeps_every_ifd() {
-    let a = Image { description: Some("first image".into()), ..grey(3, 2, 8, vec![1, 2, 3, 4, 5, 6]) };
+    let a =
+        Image { description: Some("first image".into()), ..grey(3, 2, 8, vec![1, 2, 3, 4, 5, 6]) };
     let b = Image { sample_format: 3, ..grey(2, 1, 32, vec![0, 0, 128, 63, 0, 0, 0, 64]) };
     let bytes = write(&[a.clone(), b.clone()]).unwrap();
     let back = parse(&bytes).unwrap();

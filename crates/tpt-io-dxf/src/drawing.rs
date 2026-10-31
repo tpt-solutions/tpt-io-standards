@@ -67,9 +67,7 @@ fn pairs(input: &[u8]) -> Result<Vec<Pair<'_>>, DxfError> {
 }
 
 fn num(p: &Pair<'_>) -> Result<f64, DxfError> {
-    p.value
-        .parse::<f64>()
-        .map_err(|_| ParseError::custom(p.offset, "expected a number").into())
+    p.value.parse::<f64>().map_err(|_| ParseError::custom(p.offset, "expected a number").into())
 }
 
 /// Parse a DXF (ASCII) file.
@@ -182,9 +180,9 @@ fn entity(kind: &str, body: &[Pair<'_>]) -> Result<Entity, DxfError> {
                         pending_x = Some(num(p)?);
                     }
                     20 => {
-                        let x = pending_x
-                            .take()
-                            .ok_or_else(|| DxfError::Invalid("LWPOLYLINE Y without X".to_string()))?;
+                        let x = pending_x.take().ok_or_else(|| {
+                            DxfError::Invalid("LWPOLYLINE Y without X".to_string())
+                        })?;
                         vertices.push([x, num(p)?]);
                     }
                     _ => {}

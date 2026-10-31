@@ -61,7 +61,12 @@ pub fn lzw(input: &[u8]) -> Result<Vec<u8>, TiffError> {
         }
         let known = prefix.len();
         let entry_index = code as usize;
-        let emit = |c: u16, out: &mut Vec<u8>, prefix: &[u16], suffix: &[u8], length: &[usize]| -> Result<u8, TiffError> {
+        let emit = |c: u16,
+                    out: &mut Vec<u8>,
+                    prefix: &[u16],
+                    suffix: &[u8],
+                    length: &[usize]|
+         -> Result<u8, TiffError> {
             let n = length[c as usize];
             let start = out.len();
             out.resize(start + n, 0);
@@ -76,7 +81,8 @@ pub fn lzw(input: &[u8]) -> Result<Vec<u8>, TiffError> {
             emit(code, &mut out, &prefix, &suffix, &length)?
         } else if entry_index == known {
             // The KwKwK case: the new entry is the previous string plus its first byte.
-            let p = prev.ok_or_else(|| ParseError::custom(bit_pos, "LZW code before any previous code"))?;
+            let p = prev
+                .ok_or_else(|| ParseError::custom(bit_pos, "LZW code before any previous code"))?;
             let p_first = emit(p, &mut out, &prefix, &suffix, &length)?;
             out.push(p_first);
             p_first

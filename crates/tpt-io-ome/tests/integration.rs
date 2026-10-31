@@ -25,7 +25,10 @@ fn ome_xml_errors_are_reported() {
     assert!(matches!(parse_xml(b"<OME/>"), Err(OmeError::Invalid(_))));
     let no_size = br#"<OME><Pixels ID="p" SizeX="1" SizeY="1" SizeZ="1" SizeC="1"/></OME>"#;
     assert!(matches!(parse_xml(no_size), Err(OmeError::Invalid(_))));
-    assert!(parse_xml(br#"<OME><Pixels SizeX="x" SizeY="1" SizeZ="1" SizeC="1" SizeT="1"/></OME>"#).is_err());
+    assert!(parse_xml(
+        br#"<OME><Pixels SizeX="x" SizeY="1" SizeZ="1" SizeC="1" SizeT="1"/></OME>"#
+    )
+    .is_err());
 }
 
 #[test]

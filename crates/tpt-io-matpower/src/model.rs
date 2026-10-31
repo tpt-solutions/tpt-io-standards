@@ -143,7 +143,9 @@ impl Case {
         let mut references = 0usize;
         for b in &self.bus {
             if !(1..=4).contains(&b.kind) {
-                return Err(invalid("bus type must be 1 (PQ), 2 (PV), 3 (reference) or 4 (isolated)"));
+                return Err(invalid(
+                    "bus type must be 1 (PQ), 2 (PV), 3 (reference) or 4 (isolated)",
+                ));
             }
             if b.kind == 3 {
                 references += 1;

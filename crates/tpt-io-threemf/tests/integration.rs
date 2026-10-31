@@ -1,7 +1,9 @@
 //! Integration tests for the 3MF package reader and writer.
 
 use tpt_io_core::zip;
-use tpt_io_threemf::{model_xml, parse, parse_model_xml, write, Item, Model, Object, ThreeMfError, MODEL_PART};
+use tpt_io_threemf::{
+    model_xml, parse, parse_model_xml, write, Item, Model, Object, ThreeMfError, MODEL_PART,
+};
 
 fn tetra(id: u32) -> Object {
     Object {
@@ -15,10 +17,7 @@ fn tetra(id: u32) -> Object {
 fn model() -> Model {
     Model {
         unit: "millimeter".to_string(),
-        objects: vec![Object {
-            name: Some("tetra & friends".to_string()),
-            ..tetra(7)
-        }],
+        objects: vec![Object { name: Some("tetra & friends".to_string()), ..tetra(7) }],
         build: vec![Item {
             object_id: 7,
             transform: Some([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 5.0, 6.0, 7.0]),

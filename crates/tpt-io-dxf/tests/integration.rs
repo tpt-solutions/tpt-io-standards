@@ -1,6 +1,6 @@
 //! Integration tests for the DXF reader and writer.
 
-use tpt_io_dxf::{parse, write, DxfError, Drawing, Entity};
+use tpt_io_dxf::{parse, write, Drawing, DxfError, Entity};
 
 const DRAWING: &[u8] = b"0
 SECTION
@@ -123,7 +123,10 @@ fn reads_version_layers_and_entities() {
 #[test]
 fn circles_polylines_text_and_other_entities() {
     let d = parse(DRAWING).unwrap();
-    assert_eq!(d.entities[1], Entity::Circle { layer: "Walls".into(), center: [1.0, 1.0, 0.0], radius: 2.5 });
+    assert_eq!(
+        d.entities[1],
+        Entity::Circle { layer: "Walls".into(), center: [1.0, 1.0, 0.0], radius: 2.5 }
+    );
     assert_eq!(
         d.entities[2],
         Entity::LwPolyline {
@@ -134,7 +137,12 @@ fn circles_polylines_text_and_other_entities() {
     );
     assert_eq!(
         d.entities[3],
-        Entity::Text { layer: "Text".into(), insert: [2.0, 3.0, 0.0], height: 0.5, value: "Hello".into() }
+        Entity::Text {
+            layer: "Text".into(),
+            insert: [2.0, 3.0, 0.0],
+            height: 0.5,
+            value: "Hello".into()
+        }
     );
     assert_eq!(d.entities[4], Entity::Other { kind: "HATCH".into(), layer: "Walls".into() });
 }

@@ -29,7 +29,9 @@
 #![forbid(unsafe_code)]
 
 #[cfg(not(any(feature = "alloc", feature = "std")))]
-compile_error!("tpt-io-omex requires the `alloc` or `std` feature: its types own text and vectors.");
+compile_error!(
+    "tpt-io-omex requires the `alloc` or `std` feature: its types own text and vectors."
+);
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 #[allow(unused_imports)]
@@ -131,8 +133,9 @@ pub fn parse(input: &[u8]) -> Result<Archive, OmexError> {
     for el in root.children_named("content") {
         let location = attr(el, "location")?;
         let path = path_of(location);
-        let data = zip::entry(input, path)?
-            .ok_or_else(|| OmexError::Invalid(alloc::format!("manifest lists missing file {path}")))?;
+        let data = zip::entry(input, path)?.ok_or_else(|| {
+            OmexError::Invalid(alloc::format!("manifest lists missing file {path}"))
+        })?;
         archive.contents.push(Content {
             location: location.to_string(),
             format: attr(el, "format")?.to_string(),

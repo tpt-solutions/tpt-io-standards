@@ -3,10 +3,7 @@
 use tpt_io_segy::{parse, write, SegY, SegyError, Trace};
 
 fn file_with(traces: Vec<Vec<f32>>) -> SegY {
-    let mut f = SegY {
-        text: b"C01 synthetic survey".to_vec(),
-        ..SegY::default()
-    };
+    let mut f = SegY { text: b"C01 synthetic survey".to_vec(), ..SegY::default() };
     f.binary.sample_interval_us = 2000;
     f.binary.samples_per_trace = traces.first().map(|t| t.len()).unwrap_or(0) as u16;
     f.binary.raw = vec![0; 400];

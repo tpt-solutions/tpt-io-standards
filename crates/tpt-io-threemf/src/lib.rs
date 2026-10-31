@@ -30,7 +30,9 @@
 #![forbid(unsafe_code)]
 
 #[cfg(not(any(feature = "alloc", feature = "std")))]
-compile_error!("tpt-io-threemf requires the `alloc` or `std` feature: its types own text and vectors.");
+compile_error!(
+    "tpt-io-threemf requires the `alloc` or `std` feature: its types own text and vectors."
+);
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 #[allow(unused_imports)]

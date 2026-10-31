@@ -13,12 +13,12 @@ use crate::model::{Component, DataItem, Device, Devices, Observation, Streams};
 pub fn parse_devices(input: &[u8]) -> Result<Devices, MtConnectError> {
     let root = xml::parse(input)?;
     if root.local_name() != "MTConnectDevices" {
-        return Err(ParseError::custom(root.offset, "root element is not <MTConnectDevices>").into());
+        return Err(
+            ParseError::custom(root.offset, "root element is not <MTConnectDevices>").into()
+        );
     }
-    let schema_version = root
-        .child("Header")
-        .and_then(|h| h.attr("schemaVersion"))
-        .map(|s| s.to_string());
+    let schema_version =
+        root.child("Header").and_then(|h| h.attr("schemaVersion")).map(|s| s.to_string());
     let mut devices = Vec::new();
     if let Some(list) = root.child("Devices") {
         for d in list.children_named("Device") {
@@ -77,7 +77,9 @@ fn data_item(el: &Element) -> Result<DataItem, MtConnectError> {
 pub fn parse_streams(input: &[u8]) -> Result<Streams, MtConnectError> {
     let root = xml::parse(input)?;
     if root.local_name() != "MTConnectStreams" {
-        return Err(ParseError::custom(root.offset, "root element is not <MTConnectStreams>").into());
+        return Err(
+            ParseError::custom(root.offset, "root element is not <MTConnectStreams>").into()
+        );
     }
     let mut observations = Vec::new();
     if let Some(streams) = root.child("Streams") {

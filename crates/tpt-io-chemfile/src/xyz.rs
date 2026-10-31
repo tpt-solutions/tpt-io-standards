@@ -31,7 +31,9 @@ pub fn parse(input: &[u8]) -> Result<Molecule, ChemError> {
             .ok_or_else(|| ChemError::Invalid("fewer atom lines than the count".to_string()))?;
         let cols: Vec<&str> = line.split_whitespace().collect();
         if cols.len() < 4 {
-            return Err(ChemError::Invalid("atom line needs an element and three coordinates".to_string()));
+            return Err(ChemError::Invalid(
+                "atom line needs an element and three coordinates".to_string(),
+            ));
         }
         atoms.push(Atom {
             element: cols[0].to_string(),

@@ -35,8 +35,8 @@
 #[macro_use]
 extern crate alloc;
 
-pub mod error;
 pub mod edf;
+pub mod error;
 
 pub use edf::{parse, write, Edf, Signal};
 pub use error::EdfError;

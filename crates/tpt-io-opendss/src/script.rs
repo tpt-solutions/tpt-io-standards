@@ -28,10 +28,7 @@ pub struct Command {
 impl Command {
     /// The raw value of a property, matched case-insensitively.
     pub fn prop(&self, key: &str) -> Option<&str> {
-        self.props
-            .iter()
-            .find(|(k, _)| k.eq_ignore_ascii_case(key))
-            .map(|(_, v)| v.as_str())
+        self.props.iter().find(|(k, _)| k.eq_ignore_ascii_case(key)).map(|(_, v)| v.as_str())
     }
 }
 
@@ -46,9 +43,9 @@ impl Script {
     /// Commands that create or edit an element of the given class, e.g. `"Line"`.
     /// Matching is case-insensitive and includes `New` and `Edit` commands.
     pub fn elements<'a>(&'a self, class: &'a str) -> impl Iterator<Item = &'a Command> + 'a {
-        self.commands.iter().filter(move |c| {
-            c.object.as_deref().is_some_and(|o| o.eq_ignore_ascii_case(class))
-        })
+        self.commands
+            .iter()
+            .filter(move |c| c.object.as_deref().is_some_and(|o| o.eq_ignore_ascii_case(class)))
     }
 }
 

@@ -36,7 +36,9 @@ pub struct ClinicalDocument {
 pub fn parse(input: &[u8]) -> Result<ClinicalDocument, CdaError> {
     let root = xml::parse(input)?;
     if root.local_name() != "ClinicalDocument" {
-        return Err(ParseError::custom(root.offset, "root element is not <ClinicalDocument>").into());
+        return Err(
+            ParseError::custom(root.offset, "root element is not <ClinicalDocument>").into()
+        );
     }
     let mut doc = ClinicalDocument::default();
     if let Some(id) = root.child("id") {
@@ -47,7 +49,8 @@ pub fn parse(input: &[u8]) -> Result<ClinicalDocument, CdaError> {
         };
     }
     doc.title = root.child("title").map(|t| t.text_trimmed().to_string());
-    doc.effective_time = root.child("effectiveTime").and_then(|t| t.attr("value")).map(|v| v.to_string());
+    doc.effective_time =
+        root.child("effectiveTime").and_then(|t| t.attr("value")).map(|v| v.to_string());
     doc.patient = root
         .path(&["recordTarget", "patientRole", "patient", "name"])
         .map(|n| {

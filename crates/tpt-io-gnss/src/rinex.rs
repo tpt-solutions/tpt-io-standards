@@ -48,8 +48,7 @@ fn field(line: &str, from: usize, to: usize) -> &str {
 }
 
 fn number(s: &str, at: usize) -> Result<f64, GnssError> {
-    s.parse::<f64>()
-        .map_err(|_| ParseError::custom(at, "expected a number").into())
+    s.parse::<f64>().map_err(|_| ParseError::custom(at, "expected a number").into())
 }
 
 /// Parse a RINEX 3 observation file.
@@ -74,7 +73,8 @@ pub fn parse_rinex_obs(input: &[u8]) -> Result<RinexObs, GnssError> {
                 "APPROX POSITION XYZ" => {
                     let c: Vec<&str> = line.split_whitespace().take(3).collect();
                     if c.len() == 3 {
-                        obs.approx_position = Some([number(c[0], at)?, number(c[1], at)?, number(c[2], at)?]);
+                        obs.approx_position =
+                            Some([number(c[0], at)?, number(c[1], at)?, number(c[2], at)?]);
                     }
                 }
                 "SYS / # / OBS TYPES" => {
@@ -114,7 +114,11 @@ pub fn parse_rinex_obs(input: &[u8]) -> Result<RinexObs, GnssError> {
             let minute = c[4].parse::<u8>().map_err(|_| ParseError::custom(at, "bad minute"))?;
             let second = number(c[5], at)?;
             let flag = c.get(6).and_then(|f| f.parse::<u8>().ok()).unwrap_or(0);
-            obs.epochs.push(Epoch { time: (year, month, day, hour, minute, second), flag, satellites: Vec::new() });
+            obs.epochs.push(Epoch {
+                time: (year, month, day, hour, minute, second),
+                flag,
+                satellites: Vec::new(),
+            });
             continue;
         }
         if line.trim().is_empty() {
@@ -126,12 +130,8 @@ pub fn parse_rinex_obs(input: &[u8]) -> Result<RinexObs, GnssError> {
             .ok_or_else(|| GnssError::Invalid("observation line before any epoch".to_string()))?;
         let id = field(line, 0, 3).to_string();
         let system = id.chars().next().unwrap_or(' ');
-        let codes = obs
-            .obs_types
-            .iter()
-            .find(|(s, _)| *s == system)
-            .map(|(_, c)| c.len())
-            .unwrap_or(0);
+        let codes =
+            obs.obs_types.iter().find(|(s, _)| *s == system).map(|(_, c)| c.len()).unwrap_or(0);
         let mut values = Vec::with_capacity(codes);
         for k in 0..codes {
             let start = 3 + 16 * k;

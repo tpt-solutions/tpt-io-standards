@@ -31,9 +31,7 @@ impl Spectrum {
 
 fn number(tok: &str, at: usize) -> Result<f64, JcampError> {
     let fixed = tok.replace(['D', 'd'], "E");
-    fixed
-        .parse::<f64>()
-        .map_err(|_| ParseError::custom(at, "expected a number").into())
+    fixed.parse::<f64>().map_err(|_| ParseError::custom(at, "expected a number").into())
 }
 
 /// Parse a JCAMP-DX file.
@@ -93,10 +91,16 @@ pub fn parse(input: &[u8]) -> Result<Spectrum, JcampError> {
             } else {
                 // Compressed values use letters and the '@' and '%' characters; plain values use only
                 // digits, signs, points and the E or D exponent marker.
-                let compressed = body
-                    .chars()
-                    .any(|c| (c.is_ascii_alphabetic() && !matches!(c, 'E' | 'e' | 'D' | 'd')) || c == '@' || c == '%');
-                if compressed || form.contains("SQZ") || form.contains("DIF") || form.contains("DUP") {
+                let compressed = body.chars().any(|c| {
+                    (c.is_ascii_alphabetic() && !matches!(c, 'E' | 'e' | 'D' | 'd'))
+                        || c == '@'
+                        || c == '%'
+                });
+                if compressed
+                    || form.contains("SQZ")
+                    || form.contains("DIF")
+                    || form.contains("DUP")
+                {
                     return Err(JcampError::Unsupported(form));
                 }
                 // X++(Y..Y): each line gives an X value then Y values at successive X steps.
@@ -148,10 +152,7 @@ pub fn write(s: &Spectrum) -> Vec<u8> {
     }
     // The reader multiplies stored values by the factors in the header, so store values divided by them.
     let factor = |name: &str| {
-        s.label(name)
-            .and_then(|v| v.parse::<f64>().ok())
-            .filter(|f| *f != 0.0)
-            .unwrap_or(1.0)
+        s.label(name).and_then(|v| v.parse::<f64>().ok()).filter(|f| *f != 0.0).unwrap_or(1.0)
     };
     let (xf, yf) = (factor("XFACTOR"), factor("YFACTOR"));
     out.push_str("##XYPOINTS=(XY..XY)\n");

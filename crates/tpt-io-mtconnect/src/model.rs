@@ -88,7 +88,9 @@ impl Devices {
         }
         ids.sort_unstable();
         if ids.windows(2).any(|w| w[0] == w[1]) {
-            return Err(MtConnectError::Invalid(alloc::string::String::from("duplicate data item id")));
+            return Err(MtConnectError::Invalid(alloc::string::String::from(
+                "duplicate data item id",
+            )));
         }
         Ok(())
     }

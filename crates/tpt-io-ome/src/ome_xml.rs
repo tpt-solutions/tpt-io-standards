@@ -60,7 +60,8 @@ pub fn parse_xml(input: &[u8]) -> Result<Pixels, OmeError> {
 
 /// Read the OME-XML from an OME-TIFF file: the `ImageDescription` of its first image, parsed as OME-XML.
 pub fn from_tiff(tiff_bytes: &[u8]) -> Result<Pixels, OmeError> {
-    let images = tpt_io_tiff::parse(tiff_bytes).map_err(|e| OmeError::Tiff(alloc::format!("{e}")))?;
+    let images =
+        tpt_io_tiff::parse(tiff_bytes).map_err(|e| OmeError::Tiff(alloc::format!("{e}")))?;
     let description = images
         .first()
         .and_then(|i| i.description.as_deref())

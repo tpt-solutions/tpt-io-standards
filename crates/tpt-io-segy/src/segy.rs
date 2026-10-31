@@ -71,15 +71,9 @@ fn decode(format: u16, bytes: &[u8]) -> Vec<f32> {
             .chunks_exact(4)
             .map(|c| i32::from_be_bytes([c[0], c[1], c[2], c[3]]) as f32)
             .collect(),
-        3 => bytes
-            .chunks_exact(2)
-            .map(|c| i16::from_be_bytes([c[0], c[1]]) as f32)
-            .collect(),
+        3 => bytes.chunks_exact(2).map(|c| i16::from_be_bytes([c[0], c[1]]) as f32).collect(),
         8 => bytes.iter().map(|&b| b as i8 as f32).collect(),
-        _ => bytes
-            .chunks_exact(4)
-            .map(|c| f32::from_be_bytes([c[0], c[1], c[2], c[3]]))
-            .collect(),
+        _ => bytes.chunks_exact(4).map(|c| f32::from_be_bytes([c[0], c[1], c[2], c[3]])).collect(),
     }
 }
 
@@ -98,11 +92,7 @@ pub fn parse(input: &[u8]) -> Result<SegY, SegyError> {
         raw: bin.to_vec(),
     };
     let width = bytes_per_sample(binary.format)?;
-    let mut file = SegY {
-        text: input[..TEXT_LEN].to_vec(),
-        binary,
-        traces: Vec::new(),
-    };
+    let mut file = SegY { text: input[..TEXT_LEN].to_vec(), binary, traces: Vec::new() };
     let samples = file.binary.samples_per_trace as usize;
     let mut pos = header_len;
     while pos < input.len() {

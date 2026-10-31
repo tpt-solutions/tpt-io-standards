@@ -71,7 +71,8 @@ impl Hdu {
 
     /// Decode the image into `f64` pixels with `BZERO` and `BSCALE` applied.
     pub fn pixels(&self) -> Result<Vec<f64>, FitsError> {
-        let bitpix = self.integer("BITPIX").ok_or_else(|| FitsError::Invalid("no BITPIX".to_string()))?;
+        let bitpix =
+            self.integer("BITPIX").ok_or_else(|| FitsError::Invalid("no BITPIX".to_string()))?;
         let width = match bitpix {
             8 => 1,
             16 => 2,
@@ -144,9 +145,7 @@ pub fn parse(input: &[u8]) -> Result<Fits, FitsError> {
     while pos < input.len() {
         let mut cards = Vec::new();
         loop {
-            let block = input
-                .get(pos..pos + BLOCK)
-                .ok_or_else(|| ParseError::eof(pos))?;
+            let block = input.get(pos..pos + BLOCK).ok_or_else(|| ParseError::eof(pos))?;
             pos += BLOCK;
             let mut ended = false;
             for image in block.chunks_exact(80) {
@@ -164,10 +163,7 @@ pub fn parse(input: &[u8]) -> Result<Fits, FitsError> {
         let size = data_size(&cards)?;
         let total = padded(size);
         let data_end = pos.checked_add(size).ok_or_else(|| ParseError::eof(pos))?;
-        let data = input
-            .get(pos..data_end)
-            .ok_or_else(|| ParseError::eof(pos))?
-            .to_vec();
+        let data = input.get(pos..data_end).ok_or_else(|| ParseError::eof(pos))?.to_vec();
         pos = pos.checked_add(total).ok_or_else(|| ParseError::eof(pos))?;
         if pos > input.len() {
             // Tolerate a missing final pad block when the data itself is complete.

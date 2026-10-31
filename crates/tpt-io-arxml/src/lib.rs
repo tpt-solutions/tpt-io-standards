@@ -37,5 +37,5 @@ pub mod model;
 pub mod reader;
 
 pub use error::ArxmlError;
-pub use model::{ArxmlFile, ArxmlElement, Package};
+pub use model::{ArxmlElement, ArxmlFile, Package};
 pub use reader::parse;

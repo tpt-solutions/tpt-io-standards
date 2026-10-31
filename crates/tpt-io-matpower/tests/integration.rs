@@ -207,9 +207,8 @@ fn generated_cases_round_trip() {
     for _ in 0..200 {
         let case = random_case(&mut rng);
         let text = write(&case);
-        let back = parse(&text).unwrap_or_else(|e| {
-            panic!("re-read failed: {e}\n{}", String::from_utf8_lossy(&text))
-        });
+        let back = parse(&text)
+            .unwrap_or_else(|e| panic!("re-read failed: {e}\n{}", String::from_utf8_lossy(&text)));
         assert_eq!(case, back);
     }
 }

@@ -37,8 +37,7 @@ impl std::error::Error for ChemError {}
 
 /// Parse a decimal number from a token, reporting the byte offset on failure.
 pub(crate) fn number(tok: &str, at: usize) -> Result<f64, ChemError> {
-    tok.parse::<f64>()
-        .map_err(|_| ParseError::custom(at, "expected a number").into())
+    tok.parse::<f64>().map_err(|_| ParseError::custom(at, "expected a number").into())
 }
 
 /// Split a text into its lines (accepting `\n` or `\r\n`).

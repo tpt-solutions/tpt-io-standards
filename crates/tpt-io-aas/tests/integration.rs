@@ -59,7 +59,10 @@ fn duplicate_ids_are_rejected() {
 
 #[test]
 fn missing_identifiers_and_bad_json_are_errors() {
-    assert!(matches!(parse(br#"{"assetAdministrationShells":[{"idShort":"x"}]}"#), Err(AasError::Invalid(_))));
+    assert!(matches!(
+        parse(br#"{"assetAdministrationShells":[{"idShort":"x"}]}"#),
+        Err(AasError::Invalid(_))
+    ));
     assert!(matches!(parse(br#"{"submodels":[{"idShort":"x"}]}"#), Err(AasError::Invalid(_))));
     assert!(parse(b"[1, 2]").is_err());
     assert!(parse(b"{\"assetAdministrationShells\": [").is_err());

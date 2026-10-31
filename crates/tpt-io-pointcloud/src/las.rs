@@ -49,9 +49,7 @@ pub struct Cloud {
 }
 
 fn u16_at(b: &[u8], at: usize) -> Result<u16, ParseError> {
-    b.get(at..at + 2)
-        .map(|s| u16::from_le_bytes([s[0], s[1]]))
-        .ok_or_else(|| ParseError::eof(at))
+    b.get(at..at + 2).map(|s| u16::from_le_bytes([s[0], s[1]])).ok_or_else(|| ParseError::eof(at))
 }
 
 fn u32_at(b: &[u8], at: usize) -> Result<u32, ParseError> {
@@ -99,7 +97,9 @@ pub fn parse(input: &[u8]) -> Result<Cloud, LasError> {
         _ => 34,
     };
     if record_len < min_len {
-        return Err(ParseError::custom(105, "record length is shorter than the format needs").into());
+        return Err(
+            ParseError::custom(105, "record length is shorter than the format needs").into()
+        );
     }
     let mut cloud = Cloud {
         version_major,
@@ -111,9 +111,7 @@ pub fn parse(input: &[u8]) -> Result<Cloud, LasError> {
     };
     for i in 0..count {
         let at = data_offset + i * record_len;
-        let r = input
-            .get(at..at + record_len)
-            .ok_or_else(|| ParseError::eof(at))?;
+        let r = input.get(at..at + record_len).ok_or_else(|| ParseError::eof(at))?;
         let x = i32::from_le_bytes([r[0], r[1], r[2], r[3]]) as f64 * scale[0] + offset[0];
         let y = i32::from_le_bytes([r[4], r[5], r[6], r[7]]) as f64 * scale[1] + offset[1];
         let z = i32::from_le_bytes([r[8], r[9], r[10], r[11]]) as f64 * scale[2] + offset[2];
@@ -131,13 +129,23 @@ pub fn parse(input: &[u8]) -> Result<Cloud, LasError> {
             rgb: None,
         };
         if point_format == 1 || point_format == 3 {
-            p.gps_time = Some(f64::from_bits(u64::from_le_bytes([r[20], r[21], r[22], r[23], r[24], r[25], r[26], r[27]])));
+            p.gps_time = Some(f64::from_bits(u64::from_le_bytes([
+                r[20], r[21], r[22], r[23], r[24], r[25], r[26], r[27],
+            ])));
         }
         if point_format == 2 {
-            p.rgb = Some([u16::from_le_bytes([r[20], r[21]]), u16::from_le_bytes([r[22], r[23]]), u16::from_le_bytes([r[24], r[25]])]);
+            p.rgb = Some([
+                u16::from_le_bytes([r[20], r[21]]),
+                u16::from_le_bytes([r[22], r[23]]),
+                u16::from_le_bytes([r[24], r[25]]),
+            ]);
         }
         if point_format == 3 {
-            p.rgb = Some([u16::from_le_bytes([r[28], r[29]]), u16::from_le_bytes([r[30], r[31]]), u16::from_le_bytes([r[32], r[33]])]);
+            p.rgb = Some([
+                u16::from_le_bytes([r[28], r[29]]),
+                u16::from_le_bytes([r[30], r[31]]),
+                u16::from_le_bytes([r[32], r[33]]),
+            ]);
         }
         cloud.points.push(p);
     }
@@ -172,7 +180,9 @@ pub fn write(c: &Cloud) -> Result<Vec<u8>, LasError> {
         for axis in 0..3 {
             let raw = ((p.position[axis] - c.offset[axis]) / c.scale[axis]).round();
             if !(raw >= i32::MIN as f64 && raw <= i32::MAX as f64) {
-                return Err(LasError::Invalid("coordinate does not fit the scale and offset".into()));
+                return Err(LasError::Invalid(
+                    "coordinate does not fit the scale and offset".into(),
+                ));
             }
             r[4 * axis..4 * axis + 4].copy_from_slice(&(raw as i32).to_le_bytes());
         }

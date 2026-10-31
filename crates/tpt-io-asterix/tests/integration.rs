@@ -65,10 +65,7 @@ fn several_records_in_one_block() {
 fn unsupported_items_are_reported_not_guessed() {
     let fspec = [0x20u8]; // FRN 3 (target report descriptor, variable length) is not supported
     let bytes = block(48, &[(&fspec, &[0x00])]);
-    assert_eq!(
-        parse(&bytes),
-        Err(AsterixError::UnsupportedItem { category: 48, frn: 3 })
-    );
+    assert_eq!(parse(&bytes), Err(AsterixError::UnsupportedItem { category: 48, frn: 3 }));
     let other = block(21, &[(&[0x80u8], &[0, 0])]);
     assert!(matches!(parse(&other), Err(AsterixError::UnsupportedItem { category: 21, .. })));
 }

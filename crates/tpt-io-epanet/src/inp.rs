@@ -140,7 +140,9 @@ pub fn parse(input: &[u8]) -> Result<Inp, EpanetError> {
         match inp.sections.last_mut() {
             Some(s) => s.rows.push(row),
             None if row.tokens.is_empty() => inp.preamble.push(row),
-            None => return Err(ParseError::custom(line_offset, "row before the first section").into()),
+            None => {
+                return Err(ParseError::custom(line_offset, "row before the first section").into())
+            }
         }
     }
     Ok(inp)
@@ -167,10 +169,7 @@ impl Inp {
 
     /// Rows of the named section that have tokens (comment-only rows are skipped).
     fn data_rows(&self, name: &str) -> impl Iterator<Item = &Row> + '_ {
-        self.section(name)
-            .into_iter()
-            .flat_map(|s| s.rows.iter())
-            .filter(|r| !r.tokens.is_empty())
+        self.section(name).into_iter().flat_map(|s| s.rows.iter()).filter(|r| !r.tokens.is_empty())
     }
 
     /// The `[JUNCTIONS]` rows.
@@ -215,7 +214,12 @@ impl Inp {
                     min_level: f(3, "minimum level")?,
                     max_level: f(4, "maximum level")?,
                     diameter: f(5, "diameter")?,
-                    min_volume: r.tokens.get(6).map(|t| num(t, "minimum volume")).transpose()?.unwrap_or(0.0),
+                    min_volume: r
+                        .tokens
+                        .get(6)
+                        .map(|t| num(t, "minimum volume"))
+                        .transpose()?
+                        .unwrap_or(0.0),
                 })
             })
             .collect()
@@ -234,7 +238,12 @@ impl Inp {
                     length: f(3, "length")?,
                     diameter: f(4, "diameter")?,
                     roughness: f(5, "roughness")?,
-                    minor_loss: r.tokens.get(6).map(|t| num(t, "minor loss")).transpose()?.unwrap_or(0.0),
+                    minor_loss: r
+                        .tokens
+                        .get(6)
+                        .map(|t| num(t, "minor loss"))
+                        .transpose()?
+                        .unwrap_or(0.0),
                     status: r.tokens.get(7).cloned().unwrap_or_else(|| "Open".to_string()),
                 })
             })
@@ -270,13 +279,23 @@ impl Inp {
         }
         for p in self.pipes()? {
             if !nodes.contains(&p.node1) || !nodes.contains(&p.node2) {
-                return Err(EpanetError::Topology(alloc::format!("pipe {} joins an unknown node", p.id)));
+                return Err(EpanetError::Topology(alloc::format!(
+                    "pipe {} joins an unknown node",
+                    p.id
+                )));
             }
             if !(p.length > 0.0 && p.diameter > 0.0) {
-                return Err(EpanetError::Topology(alloc::format!("pipe {} needs positive length and diameter", p.id)));
+                return Err(EpanetError::Topology(alloc::format!(
+                    "pipe {} needs positive length and diameter",
+                    p.id
+                )));
             }
             if !matches!(p.status.as_str(), "Open" | "Closed" | "CV") {
-                return Err(EpanetError::Topology(alloc::format!("pipe {} has status '{}'", p.id, p.status)));
+                return Err(EpanetError::Topology(alloc::format!(
+                    "pipe {} has status '{}'",
+                    p.id,
+                    p.status
+                )));
             }
         }
         Ok(())

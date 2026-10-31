@@ -30,8 +30,8 @@
 #[macro_use]
 extern crate alloc;
 
-pub mod error;
 pub mod board;
+pub mod error;
 
 pub use board::{parse, Component, Ipc2581, Layer};
 pub use error::Ipc2581Error;

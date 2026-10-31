@@ -25,8 +25,8 @@
 #[macro_use]
 extern crate alloc;
 
-pub mod error;
 pub mod drawing;
+pub mod error;
 
 pub use drawing::{parse, write, Drawing, Entity};
 pub use error::DxfError;

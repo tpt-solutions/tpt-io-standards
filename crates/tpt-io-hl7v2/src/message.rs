@@ -79,13 +79,17 @@ impl Message {
 
 /// Parse an HL7 v2 message. Segments may be separated by carriage returns or line feeds.
 pub fn parse(input: &[u8]) -> Result<Message, Hl7Error> {
-    let text = core::str::from_utf8(input)
-        .map_err(|e| tpt_io_core::ParseError::custom(e.valid_up_to(), "message is not valid UTF-8"))?;
+    let text = core::str::from_utf8(input).map_err(|e| {
+        tpt_io_core::ParseError::custom(e.valid_up_to(), "message is not valid UTF-8")
+    })?;
     let text = text.trim_start_matches(['\r', '\n', ' ']);
     if !text.starts_with("MSH") {
         return Err(Hl7Error::Invalid("the message must start with MSH".to_string()));
     }
-    let field_sep = text[3..].chars().next().ok_or_else(|| Hl7Error::Invalid("MSH has no separator".to_string()))?;
+    let field_sep = text[3..]
+        .chars()
+        .next()
+        .ok_or_else(|| Hl7Error::Invalid("MSH has no separator".to_string()))?;
     let enc: Vec<char> = text[3 + field_sep.len_utf8()..].chars().take(4).collect();
     if enc.len() < 4 {
         return Err(Hl7Error::Invalid("MSH-2 must hold four encoding characters".to_string()));

@@ -149,7 +149,8 @@ impl OpenDrive {
                     return Err(invalid("first lane section must start at s = 0"));
                 }
                 prev = Some(ls.s);
-                let mut seen: Vec<i32> = ls.left.iter().chain(&ls.center).chain(&ls.right).map(|l| l.id).collect();
+                let mut seen: Vec<i32> =
+                    ls.left.iter().chain(&ls.center).chain(&ls.right).map(|l| l.id).collect();
                 seen.sort_unstable();
                 if seen.windows(2).any(|w| w[0] == w[1]) {
                     return Err(invalid("duplicate lane id in a lane section"));

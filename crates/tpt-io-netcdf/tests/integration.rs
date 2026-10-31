@@ -111,3 +111,25 @@ fn header_round_trip_stable() {
     assert_eq!(rt.vars, nc.vars);
     assert_eq!(rt.global_attrs, nc.global_attrs);
 }
+
+#[test]
+fn golden_slabs_stream_the_variable_in_pieces() {
+    let bytes = sample("example.nc");
+    let nc = NetCdfReader::new().parse(&bytes).unwrap();
+    let temp = nc.var("temp").unwrap();
+
+    let slabs: Vec<_> = nc.slabs(&bytes, temp, 1).unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+    assert_eq!(slabs.len(), 2);
+    assert_eq!((slabs[0].start, slabs[0].rows), (0, 1));
+    assert_eq!((slabs[1].start, slabs[1].rows), (1, 1));
+    assert_eq!(slabs[1].values[0], 100.0);
+    assert_eq!(slabs[0].values.len(), 12);
+
+    // A slab larger than the variable covers it in one step, and the pieces join to the full read.
+    let whole: Vec<_> = nc.slabs(&bytes, temp, 5).unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+    assert_eq!(whole.len(), 1);
+    let joined: Vec<f64> = slabs.iter().flat_map(|s| s.values.iter().copied()).collect();
+    assert_eq!(joined, whole[0].values);
+
+    assert!(nc.slabs(&bytes, temp, 0).is_err());
+}

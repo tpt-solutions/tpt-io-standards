@@ -139,7 +139,8 @@ impl<'a> Reader<'a> {
         match self.peek() {
             Some(c) if c.is_ascii_alphabetic() => {
                 let mut end = self.pos;
-                while matches!(self.src.get(end), Some(c) if c.is_ascii_alphanumeric() || *c == b'_') {
+                while matches!(self.src.get(end), Some(c) if c.is_ascii_alphanumeric() || *c == b'_')
+                {
                     end += 1;
                 }
                 let word = &self.text[self.pos..end];
@@ -201,8 +202,7 @@ impl<'a> Reader<'a> {
     fn number(&mut self) -> Result<f64, MatpowerError> {
         let at = self.pos;
         let tok = self.token();
-        tok.parse::<f64>()
-            .map_err(|_| ParseError::custom(at, "expected a number").into())
+        tok.parse::<f64>().map_err(|_| ParseError::custom(at, "expected a number").into())
     }
 
     fn matrix(&mut self) -> Result<Value, MatpowerError> {
@@ -252,7 +252,9 @@ impl<'a> Reader<'a> {
                 Some(_) => {
                     let word = self.token();
                     if word.is_empty() {
-                        return Err(ParseError::custom(self.pos, "unexpected character in cell").into());
+                        return Err(
+                            ParseError::custom(self.pos, "unexpected character in cell").into()
+                        );
                     }
                     items.push(word.to_string());
                 }
@@ -268,8 +270,12 @@ fn build(name: Option<String>, fields: Vec<(String, Value)>) -> Result<Case, Mat
             ("version", Value::Text(t)) => case.version = Some(t),
             ("version", Value::Scalar(x)) => case.version = Some(x.to_string()),
             ("baseMVA", Value::Scalar(x)) => case.base_mva = x,
-            ("bus", Value::Matrix(m)) => case.bus = m.iter().map(|r| bus_row(r)).collect::<Result<_, _>>()?,
-            ("gen", Value::Matrix(m)) => case.gen = m.iter().map(|r| gen_row(r)).collect::<Result<_, _>>()?,
+            ("bus", Value::Matrix(m)) => {
+                case.bus = m.iter().map(|r| bus_row(r)).collect::<Result<_, _>>()?
+            }
+            ("gen", Value::Matrix(m)) => {
+                case.gen = m.iter().map(|r| gen_row(r)).collect::<Result<_, _>>()?
+            }
             ("branch", Value::Matrix(m)) => {
                 case.branch = m.iter().map(|r| branch_row(r)).collect::<Result<_, _>>()?
             }

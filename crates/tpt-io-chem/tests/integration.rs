@@ -1,6 +1,6 @@
 //! Integration tests for the molfile and SDF reader and writer.
 
-use tpt_io_chem::{parse_mol, parse_sdf, write_sdf, ChemError, Molecule, MolAtom, Bond};
+use tpt_io_chem::{parse_mol, parse_sdf, write_sdf, Bond, ChemError, MolAtom, Molecule};
 
 const SDF: &[u8] = b"ethanol
   test program

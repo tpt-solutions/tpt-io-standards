@@ -52,13 +52,11 @@ fn field(line: &str, from: usize, to: usize) -> &str {
 }
 
 fn int(s: &str, at: usize) -> Result<usize, ChemError> {
-    s.parse::<usize>()
-        .map_err(|_| ParseError::custom(at, "expected an integer").into())
+    s.parse::<usize>().map_err(|_| ParseError::custom(at, "expected an integer").into())
 }
 
 fn num(s: &str, at: usize) -> Result<f64, ChemError> {
-    s.parse::<f64>()
-        .map_err(|_| ParseError::custom(at, "expected a number").into())
+    s.parse::<f64>().map_err(|_| ParseError::custom(at, "expected a number").into())
 }
 
 /// Parse one molfile record, starting at byte offset `base` of the source, from its lines.
@@ -81,22 +79,28 @@ fn record(lines: &[&str], base: usize) -> Result<Molecule, ChemError> {
     let atom_start = 4;
     let bond_start = atom_start + natoms;
     for i in 0..natoms {
-        let line = lines
-            .get(atom_start + i)
-            .ok_or_else(|| ChemError::Invalid("fewer atom lines than the counts line".to_string()))?;
+        let line = lines.get(atom_start + i).ok_or_else(|| {
+            ChemError::Invalid("fewer atom lines than the counts line".to_string())
+        })?;
         mol.atoms.push(MolAtom {
-            position: [num(field(line, 1, 10), base)?, num(field(line, 11, 20), base)?, num(field(line, 21, 30), base)?],
+            position: [
+                num(field(line, 1, 10), base)?,
+                num(field(line, 11, 20), base)?,
+                num(field(line, 21, 30), base)?,
+            ],
             symbol: field(line, 32, 34).to_string(),
         });
     }
     for i in 0..nbonds {
-        let line = lines
-            .get(bond_start + i)
-            .ok_or_else(|| ChemError::Invalid("fewer bond lines than the counts line".to_string()))?;
+        let line = lines.get(bond_start + i).ok_or_else(|| {
+            ChemError::Invalid("fewer bond lines than the counts line".to_string())
+        })?;
         let first = int(field(line, 1, 3), base)?;
         let second = int(field(line, 4, 6), base)?;
         if first == 0 || second == 0 || first > natoms || second > natoms {
-            return Err(ChemError::Invalid("bond refers to an atom outside the atom block".to_string()));
+            return Err(ChemError::Invalid(
+                "bond refers to an atom outside the atom block".to_string(),
+            ));
         }
         mol.bonds.push(Bond {
             first,
@@ -173,12 +177,8 @@ fn write_one(out: &mut String, m: &Molecule) {
     let _ = writeln!(out, "{}", m.name);
     let _ = writeln!(out, "{}", m.program_line);
     let _ = writeln!(out, "{}", m.comment);
-    let _ = writeln!(
-        out,
-        "{:>3}{:>3}  0  0  0  0  0  0  0  0999 V2000",
-        m.atoms.len(),
-        m.bonds.len()
-    );
+    let _ =
+        writeln!(out, "{:>3}{:>3}  0  0  0  0  0  0  0  0999 V2000", m.atoms.len(), m.bonds.len());
     for a in &m.atoms {
         let _ = writeln!(
             out,

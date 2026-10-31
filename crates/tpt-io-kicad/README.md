@@ -23,7 +23,7 @@ documents (for example a `.kicad_pro` project file) returns
 ## What it does not read yet
 
 - KiCad 5 schematics. They use the legacy `.sch` text format, not S-expressions.
-- Zones and their fills, footprint graphics, and schematic labels and junctions.
+- Footprint graphics (silkscreen, courtyard and fab lines).
 - Symbol graphics and pin definitions in libraries.
 - Project files and library tables.
 

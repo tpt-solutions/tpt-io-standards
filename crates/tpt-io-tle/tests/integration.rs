@@ -105,7 +105,8 @@ fn generated_sets_round_trip() {
             revolution_number: (next() % 99_999) as u32,
         };
         let text = write(std::slice::from_ref(&t));
-        let back = parse(&text).unwrap_or_else(|e| panic!("{e}\n{}", String::from_utf8_lossy(&text)));
+        let back =
+            parse(&text).unwrap_or_else(|e| panic!("{e}\n{}", String::from_utf8_lossy(&text)));
         assert_eq!(back.len(), 1);
         assert_eq!(back[0], t);
     }

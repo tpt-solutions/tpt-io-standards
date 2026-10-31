@@ -42,10 +42,7 @@ pub struct DataBlock {
 impl DataBlock {
     /// The value of an item, by tag (case-insensitive). A text field's value has no delimiters.
     pub fn item(&self, tag: &str) -> Option<&str> {
-        self.items
-            .iter()
-            .find(|i| i.tag.eq_ignore_ascii_case(tag))
-            .map(|i| i.value.as_str())
+        self.items.iter().find(|i| i.tag.eq_ignore_ascii_case(tag)).map(|i| i.value.as_str())
     }
 
     /// The loop that declares the given tag, if any.
@@ -99,7 +96,13 @@ pub fn parse(input: &[u8]) -> Result<CifFile, CifError> {
                 let mut values = Vec::new();
                 while let Some(tok) = tokens.get(i) {
                     let v = match tok {
-                        Tok::Data(t) if t.starts_with('_') || is_data_header(t) || t.eq_ignore_ascii_case("loop_") => break,
+                        Tok::Data(t)
+                            if t.starts_with('_')
+                                || is_data_header(t)
+                                || t.eq_ignore_ascii_case("loop_") =>
+                        {
+                            break
+                        }
                         Tok::Data(t) => t.clone(),
                         // A text cell is marked with one leading newline so writers can tell it apart.
                         Tok::Text(t) => alloc::format!("\n{t}"),
@@ -108,7 +111,9 @@ pub fn parse(input: &[u8]) -> Result<CifFile, CifError> {
                     i += 1;
                 }
                 if values.len() % width != 0 {
-                    return Err(CifError::Invalid("loop values do not fill whole rows".to_string()));
+                    return Err(CifError::Invalid(
+                        "loop values do not fill whole rows".to_string(),
+                    ));
                 }
                 lp.rows = values.chunks(width).map(|c| c.to_vec()).collect();
                 block.loops.push(lp);
@@ -189,9 +194,9 @@ fn tokenize(src: &str) -> Result<Vec<Tok>, CifError> {
             }
             let first = rest.chars().next().unwrap_or(' ');
             if first == '\'' || first == '"' {
-                let close = rest[1..].find(first).ok_or_else(|| {
-                    ParseError::custom(line_offset, "unterminated quoted value")
-                })?;
+                let close = rest[1..]
+                    .find(first)
+                    .ok_or_else(|| ParseError::custom(line_offset, "unterminated quoted value"))?;
                 let end = close + 2;
                 let after = rest[end..].chars().next();
                 if after.is_some_and(|c| !c.is_whitespace()) {
@@ -228,8 +233,10 @@ pub fn write(file: &CifFile) -> Vec<u8> {
             }
         }
         for lp in &b.loops {
-            out.push_str("loop_
-");
+            out.push_str(
+                "loop_
+",
+            );
             for t in &lp.tags {
                 let _ = writeln!(out, "{t}");
             }

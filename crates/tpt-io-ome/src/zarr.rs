@@ -64,12 +64,7 @@ pub fn parse_zattrs(input: &[u8]) -> Result<Multiscales, OmeError> {
         .and_then(|a| a.as_array())
         .unwrap_or(&[])
         .iter()
-        .map(|a| {
-            (
-                text(a.get("name")).unwrap_or_default(),
-                text(a.get("type")).unwrap_or_default(),
-            )
-        })
+        .map(|a| (text(a.get("name")).unwrap_or_default(), text(a.get("type")).unwrap_or_default()))
         .collect();
     let datasets = ms
         .get("datasets")

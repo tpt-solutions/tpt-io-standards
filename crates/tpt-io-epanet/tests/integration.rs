@@ -30,7 +30,10 @@ UNITS              GPM
 fn reads_sections_as_rows_with_comments() {
     let inp = parse(NETWORK).unwrap();
     let names: Vec<&str> = inp.sections.iter().map(|s| s.name.as_str()).collect();
-    assert_eq!(names, ["TITLE", "JUNCTIONS", "RESERVOIRS", "TANKS", "PIPES", "COORDINATES", "OPTIONS", "END"]);
+    assert_eq!(
+        names,
+        ["TITLE", "JUNCTIONS", "RESERVOIRS", "TANKS", "PIPES", "COORDINATES", "OPTIONS", "END"]
+    );
     // Row 0 is the ";ID …" header comment; row 1 is the first junction.
     let junctions = inp.section("junctions").unwrap();
     assert!(junctions.rows[0].tokens.is_empty());
@@ -63,12 +66,8 @@ fn the_network_validates() {
 #[test]
 fn validation_finds_unknown_nodes_and_bad_pipes() {
     let mut inp = parse(NETWORK).unwrap();
-    inp.sections
-        .iter_mut()
-        .find(|s| s.name == "PIPES")
-        .unwrap()
-        .rows[0]
-        .tokens[2] = "NOWHERE".into();
+    inp.sections.iter_mut().find(|s| s.name == "PIPES").unwrap().rows[0].tokens[2] =
+        "NOWHERE".into();
     assert!(matches!(inp.validate(), Err(EpanetError::Topology(_))));
 
     let bad = b"[JUNCTIONS]\nJ1 1\nJ1 2\n";

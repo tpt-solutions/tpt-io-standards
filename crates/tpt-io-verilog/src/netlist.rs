@@ -122,7 +122,9 @@ fn tokenize(src: &str) -> Result<Vec<(usize, Tok)>, VerilogError> {
                     i += 1;
                 }
             } else {
-                while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_' || bytes[i] == b'$') {
+                while i < bytes.len()
+                    && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_' || bytes[i] == b'$')
+                {
                     i += 1;
                 }
             }
@@ -130,7 +132,9 @@ fn tokenize(src: &str) -> Result<Vec<(usize, Tok)>, VerilogError> {
         } else if c.is_ascii_digit() {
             // Numbers and sized literals such as 1'b0 are kept as identifiers for connection purposes.
             let start = i;
-            while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'\'' || bytes[i] == b'_') {
+            while i < bytes.len()
+                && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'\'' || bytes[i] == b'_')
+            {
                 i += 1;
             }
             out.push((start, Tok::Ident(src[start..i].to_string())));
@@ -301,7 +305,10 @@ impl Parser {
                     self.punct(';')?;
                     m.assigns.push((lhs, rhs));
                 }
-                Some(kw @ ("always" | "initial" | "function" | "task" | "reg" | "parameter" | "generate")) => {
+                Some(
+                    kw @ ("always" | "initial" | "function" | "task" | "reg" | "parameter"
+                    | "generate"),
+                ) => {
                     return Err(VerilogError::Unsupported(kw.to_string()));
                 }
                 Some(_) => m.instances.push(self.instance()?),

@@ -1,5 +1,6 @@
 //! Integration tests on the hand-written KiCad 6 fixtures in `tests/samples/`.
 
+use tpt_io_kicad::model::LabelKind;
 use tpt_io_kicad::{parse, DocKind, KicadError};
 
 const PCB: &[u8] = include_bytes!("samples/divider.kicad_pcb");
@@ -128,4 +129,46 @@ fn kicad5_modules_and_unquoted_pad_numbers() {
 
     assert_eq!(doc.tracks.len(), 1);
     assert_eq!(doc.tracks[0].net, Some(1));
+}
+
+const SCH_LABELS: &str = r#"(kicad_sch (version 20211123) (generator eeschema)
+  (junction (at 10 10) (diameter 0) (color 0 0 0 0))
+  (label "VIN" (at 20 30 90) (fields_autoplaced))
+  (global_label "GND" (shape input) (at 40 50 0) (effects (font (size 1 1))))
+  (hierarchical_label "SDA" (shape bidirectional) (at 60 70 180))
+)"#;
+
+#[test]
+fn schematic_labels_and_junctions() {
+    let doc = parse(SCH_LABELS.as_bytes()).unwrap();
+    assert_eq!(doc.junctions.len(), 1);
+    assert_eq!(doc.junctions[0].at, (10.0, 10.0));
+    assert_eq!(doc.labels.len(), 3);
+    assert_eq!(doc.labels[0].kind, LabelKind::Local);
+    assert_eq!(doc.labels[0].text, "VIN");
+    assert_eq!(doc.labels[0].rotation, 90.0);
+    assert_eq!(doc.labels[1].kind, LabelKind::Global);
+    assert_eq!(doc.labels[1].at, (40.0, 50.0));
+    assert_eq!(doc.labels[2].kind, LabelKind::Hierarchical);
+}
+
+const PCB_ZONE: &str = r#"(kicad_pcb (version 20211014) (generator pcbnew)
+  (net 0 "")
+  (net 1 "GND")
+  (zone (net 1) (net_name "GND") (layer "F.Cu")
+    (polygon (pts (xy 0 0) (xy 10 0) (xy 10 10) (xy 0 10)))
+    (filled_polygon (layer "F.Cu") (pts (xy 1 1) (xy 9 1) (xy 9 9) (xy 1 9)))
+  )
+)"#;
+
+#[test]
+fn pcb_zone_outline_and_fills() {
+    let doc = parse(PCB_ZONE.as_bytes()).unwrap();
+    assert_eq!(doc.zones.len(), 1);
+    let z = &doc.zones[0];
+    assert_eq!(z.net, Some(1));
+    assert_eq!(z.net_name.as_deref(), Some("GND"));
+    assert_eq!(z.layer.as_deref(), Some("F.Cu"));
+    assert_eq!(z.outline.len(), 4);
+    assert_eq!(z.fills, vec![vec![(1.0, 1.0), (9.0, 1.0), (9.0, 9.0), (1.0, 9.0)]]);
 }

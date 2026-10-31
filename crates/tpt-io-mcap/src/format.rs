@@ -169,7 +169,8 @@ fn read_record(cur: &mut Cursor<'_>, out: &mut Mcap, base: usize) -> Result<(), 
     let at = base + cur.pos;
     let op = cur.u8()?;
     let len = cur.u64()? as usize;
-    let data = cur.take(len).map_err(|_| ParseError::custom(at, "record length overruns the file"))?;
+    let data =
+        cur.take(len).map_err(|_| ParseError::custom(at, "record length overruns the file"))?;
     let mut r = Cursor { buf: data, pos: 0 };
     match op {
         OP_HEADER => {

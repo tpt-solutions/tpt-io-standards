@@ -35,9 +35,7 @@ fn text(v: &Json, key: &str) -> Option<String> {
 
 fn shell(v: &Json) -> Result<Shell, AasError> {
     let id = text(v, "id").ok_or_else(|| AasError::Invalid("shell has no id".to_string()))?;
-    let global_asset_id = v
-        .get("assetInformation")
-        .and_then(|a| text(a, "globalAssetId"));
+    let global_asset_id = v.get("assetInformation").and_then(|a| text(a, "globalAssetId"));
     let submodel_refs = match v.get("submodels").and_then(|s| s.as_array()) {
         Some(refs) => refs
             .iter()
@@ -52,10 +50,7 @@ fn shell(v: &Json) -> Result<Shell, AasError> {
 fn submodel(v: &Json) -> Result<Submodel, AasError> {
     let id = text(v, "id").ok_or_else(|| AasError::Invalid("submodel has no id".to_string()))?;
     let elements = items(v, "submodelElements")
-        .map(|e| SubmodelElement {
-            id_short: text(e, "idShort"),
-            model_type: model_type(e),
-        })
+        .map(|e| SubmodelElement { id_short: text(e, "idShort"), model_type: model_type(e) })
         .collect();
     Ok(Submodel { id, id_short: text(v, "idShort"), elements })
 }

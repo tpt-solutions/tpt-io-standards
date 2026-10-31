@@ -31,8 +31,8 @@
 #[macro_use]
 extern crate alloc;
 
-pub mod error;
 pub mod caex;
+pub mod error;
 
 pub use caex::{parse, Attribute, CaexFile, Element, Link};
 pub use error::AutomationMlError;

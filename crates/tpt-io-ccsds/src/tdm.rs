@@ -37,7 +37,9 @@ pub fn parse(input: &[u8]) -> Result<Tdm, CcsdsError> {
             Some(Line::Keyword("META_STOP")) => {}
             Some(Line::Keyword("DATA_START")) => data = Some(Vec::new()),
             Some(Line::Keyword("DATA_STOP")) => {
-                let d = data.take().ok_or_else(|| CcsdsError::Invalid("DATA_STOP without DATA_START".into()))?;
+                let d = data
+                    .take()
+                    .ok_or_else(|| CcsdsError::Invalid("DATA_STOP without DATA_START".into()))?;
                 let m = meta.take().unwrap_or_default();
                 tdm.segments.push((m, d));
             }

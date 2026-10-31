@@ -57,7 +57,10 @@ fn reads_the_device_tree_with_nested_components() {
     assert_eq!(d.schema_version.as_deref(), Some("1.7"));
     assert_eq!(d.devices.len(), 1);
     let mill = &d.devices[0];
-    assert_eq!((mill.id.as_str(), mill.uuid.as_str(), mill.name.as_str()), ("mill", "M-001", "Mill"));
+    assert_eq!(
+        (mill.id.as_str(), mill.uuid.as_str(), mill.name.as_str()),
+        ("mill", "M-001", "Mill")
+    );
     assert_eq!(mill.components.len(), 2);
     let axes = &mill.components[0];
     assert_eq!(axes.kind, "Axes");
@@ -103,7 +106,8 @@ fn wrong_root_and_bad_numbers_are_errors() {
     let bad = br#"<MTConnectStreams><Streams><DeviceStream uuid="u"><ComponentStream><Samples>
         <Position dataItemId="x" sequence="abc">1</Position></Samples></ComponentStream></DeviceStream></Streams></MTConnectStreams>"#;
     assert!(parse_streams(bad).is_err());
-    assert!(parse_devices(b"<MTConnectDevices><Devices><Device/></Devices></MTConnectDevices>").is_err());
+    assert!(parse_devices(b"<MTConnectDevices><Devices><Device/></Devices></MTConnectDevices>")
+        .is_err());
 }
 
 #[test]

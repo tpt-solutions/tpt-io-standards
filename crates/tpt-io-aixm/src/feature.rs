@@ -87,8 +87,9 @@ fn feature(el: &Element) -> Result<Feature, AixmError> {
 fn numbers(text: &str, at: usize) -> Result<Vec<f64>, AixmError> {
     text.split_whitespace()
         .map(|t| {
-            t.parse::<f64>()
-                .map_err(|_| AixmError::Core(tpt_io_core::ParseError::custom(at, "position is not a number")))
+            t.parse::<f64>().map_err(|_| {
+                AixmError::Core(tpt_io_core::ParseError::custom(at, "position is not a number"))
+            })
         })
         .collect()
 }

@@ -181,19 +181,30 @@ pub fn parse(input: &[u8]) -> Result<Library, GdsError> {
                 }
             }
             ENDSTR => {
-                let s = current.take().ok_or_else(|| GdsError::Invalid("ENDSTR outside a structure".into()))?;
+                let s = current
+                    .take()
+                    .ok_or_else(|| GdsError::Invalid("ENDSTR outside a structure".into()))?;
                 lib.structures.push(s);
             }
             BOUNDARY => element = Some(Element::Boundary { layer: 0, datatype: 0, xy: Vec::new() }),
-            PATH => element = Some(Element::Path { layer: 0, datatype: 0, width: 0, xy: Vec::new() }),
-            TEXT => element = Some(Element::Text { layer: 0, texttype: 0, at: (0, 0), string: String::new() }),
+            PATH => {
+                element = Some(Element::Path { layer: 0, datatype: 0, width: 0, xy: Vec::new() })
+            }
+            TEXT => {
+                element =
+                    Some(Element::Text { layer: 0, texttype: 0, at: (0, 0), string: String::new() })
+            }
             SREF => element = Some(Element::SRef { name: String::new(), at: (0, 0) }),
             LAYER => set_i16(&mut element, r.data, |e, v| match e {
-                Element::Boundary { layer, .. } | Element::Path { layer, .. } | Element::Text { layer, .. } => *layer = v,
+                Element::Boundary { layer, .. }
+                | Element::Path { layer, .. }
+                | Element::Text { layer, .. } => *layer = v,
                 _ => {}
             }),
             DATATYPE => set_i16(&mut element, r.data, |e, v| match e {
-                Element::Boundary { datatype, .. } | Element::Path { datatype, .. } => *datatype = v,
+                Element::Boundary { datatype, .. } | Element::Path { datatype, .. } => {
+                    *datatype = v
+                }
                 _ => {}
             }),
             TEXTTYPE => set_i16(&mut element, r.data, |e, v| {
@@ -202,16 +213,22 @@ pub fn parse(input: &[u8]) -> Result<Library, GdsError> {
                 }
             }),
             WIDTH => {
-                if let (Some(Element::Path { width, .. }), Some(v)) = (element.as_mut(), i32s(r.data).first()) {
+                if let (Some(Element::Path { width, .. }), Some(v)) =
+                    (element.as_mut(), i32s(r.data).first())
+                {
                     *width = *v;
                 }
             }
             XY => {
                 let points = pairs(r.data);
                 match element.as_mut() {
-                    Some(Element::Boundary { xy, .. }) | Some(Element::Path { xy, .. }) => *xy = points,
+                    Some(Element::Boundary { xy, .. }) | Some(Element::Path { xy, .. }) => {
+                        *xy = points
+                    }
                     Some(Element::Text { at, .. }) | Some(Element::SRef { at, .. }) => {
-                        *at = *points.first().ok_or_else(|| GdsError::Invalid("XY without a point".into()))?;
+                        *at = *points
+                            .first()
+                            .ok_or_else(|| GdsError::Invalid("XY without a point".into()))?;
                     }
                     None => return Err(GdsError::Invalid("XY outside an element".into())),
                 }
@@ -227,7 +244,9 @@ pub fn parse(input: &[u8]) -> Result<Library, GdsError> {
                 }
             }
             ENDEL => {
-                let e = element.take().ok_or_else(|| GdsError::Invalid("ENDEL without an element".into()))?;
+                let e = element
+                    .take()
+                    .ok_or_else(|| GdsError::Invalid("ENDEL without an element".into()))?;
                 current
                     .as_mut()
                     .ok_or_else(|| GdsError::Invalid("element outside a structure".into()))?

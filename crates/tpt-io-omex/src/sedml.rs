@@ -84,7 +84,10 @@ pub fn parse_sedml(input: &[u8]) -> Result<SedMl, OmexError> {
             doc.simulations.push(SedSimulation {
                 id: attr(s, "id")?,
                 kind: s.local_name().to_string(),
-                algorithm: s.child("algorithm").and_then(|a| a.attr("kisaoID")).map(|s| s.to_string()),
+                algorithm: s
+                    .child("algorithm")
+                    .and_then(|a| a.attr("kisaoID"))
+                    .map(|s| s.to_string()),
             });
         }
     }

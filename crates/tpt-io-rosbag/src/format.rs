@@ -93,7 +93,8 @@ fn fields(header: &[u8]) -> Result<Fields<'_>, ParseError> {
         if pos + 4 > header.len() {
             return Err(ParseError::eof(pos));
         }
-        let n = u32::from_le_bytes([header[pos], header[pos + 1], header[pos + 2], header[pos + 3]]) as usize;
+        let n = u32::from_le_bytes([header[pos], header[pos + 1], header[pos + 2], header[pos + 3]])
+            as usize;
         pos += 4;
         let field = header.get(pos..pos + n).ok_or_else(|| ParseError::eof(pos))?;
         pos += n;
@@ -119,7 +120,8 @@ fn get_str(fs: &Fields<'_>, name: &str, at: usize) -> Result<String, ParseError>
 
 fn get_u32(fs: &Fields<'_>, name: &str, at: usize) -> Result<u32, ParseError> {
     let v = get(fs, name).ok_or_else(|| ParseError::custom(at, "missing header field"))?;
-    let b: [u8; 4] = v.try_into().map_err(|_| ParseError::custom(at, "expected a 4-byte integer"))?;
+    let b: [u8; 4] =
+        v.try_into().map_err(|_| ParseError::custom(at, "expected a 4-byte integer"))?;
     Ok(u32::from_le_bytes(b))
 }
 
@@ -188,11 +190,7 @@ fn message(fs: &Fields<'_>, data: &[u8], at: usize) -> Result<Message, ParseErro
     }
     let sec = u32::from_le_bytes([time[0], time[1], time[2], time[3]]) as u64;
     let nsec = u32::from_le_bytes([time[4], time[5], time[6], time[7]]) as u64;
-    Ok(Message {
-        connection,
-        time_ns: sec * 1_000_000_000 + nsec,
-        data: data.to_vec(),
-    })
+    Ok(Message { connection, time_ns: sec * 1_000_000_000 + nsec, data: data.to_vec() })
 }
 
 fn put_field(out: &mut Vec<u8>, name: &str, value: &[u8]) {

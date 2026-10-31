@@ -60,7 +60,8 @@ fn written_archive_contains_manifest_and_content_files() {
 
 #[test]
 fn manifest_entry_without_its_file_is_invalid() {
-    let manifest = br#"<omexManifest><content location="./missing.xml" format="x"/></omexManifest>"#;
+    let manifest =
+        br#"<omexManifest><content location="./missing.xml" format="x"/></omexManifest>"#;
     let package = zip::write_stored(&[("manifest.xml", manifest.as_slice())]);
     assert!(matches!(parse(&package), Err(OmexError::Invalid(_))));
 }

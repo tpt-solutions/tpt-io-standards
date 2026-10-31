@@ -38,8 +38,7 @@ pub struct Sp3 {
 }
 
 fn number(s: &str, at: usize) -> Result<f64, GnssError> {
-    s.parse::<f64>()
-        .map_err(|_| ParseError::custom(at, "expected a number").into())
+    s.parse::<f64>().map_err(|_| ParseError::custom(at, "expected a number").into())
 }
 
 /// Parse an SP3 file (position records, `P` lines).
@@ -66,7 +65,11 @@ pub fn parse_sp3(input: &[u8]) -> Result<Sp3, GnssError> {
                 .ok_or_else(|| GnssError::Invalid("position before any epoch".to_string()))?;
             let cols: Vec<&str> = rest.split_whitespace().collect();
             if cols.len() < 4 {
-                return Err(ParseError::custom(at, "position line needs an id and three coordinates").into());
+                return Err(ParseError::custom(
+                    at,
+                    "position line needs an id and three coordinates",
+                )
+                .into());
             }
             let id = cols[0].to_string();
             let position_km = [number(cols[1], at)?, number(cols[2], at)?, number(cols[3], at)?];

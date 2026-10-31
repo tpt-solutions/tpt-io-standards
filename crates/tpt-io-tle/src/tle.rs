@@ -67,11 +67,7 @@ pub fn checksum(line: &str) -> u32 {
 pub fn parse(input: &[u8]) -> Result<Vec<Tle>, TleError> {
     let text = core::str::from_utf8(input)
         .map_err(|e| ParseError::custom(e.valid_up_to(), "TLE file is not valid UTF-8"))?;
-    let lines: Vec<&str> = text
-        .lines()
-        .map(|l| l.trim_end())
-        .filter(|l| !l.is_empty())
-        .collect();
+    let lines: Vec<&str> = text.lines().map(|l| l.trim_end()).filter(|l| !l.is_empty()).collect();
     let mut out = Vec::new();
     let mut i = 0;
     while i < lines.len() {
@@ -117,9 +113,7 @@ fn number(s: &str, what: &str) -> Result<f64, TleError> {
         _ if s.starts_with('.') => alloc::format!("0{s}"),
         _ => s.to_string(),
     };
-    fixed
-        .parse::<f64>()
-        .map_err(|_| TleError::Invalid(alloc::format!("{what} is not a number")))
+    fixed.parse::<f64>().map_err(|_| TleError::Invalid(alloc::format!("{what} is not a number")))
 }
 
 /// Exponent form: `[sign]DDDDD[sign]D`, read as `0.DDDDD × 10^±D`.
@@ -139,8 +133,7 @@ fn exponent_form(s: &str, what: &str) -> Result<f64, TleError> {
     let (mantissa, exp) = body.split_at(body.len() - 2);
     let exp = alloc::format!("{}{}", &exp[..1], &exp[1..]);
     let v = alloc::format!("{sign}0.{mantissa}e{exp}");
-    v.parse::<f64>()
-        .map_err(|_| TleError::Invalid(alloc::format!("{what} is malformed")))
+    v.parse::<f64>().map_err(|_| TleError::Invalid(alloc::format!("{what} is malformed")))
 }
 
 fn int(s: &str, what: &str) -> Result<u32, TleError> {
