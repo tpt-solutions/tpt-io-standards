@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `raw` module: SPICE `.raw` simulation output, read in binary and ASCII form and written in binary, for real-valued
+  plots (complex plots are rejected).
+
 ## [0.1.0] - 2026-08-31
 
 Initial release.

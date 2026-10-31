@@ -100,3 +100,59 @@ mod proptest_roundtrip {
         }
     }
 }
+
+#[test]
+fn raw_ascii_values_are_read_column_by_column() {
+    let text = "Title: * rc
+Date: Mon
+Plotname: Transient Analysis
+Flags: real
+No. Variables: 2
+No. Points: 3
+Variables:
+	0	time	time
+	1	v(out)	voltage
+Values:
+0	0.0	1.0
+	1	1.0e-3	0.5
+	2	2.0e-3	0.25
+";
+    let plot = tpt_io_spice::raw::parse(text.as_bytes()).unwrap();
+    assert_eq!(plot.plotname, "Transient Analysis");
+    assert_eq!(plot.column("time").unwrap(), &[0.0, 1.0e-3, 2.0e-3]);
+    assert_eq!(plot.column("v(out)").unwrap(), &[1.0, 0.5, 0.25]);
+}
+
+#[test]
+fn raw_binary_round_trip_and_truncation() {
+    use tpt_io_spice::raw::{parse, write, RawFile, Variable};
+    let plot = RawFile {
+        title: "rc".to_string(),
+        date: "today".to_string(),
+        plotname: "Transient Analysis".to_string(),
+        variables: vec![
+            Variable { index: 0, name: "time".to_string(), kind: "time".to_string() },
+            Variable { index: 1, name: "i(v1)".to_string(), kind: "current".to_string() },
+        ],
+        columns: vec![vec![0.0, 1.0, 2.0], vec![-1e-3, 2.5e-3, 0.0]],
+    };
+    let bytes = write(&plot).unwrap();
+    assert_eq!(parse(&bytes).unwrap(), plot);
+    assert!(parse(&bytes[..bytes.len() - 4]).is_err());
+}
+
+#[test]
+fn raw_complex_plots_are_unsupported() {
+    let text = "Title: x
+Flags: complex
+No. Variables: 1
+No. Points: 1
+Variables:
+	0	freq	frequency
+Binary:
+";
+    assert!(matches!(
+        tpt_io_spice::raw::parse(text.as_bytes()),
+        Err(tpt_io_spice::SpiceError::Unsupported(_))
+    ));
+}
