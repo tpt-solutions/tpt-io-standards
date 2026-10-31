@@ -319,7 +319,6 @@ impl Validator<ExcellonFile> for ExcellonValidator {
 
 /// Serialize an [`ExcellonFile`] back to Excellon text (round-trip).
 pub fn serialize(file: &ExcellonFile) -> Result<alloc::vec::Vec<u8>, GerberError> {
-    use alloc::format;
     let mut out = String::new();
     out.push_str("M48\n");
     match file.unit {
