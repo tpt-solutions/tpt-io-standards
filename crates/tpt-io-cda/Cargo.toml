@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-cda"
+description = "HL7 Clinical Document Architecture (CDA / C-CDA) reader: document identity, patient name and section inventory (read only)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["cda", "ccda", "hl7", "healthcare", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_cda"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

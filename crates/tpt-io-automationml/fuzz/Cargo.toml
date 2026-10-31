@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-automationml-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-automationml = { path = ".." }
+
+[[bin]]
+name = "automationml"
+path = "fuzz_targets/automationml.rs"
+test = false
+doc = false

@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-cda-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-cda = { path = ".." }
+
+[[bin]]
+name = "cda"
+path = "fuzz_targets/cda.rs"
+test = false
+doc = false

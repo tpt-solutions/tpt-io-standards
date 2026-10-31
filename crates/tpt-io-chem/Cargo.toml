@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-chem"
+description = "MDL MOL (V2000) and SDF molecule file reader and writer: atoms, bonds and SDF data items."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["mol", "sdf", "chemistry", "cheminformatics", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_chem"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

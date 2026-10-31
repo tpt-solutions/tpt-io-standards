@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-cif-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-cif = { path = ".." }
+
+[[bin]]
+name = "cif"
+path = "fuzz_targets/cif.rs"
+test = false
+doc = false

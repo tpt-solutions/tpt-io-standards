@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-chemfile"
+description = "Molecular and crystal structure files: XYZ, Gaussian cube, VASP POSCAR, and LAMMPS data (read)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["xyz", "cube", "poscar", "lammps", "chemistry", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_chemfile"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

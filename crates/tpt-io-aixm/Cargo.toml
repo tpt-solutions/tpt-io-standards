@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-aixm"
+description = "AIXM 5.1 aeronautical information reader: airports, navaids, airspaces and routes from XML."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["aixm", "aviation", "aeronautical", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_aixm"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

@@ -1,0 +1,18 @@
+[package]
+name = "tpt-io-aas-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-io-aas = { path = ".." }
+
+[[bin]]
+name = "aas"
+path = "fuzz_targets/aas.rs"
+test = false
+doc = false

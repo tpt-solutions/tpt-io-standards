@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-bcf"
+description = "Reader and writer for BIM Collaboration Format (BCF 2.1) projects: topics, comments and viewpoint references."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["bcf", "bim", "ifc", "buildingsmart", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_bcf"
+
+[dependencies]
+tpt-io-core = { workspace = true, features = ["zip"] }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

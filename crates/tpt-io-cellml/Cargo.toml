@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-cellml"
+description = "CellML 1.x model reader (XML): components, variables, units definitions and connections (read only)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["cellml", "biology", "systems-biology", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_cellml"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

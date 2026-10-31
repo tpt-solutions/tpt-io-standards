@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-automationml"
+description = "AutomationML (CAEX, IEC 62714) reader: instance hierarchy, attributes and internal links (read only)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["automationml", "caex", "industry4", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_automationml"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

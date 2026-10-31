@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-cif"
+description = "Crystallographic Information File (CIF 1.1) and mmCIF reader and writer: data blocks, items, loops and text fields."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["cif", "crystallography", "mmcif", "parser"]
+categories = ["parser-implementations", "science"]
+
+[lib]
+name = "tpt_io_cif"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]

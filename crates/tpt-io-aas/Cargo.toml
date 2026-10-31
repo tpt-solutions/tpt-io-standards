@@ -1,0 +1,23 @@
+[package]
+name = "tpt-io-aas"
+description = "Asset Administration Shell (AAS, IDTA Part 1 JSON) reader: shells, submodels and their element inventory."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["aas", "industry4", "asset-administration-shell", "parser"]
+categories = ["parser-implementations"]
+
+[lib]
+name = "tpt_io_aas"
+
+[dependencies]
+tpt-io-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["tpt-io-core/std"]
+alloc = ["tpt-io-core/alloc"]
