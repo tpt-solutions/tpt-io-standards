@@ -35,6 +35,9 @@ errors.
 | `tpt-io-welllog` | LAS 2.0/3.0 + DLIS | Earth & GIS |
 | `tpt-io-capeopen` | CAPE-OPEN 1.1 / 2.0 | Process |
 | `tpt-io-sbml` | SBML Level 2 / 3 | Process |
+| `tpt-io-mdf` | ASAM MDF 4 measurement files: channel groups, channels and values (plain, linked, deflate) | Automotive & Robotics |
+| `tpt-io-grib` | GRIB edition 2 gridded weather fields (latitude/longitude, simple packing) | Earth & GIS |
+| `tpt-io-naif` | NAIF SPICE ephemeris kernels: DAF/SPK, Chebyshev types 2 and 3 (`.bsp`) | Space & Geodesy |
 | `tpt-io-omex` | COMBINE archives (`.omex`) and SED-ML experiment summaries | Science & Materials |
 | `tpt-io-bcf` | BIM Collaboration Format 2.1 projects: topics, comments and viewpoint references (`.bcf`, `.bcfzip`) | Construction & CAD |
 | `tpt-io-threemf` | 3D Manufacturing Format packages (`.3mf`) | Construction & CAD |

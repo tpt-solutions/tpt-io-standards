@@ -31,6 +31,9 @@ tpt-io-capeopen = { workspace = true, optional = true }
 tpt-io-sbml = { workspace = true, optional = true }
 tpt-io-hdf5 = { workspace = true, optional = true }
 tpt-io-kicad = { workspace = true, optional = true }
+tpt-io-mdf = { workspace = true, optional = true }
+tpt-io-grib = { workspace = true, optional = true }
+tpt-io-naif = { workspace = true, optional = true }
 tpt-io-omex = { workspace = true, optional = true }
 tpt-io-bcf = { workspace = true, optional = true }
 tpt-io-threemf = { workspace = true, optional = true }
@@ -104,6 +107,9 @@ capeopen = ["tpt-io-capeopen", "tpt-io-capeopen/std"]
 sbml = ["tpt-io-sbml", "tpt-io-sbml/std"]
 hdf5 = ["tpt-io-hdf5", "tpt-io-hdf5/std"]
 kicad = ["tpt-io-kicad", "tpt-io-kicad/std"]
+mdf = ["tpt-io-mdf", "tpt-io-mdf/std"]
+grib = ["tpt-io-grib", "tpt-io-grib/std"]
+naif = ["tpt-io-naif", "tpt-io-naif/std"]
 omex = ["tpt-io-omex", "tpt-io-omex/std"]
 bcf = ["tpt-io-bcf", "tpt-io-bcf/std"]
 threemf = ["tpt-io-threemf", "tpt-io-threemf/std"]

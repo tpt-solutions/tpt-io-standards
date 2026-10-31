@@ -51,9 +51,21 @@ jobs:
 
       - name: alloc-only build (every domain crate)
         run: |
-          for c in tpt-io-dicom tpt-io-fhir tpt-io-nifti tpt-io-ifc tpt-io-citygml \
-                   tpt-io-spice tpt-io-gerber tpt-io-edif tpt-io-geo tpt-io-netcdf \
-                   tpt-io-hdf5 tpt-io-kicad tpt-io-welllog tpt-io-capeopen tpt-io-sbml tpt-io-matpower; do
+          for c in tpt-io-aas tpt-io-aixm tpt-io-arxml tpt-io-asterix tpt-io-automationml \
+                  tpt-io-bcf tpt-io-capeopen tpt-io-ccsds tpt-io-cda tpt-io-cellml \
+                  tpt-io-chem tpt-io-chemfile tpt-io-cif tpt-io-citygml tpt-io-dexpi \
+                  tpt-io-dicom tpt-io-dxf tpt-io-edf tpt-io-edif tpt-io-epanet \
+                  tpt-io-fhir tpt-io-fits tpt-io-gbxml tpt-io-gcode tpt-io-gds \
+                  tpt-io-geo tpt-io-gerber tpt-io-gnss tpt-io-grib tpt-io-gridlabd \
+                  tpt-io-hdf5 tpt-io-hecras tpt-io-hl7v2 tpt-io-ifc tpt-io-ipc2581 \
+                  tpt-io-jcamp tpt-io-kicad tpt-io-landxml tpt-io-matpower tpt-io-mcap \
+                  tpt-io-mdf tpt-io-mesh tpt-io-mtconnect tpt-io-mzml tpt-io-naif \
+                  tpt-io-netcdf tpt-io-nifti tpt-io-nrrd tpt-io-ome tpt-io-omex \
+                  tpt-io-opcua tpt-io-opendrive tpt-io-opendss tpt-io-openehr \
+                  tpt-io-openscenario tpt-io-pdb tpt-io-plcopen tpt-io-pointcloud \
+                  tpt-io-rosbag tpt-io-sbml tpt-io-segy tpt-io-spice tpt-io-threemf \
+                  tpt-io-tiff tpt-io-tle tpt-io-touchstone tpt-io-urdf tpt-io-verilog \
+                  tpt-io-waterml tpt-io-welllog tpt-io-witsml; do
             cargo build -p "$c" --no-default-features --features alloc
           done
 

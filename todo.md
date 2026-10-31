@@ -208,7 +208,7 @@ Each crate below follows the same sub-checklist. Sub-checklist is written out in
 - [x] Dimension definition extraction
 - [x] Variable metadata extraction (units, long_name, valid_range)
 - [x] Global attribute extraction
-- [~] Chunked reading for large multi-dim arrays (time × depth × lat × lon) — *N-D chunk assembly verified on a 4-D h5py file; the whole variable is still decoded into memory (no streaming API yet)*
+- [~] Chunked reading for large multi-dim arrays (time × depth × lat × lon) — *N-D chunk assembly verified on a 4-D h5py file; NetCDF-3 variables stream as slabs along the first dimension (`NetCdf::slabs`); NetCDF-4 variables are still decoded whole*
 - [x] Coordinate variable detection + automatic coordinate mapping
 - [x] Deflate/shuffle compression support — *zlib needs the `std` feature*
 - [x] Chunking metadata for performance
@@ -274,36 +274,36 @@ parsers, round-trip / fuzz / golden-file / property tests, README + CHANGELOG, `
 Each must also be added to the publish order, umbrella features, root README table and CI feature matrix.
 
 ### Foundation (unblocks existing work)
-- [~] `tpt-io-hdf5` — pure-Rust HDF5 reader (superblock, groups, datasets, chunking, deflate/shuffle); unblocks NetCDF-4, MATLAB v7.3; fold in `hdf5_test` findings — *extracted from `tpt-io-netcdf` with datatype and attribute decoding fixed; README, CHANGELOG, fuzz and tests done; umbrella feature, root README row and CI alloc-lane entry done. Still open: publish dry-run (blocked on crates.io), `hdf5_test` scratch crate not yet folded in (it uses the third-party `hdf5-io` crate; kept for now, needs a decision on removal), MATLAB v7.3 support*
+- [~] `tpt-io-hdf5` — pure-Rust HDF5 reader (superblock, groups, datasets, chunking, deflate/shuffle); unblocks NetCDF-4, MATLAB v7.3; fold in `hdf5_test` findings — *extracted from `tpt-io-netcdf` with datatype and attribute decoding fixed; superblock v0 with old-style (symbol-table) groups and version-1 object headers read; MATLAB v7.3 reader (`matlab` module, variables with MATLAB class and dimensions, deflate supported) tested against an h5py-written sample; README, CHANGELOG, fuzz and tests done; umbrella feature, root README row and CI alloc-lane entry done. Still open: publish dry-run (blocked on crates.io). The `hdf5_test` scratch crate (third-party `hdf5-io`, edition 2024, broke the 1.75 MSRV build) was removed; its probe was a 35-line check against a NetCDF sample, nothing to fold in*
 - [x] `tpt-io-core`: shared S-expression tokenizer (`tpt_io_core::sexpr`; EDIF uses it, KiCad still to come)
 - [x] `tpt-io-core`: shared STEP Part 21 (ISO 10303-21) tokenizer (`tpt_io_core::step`; IFC uses it)
 
 ### Earth Science, GIS & Energy
-- [ ] `tpt-io-geo`: WKT / WKB
-- [ ] `tpt-io-geo`: KML / KMZ
-- [ ] `tpt-io-geo`: GPX
-- [ ] `tpt-io-geo`: GeoPackage
-- [ ] `tpt-io-geo`: FlatGeobuf
+- [x] `tpt-io-geo`: WKT / WKB
+- [x] `tpt-io-geo`: KML / KMZ
+- [x] `tpt-io-geo`: GPX
+- [x] `tpt-io-geo`: GeoPackage
+- [x] `tpt-io-geo`: FlatGeobuf (read)
 - [ ] `tpt-io-segy` — SEG-Y rev 0/1/2 (seismic; pairs with `tpt-io-welllog`)
 - [ ] `tpt-io-pointcloud` — LAS/LAZ point clouds (separate from well-log LAS)
-- [ ] `tpt-io-grib` — GRIB2 (meteorology/oceanography; companion to NetCDF)
+- [x] `tpt-io-grib` — GRIB2 (meteorology/oceanography; companion to NetCDF)
 - [ ] `tpt-io-witsml` — WITSML / RESQML (oil & gas data exchange)
 
 ### CAD, Mesh & Civil
 - [ ] `tpt-io-dxf` — DXF (ASCII + binary)
 - [ ] `tpt-io-mesh` — STL, OBJ, PLY
-- [ ] `tpt-io-mesh`: glTF 2.0 / GLB
-- [ ] `tpt-io-mesh`: 3MF
+- [x] `tpt-io-mesh`: glTF 2.0 / GLB
+- [x] `tpt-io-mesh`: 3MF
 - [ ] `tpt-io-landxml` — LandXML
 - [ ] `tpt-io-gbxml` — gbXML (building energy)
-- [ ] `tpt-io-bcf` — BCF (BIM Collaboration Format)
+- [x] `tpt-io-bcf` — BCF (BIM Collaboration Format)
 
 ### Electronics
-- [~] `tpt-io-kicad` — `.kicad_pcb` / `.kicad_sch` / `.kicad_sym` — *KiCad 6 PCB nets, footprints, pads, tracks and vias; schematic symbols and wires; symbol libraries; KiCad 5 PCB `module` footprints; umbrella, README and CI wired. Still open: zone fills, schematic labels/junctions, KiCad 5 `.sch` schematics (legacy text format, out of scope so far), and the publish dry-run (blocked on crates.io)*
+- [~] `tpt-io-kicad` — `.kicad_pcb` / `.kicad_sch` / `.kicad_sym` — *KiCad 6 PCB nets, footprints, pads, tracks and vias; schematic symbols and wires; symbol libraries; KiCad 5 PCB `module` footprints; umbrella, README and CI wired. Zone fills (`Zone`), schematic labels (`Label`) and junctions (`Junction`) are now read too. Still open: KiCad 5 `.sch` schematics (legacy text format, out of scope so far), and the publish dry-run (blocked on crates.io)*
 - [ ] `tpt-io-ipc2581` — IPC-2581
 - [ ] `tpt-io-gds` — GDSII
 - [ ] `tpt-io-touchstone` — Touchstone `.sNp`
-- [ ] `tpt-io-spice`: SPICE `.raw` simulation output
+- [x] `tpt-io-spice`: SPICE `.raw` simulation output
 - [ ] `tpt-io-verilog` — structural Verilog netlists
 
 ### Medical & Healthcare
@@ -316,7 +316,7 @@ Each must also be added to the publish order, umbrella features, root README tab
 ### Process Engineering & Science
 - [ ] `tpt-io-dexpi` — DEXPI (P&ID exchange)
 - [ ] `tpt-io-automationml` — AutomationML (CAEX)
-- [ ] `tpt-io-sbml` / new crate: CellML, SED-ML, COMBINE/OMEX archives
+- [x] `tpt-io-sbml` / new crate: CellML, SED-ML, COMBINE/OMEX archives
 - [ ] `tpt-io-pdb` — PDB / mmCIF
 - [ ] `tpt-io-chem` — MOL / SDF
 - [ ] `tpt-io-jcamp` — JCAMP-DX (spectroscopy)
@@ -344,14 +344,14 @@ Tags: `[free]` open spec · `[free, licence terms]` free but the publisher's lic
 - [ ] `tpt-io-opendrive` — ASAM OpenDRIVE `[free, licence terms]`
 - [ ] `tpt-io-openscenario` — ASAM OpenSCENARIO `[free, licence terms]`
 - [ ] `tpt-io-arxml` — AUTOSAR ARXML `[free, licence terms]`
-- [ ] `tpt-io-mdf` — ASAM MDF4 `[free, licence terms]`- Excluded: DBC (proprietary, no official spec)
+- [x] `tpt-io-mdf` — ASAM MDF4 `[free, licence terms]`- Excluded: DBC (proprietary, no official spec)
 
 ### Aerospace, Astronomy & Geodesy
 - [ ] `tpt-io-fits` — FITS `[free]`
 - [ ] `tpt-io-ccsds` — CCSDS OEM / OPM / TDM `[free]`
 - [ ] `tpt-io-gnss` — RINEX + SP3 `[free]`
 - [ ] `tpt-io-tle` — TLE / orbital elements `[free]`
-- [ ] `tpt-io-naif` — NAIF SPICE kernels (named to avoid clash with circuit `tpt-io-spice`) `[free]`
+- [x] `tpt-io-naif` — NAIF SPICE kernels (named to avoid clash with circuit `tpt-io-spice`) `[free]`
 - Excluded: RTCM, NMEA 0183, AIS/IEC 61162 (paid specs)
 
 ### Industrial Automation (Industry 4.0)
@@ -371,7 +371,7 @@ Tags: `[free]` open spec · `[free, licence terms]` free but the publisher's lic
 ### Digital Pathology & Microscopy
 - [ ] `tpt-io-ome` — OME-TIFF + OME-Zarr `[free]`
 - [ ] `tpt-io-tiff` — generic tiled/pyramidal TIFF + BigTIFF `[free]`
-- [ ] `tpt-io-dicom`: DICOM-WSI (whole-slide imaging) `[free]`
+- [x] `tpt-io-dicom`: DICOM-WSI (whole-slide imaging) `[free]`
 - Excluded: vendor formats (SVS, NDPI, CZI)
 
 ### Computational Chemistry & Materials

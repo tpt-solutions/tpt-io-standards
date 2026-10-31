@@ -70,7 +70,7 @@ members = [
     "crates/tpt-io-threemf",
     "crates/tpt-io-bcf",
     "crates/tpt-io-omex",
-    "crates/tpt-io", "hdf5_test",
+    "crates/tpt-io",
 ]
 
 [workspace.package]
@@ -95,6 +95,9 @@ tpt-io-edif = { path = "crates/tpt-io-edif", version = "0.1.0" }
 tpt-io-geo = { path = "crates/tpt-io-geo", version = "0.1.0" }
 tpt-io-hdf5 = { path = "crates/tpt-io-hdf5", version = "0.1.0" }
 tpt-io-kicad = { path = "crates/tpt-io-kicad", version = "0.1.0" }
+tpt-io-mdf = { path = "crates/tpt-io-mdf", version = "0.1.0" }
+tpt-io-grib = { path = "crates/tpt-io-grib", version = "0.1.0" }
+tpt-io-naif = { path = "crates/tpt-io-naif", version = "0.1.0" }
 tpt-io-omex = { path = "crates/tpt-io-omex", version = "0.1.0" }
 tpt-io-bcf = { path = "crates/tpt-io-bcf", version = "0.1.0" }
 tpt-io-threemf = { path = "crates/tpt-io-threemf", version = "0.1.0" }

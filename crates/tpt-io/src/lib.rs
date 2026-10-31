@@ -61,6 +61,12 @@ pub enum IoError {
     Hdf5(tpt_io_hdf5::Hdf5Error),
     #[cfg(feature = "kicad")]
     Kicad(tpt_io_kicad::KicadError),
+    #[cfg(feature = "mdf")]
+    Mdf(tpt_io_mdf::MdfError),
+    #[cfg(feature = "grib")]
+    Grib(tpt_io_grib::GribError),
+    #[cfg(feature = "naif")]
+    Naif(tpt_io_naif::NaifError),
     #[cfg(feature = "omex")]
     Omex(tpt_io_omex::OmexError),
     #[cfg(feature = "bcf")]
@@ -204,6 +210,12 @@ impl core::fmt::Display for IoError {
             IoError::Hdf5(e) => write!(f, "HDF5: {e}"),
             #[cfg(feature = "kicad")]
             IoError::Kicad(e) => write!(f, "KiCad: {e}"),
+            #[cfg(feature = "mdf")]
+            IoError::Mdf(e) => write!(f, "ASAM MDF 4: {e}"),
+            #[cfg(feature = "grib")]
+            IoError::Grib(e) => write!(f, "GRIB2: {e}"),
+            #[cfg(feature = "naif")]
+            IoError::Naif(e) => write!(f, "NAIF DAF/SPK: {e}"),
             #[cfg(feature = "omex")]
             IoError::Omex(e) => write!(f, "COMBINE OMEX / SED-ML: {e}"),
             #[cfg(feature = "bcf")]
@@ -318,139 +330,145 @@ impl core::fmt::Display for IoError {
 impl std::error::Error for IoError {}
 
 // Re-export each domain crate as a module behind its feature.
-#[cfg(feature = "capeopen")]
-pub use tpt_io_capeopen as capeopen;
-#[cfg(feature = "citygml")]
-pub use tpt_io_citygml as citygml;
-#[cfg(feature = "dicom")]
-pub use tpt_io_dicom as dicom;
-#[cfg(feature = "edif")]
-pub use tpt_io_edif as edif;
-#[cfg(feature = "fhir")]
-pub use tpt_io_fhir as fhir;
-#[cfg(feature = "geo")]
-pub use tpt_io_geo as geo;
-#[cfg(feature = "gerber")]
-pub use tpt_io_gerber as gerber;
-#[cfg(feature = "hdf5")]
-pub use tpt_io_hdf5 as hdf5;
-#[cfg(feature = "ifc")]
-pub use tpt_io_ifc as ifc;
-#[cfg(feature = "kicad")]
-pub use tpt_io_kicad as kicad;
-#[cfg(feature = "omex")]
-pub use tpt_io_omex as omex;
-#[cfg(feature = "bcf")]
-pub use tpt_io_bcf as bcf;
-#[cfg(feature = "threemf")]
-pub use tpt_io_threemf as threemf;
-#[cfg(feature = "mesh")]
-pub use tpt_io_mesh as mesh;
-#[cfg(feature = "gnss")]
-pub use tpt_io_gnss as gnss;
-#[cfg(feature = "hecras")]
-pub use tpt_io_hecras as hecras;
-#[cfg(feature = "ome")]
-pub use tpt_io_ome as ome;
-#[cfg(feature = "tiff")]
-pub use tpt_io_tiff as tiff;
-#[cfg(feature = "pointcloud")]
-pub use tpt_io_pointcloud as pointcloud;
-#[cfg(feature = "segy")]
-pub use tpt_io_segy as segy;
-#[cfg(feature = "gds")]
-pub use tpt_io_gds as gds;
-#[cfg(feature = "edf")]
-pub use tpt_io_edf as edf;
-#[cfg(feature = "openehr")]
-pub use tpt_io_openehr as openehr;
-#[cfg(feature = "nrrd")]
-pub use tpt_io_nrrd as nrrd;
-#[cfg(feature = "cellml")]
-pub use tpt_io_cellml as cellml;
-#[cfg(feature = "dexpi")]
-pub use tpt_io_dexpi as dexpi;
+#[cfg(feature = "aas")]
+pub use tpt_io_aas as aas;
+#[cfg(feature = "aixm")]
+pub use tpt_io_aixm as aixm;
+#[cfg(feature = "arxml")]
+pub use tpt_io_arxml as arxml;
+#[cfg(feature = "asterix")]
+pub use tpt_io_asterix as asterix;
 #[cfg(feature = "automationml")]
 pub use tpt_io_automationml as automationml;
-#[cfg(feature = "witsml")]
-pub use tpt_io_witsml as witsml;
-#[cfg(feature = "ipc2581")]
-pub use tpt_io_ipc2581 as ipc2581;
+#[cfg(feature = "bcf")]
+pub use tpt_io_bcf as bcf;
+#[cfg(feature = "capeopen")]
+pub use tpt_io_capeopen as capeopen;
+#[cfg(feature = "ccsds")]
+pub use tpt_io_ccsds as ccsds;
 #[cfg(feature = "cda")]
 pub use tpt_io_cda as cda;
-#[cfg(feature = "gbxml")]
-pub use tpt_io_gbxml as gbxml;
-#[cfg(feature = "landxml")]
-pub use tpt_io_landxml as landxml;
-#[cfg(feature = "mzml")]
-pub use tpt_io_mzml as mzml;
-#[cfg(feature = "jcamp")]
-pub use tpt_io_jcamp as jcamp;
+#[cfg(feature = "cellml")]
+pub use tpt_io_cellml as cellml;
 #[cfg(feature = "chem")]
 pub use tpt_io_chem as chem;
-#[cfg(feature = "pdb")]
-pub use tpt_io_pdb as pdb;
-#[cfg(feature = "dxf")]
-pub use tpt_io_dxf as dxf;
-#[cfg(feature = "hl7v2")]
-pub use tpt_io_hl7v2 as hl7v2;
-#[cfg(feature = "verilog")]
-pub use tpt_io_verilog as verilog;
-#[cfg(feature = "touchstone")]
-pub use tpt_io_touchstone as touchstone;
 #[cfg(feature = "chemfile")]
 pub use tpt_io_chemfile as chemfile;
 #[cfg(feature = "cif")]
 pub use tpt_io_cif as cif;
-#[cfg(feature = "asterix")]
-pub use tpt_io_asterix as asterix;
-#[cfg(feature = "aixm")]
-pub use tpt_io_aixm as aixm;
-#[cfg(feature = "opcua")]
-pub use tpt_io_opcua as opcua;
-#[cfg(feature = "aas")]
-pub use tpt_io_aas as aas;
-#[cfg(feature = "plcopen")]
-pub use tpt_io_plcopen as plcopen;
-#[cfg(feature = "mtconnect")]
-pub use tpt_io_mtconnect as mtconnect;
-#[cfg(feature = "waterml")]
-pub use tpt_io_waterml as waterml;
+#[cfg(feature = "citygml")]
+pub use tpt_io_citygml as citygml;
+#[cfg(feature = "dexpi")]
+pub use tpt_io_dexpi as dexpi;
+#[cfg(feature = "dicom")]
+pub use tpt_io_dicom as dicom;
+#[cfg(feature = "dxf")]
+pub use tpt_io_dxf as dxf;
+#[cfg(feature = "edf")]
+pub use tpt_io_edf as edf;
+#[cfg(feature = "edif")]
+pub use tpt_io_edif as edif;
 #[cfg(feature = "epanet")]
 pub use tpt_io_epanet as epanet;
-#[cfg(feature = "gcode")]
-pub use tpt_io_gcode as gcode;
+#[cfg(feature = "fhir")]
+pub use tpt_io_fhir as fhir;
 #[cfg(feature = "fits")]
 pub use tpt_io_fits as fits;
-#[cfg(feature = "ccsds")]
-pub use tpt_io_ccsds as ccsds;
-#[cfg(feature = "tle")]
-pub use tpt_io_tle as tle;
-#[cfg(feature = "arxml")]
-pub use tpt_io_arxml as arxml;
-#[cfg(feature = "openscenario")]
-pub use tpt_io_openscenario as openscenario;
-#[cfg(feature = "opendrive")]
-pub use tpt_io_opendrive as opendrive;
-#[cfg(feature = "urdf")]
-pub use tpt_io_urdf as urdf;
-#[cfg(feature = "rosbag")]
-pub use tpt_io_rosbag as rosbag;
-#[cfg(feature = "mcap")]
-pub use tpt_io_mcap as mcap;
+#[cfg(feature = "gbxml")]
+pub use tpt_io_gbxml as gbxml;
+#[cfg(feature = "gcode")]
+pub use tpt_io_gcode as gcode;
+#[cfg(feature = "gds")]
+pub use tpt_io_gds as gds;
+#[cfg(feature = "geo")]
+pub use tpt_io_geo as geo;
+#[cfg(feature = "gerber")]
+pub use tpt_io_gerber as gerber;
+#[cfg(feature = "gnss")]
+pub use tpt_io_gnss as gnss;
+#[cfg(feature = "grib")]
+pub use tpt_io_grib as grib;
 #[cfg(feature = "gridlabd")]
 pub use tpt_io_gridlabd as gridlabd;
-#[cfg(feature = "opendss")]
-pub use tpt_io_opendss as opendss;
+#[cfg(feature = "hdf5")]
+pub use tpt_io_hdf5 as hdf5;
+#[cfg(feature = "hecras")]
+pub use tpt_io_hecras as hecras;
+#[cfg(feature = "hl7v2")]
+pub use tpt_io_hl7v2 as hl7v2;
+#[cfg(feature = "ifc")]
+pub use tpt_io_ifc as ifc;
+#[cfg(feature = "ipc2581")]
+pub use tpt_io_ipc2581 as ipc2581;
+#[cfg(feature = "jcamp")]
+pub use tpt_io_jcamp as jcamp;
+#[cfg(feature = "kicad")]
+pub use tpt_io_kicad as kicad;
+#[cfg(feature = "landxml")]
+pub use tpt_io_landxml as landxml;
 #[cfg(feature = "matpower")]
 pub use tpt_io_matpower as matpower;
+#[cfg(feature = "mcap")]
+pub use tpt_io_mcap as mcap;
+#[cfg(feature = "mdf")]
+pub use tpt_io_mdf as mdf;
+#[cfg(feature = "mesh")]
+pub use tpt_io_mesh as mesh;
+#[cfg(feature = "mtconnect")]
+pub use tpt_io_mtconnect as mtconnect;
+#[cfg(feature = "mzml")]
+pub use tpt_io_mzml as mzml;
+#[cfg(feature = "naif")]
+pub use tpt_io_naif as naif;
 #[cfg(feature = "netcdf")]
 pub use tpt_io_netcdf as netcdf;
 #[cfg(feature = "nifti")]
 pub use tpt_io_nifti as nifti;
+#[cfg(feature = "nrrd")]
+pub use tpt_io_nrrd as nrrd;
+#[cfg(feature = "ome")]
+pub use tpt_io_ome as ome;
+#[cfg(feature = "omex")]
+pub use tpt_io_omex as omex;
+#[cfg(feature = "opcua")]
+pub use tpt_io_opcua as opcua;
+#[cfg(feature = "opendrive")]
+pub use tpt_io_opendrive as opendrive;
+#[cfg(feature = "opendss")]
+pub use tpt_io_opendss as opendss;
+#[cfg(feature = "openehr")]
+pub use tpt_io_openehr as openehr;
+#[cfg(feature = "openscenario")]
+pub use tpt_io_openscenario as openscenario;
+#[cfg(feature = "pdb")]
+pub use tpt_io_pdb as pdb;
+#[cfg(feature = "plcopen")]
+pub use tpt_io_plcopen as plcopen;
+#[cfg(feature = "pointcloud")]
+pub use tpt_io_pointcloud as pointcloud;
+#[cfg(feature = "rosbag")]
+pub use tpt_io_rosbag as rosbag;
 #[cfg(feature = "sbml")]
 pub use tpt_io_sbml as sbml;
+#[cfg(feature = "segy")]
+pub use tpt_io_segy as segy;
 #[cfg(feature = "spice")]
 pub use tpt_io_spice as spice;
+#[cfg(feature = "threemf")]
+pub use tpt_io_threemf as threemf;
+#[cfg(feature = "tiff")]
+pub use tpt_io_tiff as tiff;
+#[cfg(feature = "tle")]
+pub use tpt_io_tle as tle;
+#[cfg(feature = "touchstone")]
+pub use tpt_io_touchstone as touchstone;
+#[cfg(feature = "urdf")]
+pub use tpt_io_urdf as urdf;
+#[cfg(feature = "verilog")]
+pub use tpt_io_verilog as verilog;
+#[cfg(feature = "waterml")]
+pub use tpt_io_waterml as waterml;
 #[cfg(feature = "welllog")]
 pub use tpt_io_welllog as welllog;
+#[cfg(feature = "witsml")]
+pub use tpt_io_witsml as witsml;
