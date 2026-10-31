@@ -28,3 +28,16 @@ name = "shapefile"
 path = "fuzz_targets/shapefile.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "text_geometry"
+path = "fuzz_targets/text_geometry.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "geopackage"
+path = "fuzz_targets/geopackage.rs"
+test = false
+doc = false
+

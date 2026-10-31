@@ -71,7 +71,9 @@ pub fn write_kmz(fc: &FeatureCollection) -> Vec<u8> {
 /// A string-valued property, or `None` when the feature has no such property.
 pub(crate) fn text_property<'a>(f: &'a Feature, key: &str) -> Option<&'a str> {
     match &f.properties {
-        Json::Object(entries) => entries.iter().find(|(k, _)| k == key).and_then(|(_, v)| v.as_str()),
+        Json::Object(entries) => {
+            entries.iter().find(|(k, _)| k == key).and_then(|(_, v)| v.as_str())
+        }
         _ => None,
     }
 }
@@ -155,7 +157,8 @@ fn coords(el: &Element) -> Result<Vec<Position>, GeoError> {
     let mut out = Vec::new();
     for tuple in text.split_whitespace() {
         let mut parts = tuple.split(',');
-        let mut values = alloc::vec![coord(parts.next(), el.offset)?, coord(parts.next(), el.offset)?];
+        let mut values =
+            alloc::vec![coord(parts.next(), el.offset)?, coord(parts.next(), el.offset)?];
         if let Some(alt) = parts.next() {
             values.push(coord(Some(alt), el.offset)?);
         }

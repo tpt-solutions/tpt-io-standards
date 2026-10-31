@@ -40,6 +40,7 @@ assert!((lon - 174.0).abs() < 1e-7);
 | `alloc` | no | `alloc`-based types without `std` |
 | `eng-geometry-integration` | no | Stub conversion into a future `tpt-eng-geometry` crate |
 | `math-geometry-integration` | no | Stub conversion into a future `tpt-math-geometry` crate |
+| `kmz` | no | KMZ (zipped KML) reading and writing, via the core ZIP reader and writer |
 
 ## Testing
 

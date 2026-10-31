@@ -114,7 +114,9 @@ fn enum_geometry(r: &mut Reader<'_>) -> Result<GeometryEnum, GeoError> {
             for g in children(r)? {
                 match g.geometry {
                     GeometryEnum::LineString(ps) => out.push(ps),
-                    _ => return Err(GeoError::custom(r.pos, "WKB MultiLineString holds a non-line")),
+                    _ => {
+                        return Err(GeoError::custom(r.pos, "WKB MultiLineString holds a non-line"))
+                    }
                 }
             }
             Ok(GeometryEnum::MultiLineString(out))
@@ -124,7 +126,9 @@ fn enum_geometry(r: &mut Reader<'_>) -> Result<GeometryEnum, GeoError> {
             for g in children(r)? {
                 match g.geometry {
                     GeometryEnum::Polygon(rs) => out.push(rs),
-                    _ => return Err(GeoError::custom(r.pos, "WKB MultiPolygon holds a non-polygon")),
+                    _ => {
+                        return Err(GeoError::custom(r.pos, "WKB MultiPolygon holds a non-polygon"))
+                    }
                 }
             }
             Ok(GeometryEnum::MultiPolygon(out))

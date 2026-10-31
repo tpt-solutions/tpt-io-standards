@@ -1,6 +1,8 @@
 //! Round-trip and error tests for the WKT, WKB, KML/KMZ and GPX readers and writers.
 
-use tpt_io_geo::geojson::{Feature, FeatureCollection, FeatureId, Geometry, GeometryEnum, Position};
+use tpt_io_geo::geojson::{
+    Feature, FeatureCollection, FeatureId, Geometry, GeometryEnum, Position,
+};
 use tpt_io_geo::json::Json;
 use tpt_io_geo::{gpx, kml, wkb, wkt, GeoError};
 
@@ -41,7 +43,10 @@ fn wkt_reads_every_simple_type() {
     assert_eq!(point.geometry, GeometryEnum::Point(pos(174.0, -41.0)));
 
     let line = wkt::parse_wkt("LINESTRING (0 0, 1 1, 2 0)").unwrap();
-    assert_eq!(line.geometry, GeometryEnum::LineString(vec![pos(0.0, 0.0), pos(1.0, 1.0), pos(2.0, 0.0)]));
+    assert_eq!(
+        line.geometry,
+        GeometryEnum::LineString(vec![pos(0.0, 0.0), pos(1.0, 1.0), pos(2.0, 0.0)])
+    );
 
     let poly = wkt::parse_wkt("POLYGON ((0 0, 4 0, 4 4, 0 0), (1 1, 2 1, 2 2, 1 1))").unwrap();
     match poly.geometry {
@@ -62,7 +67,10 @@ fn wkt_accepts_both_multipoint_forms_and_z_tags() {
 
 #[test]
 fn wkt_empty_bodies_and_collections() {
-    assert_eq!(wkt::parse_wkt("LINESTRING EMPTY").unwrap().geometry, GeometryEnum::LineString(Vec::new()));
+    assert_eq!(
+        wkt::parse_wkt("LINESTRING EMPTY").unwrap().geometry,
+        GeometryEnum::LineString(Vec::new())
+    );
     assert!(matches!(wkt::parse_wkt("POINT EMPTY"), Err(GeoError::Unsupported(_))));
 
     let gc = wkt::parse_wkt("GEOMETRYCOLLECTION (POINT (1 2), LINESTRING (0 0, 1 1))").unwrap();
@@ -95,8 +103,8 @@ fn wkt_rejects_measures_trailing_text_and_unknown_types() {
 fn wkb_reads_a_little_endian_point() {
     // POINT(1 2): byte order 1, type 1, then two little-endian doubles.
     let bytes = [
-        0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x40,
+        0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x40,
     ];
     assert_eq!(wkb::parse_wkb(&bytes).unwrap().geometry, GeometryEnum::Point(pos(1.0, 2.0)));
 }
@@ -104,7 +112,8 @@ fn wkb_reads_a_little_endian_point() {
 #[test]
 fn wkb_reads_a_big_endian_point() {
     // POINT(2 3) in big-endian order.
-    let bytes = [0x00, 0x00, 0x00, 0x00, 0x01, 0x40, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x08, 0, 0, 0, 0, 0, 0];
+    let bytes =
+        [0x00, 0x00, 0x00, 0x00, 0x01, 0x40, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x08, 0, 0, 0, 0, 0, 0];
     assert_eq!(wkb::parse_wkb(&bytes).unwrap().geometry, GeometryEnum::Point(pos(2.0, 3.0)));
 }
 
@@ -112,7 +121,11 @@ fn wkb_reads_a_big_endian_point() {
 fn wkb_round_trips_collections_and_elevations() {
     let g = plain(GeometryEnum::GeometryCollection(vec![
         plain(GeometryEnum::Point(pos3(1.0, 2.0, 3.0))),
-        plain(GeometryEnum::MultiPolygon(vec![vec![vec![pos3(0.0, 0.0, 1.0), pos3(4.0, 0.0, 1.0), pos3(0.0, 0.0, 1.0)]]])),
+        plain(GeometryEnum::MultiPolygon(vec![vec![vec![
+            pos3(0.0, 0.0, 1.0),
+            pos3(4.0, 0.0, 1.0),
+            pos3(0.0, 0.0, 1.0),
+        ]]])),
     ]));
     assert_eq!(wkb::parse_wkb(&wkb::to_wkb(&g)).unwrap(), g);
 }
@@ -189,7 +202,12 @@ fn kml_write_then_read_keeps_points_lines_polygons_and_names() {
         feature(GeometryEnum::Point(pos3(1.0, 2.0, 3.0)), Some("A & B")),
         feature(GeometryEnum::LineString(vec![pos(0.0, 0.0), pos(1.0, 1.0)]), None),
         feature(
-            GeometryEnum::Polygon(vec![vec![pos(0.0, 0.0), pos(4.0, 0.0), pos(4.0, 4.0), pos(0.0, 0.0)]]),
+            GeometryEnum::Polygon(vec![vec![
+                pos(0.0, 0.0),
+                pos(4.0, 0.0),
+                pos(4.0, 4.0),
+                pos(0.0, 0.0),
+            ]]),
             Some("Zone"),
         ),
     ]);
@@ -202,7 +220,8 @@ fn kml_write_then_read_keeps_points_lines_polygons_and_names() {
 
 #[test]
 fn kml_bad_coordinate_is_an_error() {
-    let doc = br#"<kml><Placemark><Point><coordinates>abc,def</coordinates></Point></Placemark></kml>"#;
+    let doc =
+        br#"<kml><Placemark><Point><coordinates>abc,def</coordinates></Point></Placemark></kml>"#;
     assert!(matches!(kml::parse(doc), Err(GeoError::Core(_))));
 }
 
@@ -250,7 +269,13 @@ fn gpx_reads_waypoints_routes_and_tracks() {
 fn gpx_write_then_read_keeps_points_and_tracks() {
     let fc = collection(vec![
         feature(GeometryEnum::Point(pos3(1.0, 2.0, 3.0)), Some("Peak")),
-        feature(GeometryEnum::MultiLineString(vec![vec![pos(1.0, 2.0), pos(3.0, 4.0)], vec![pos(5.0, 6.0)]]), Some("Walk")),
+        feature(
+            GeometryEnum::MultiLineString(vec![
+                vec![pos(1.0, 2.0), pos(3.0, 4.0)],
+                vec![pos(5.0, 6.0)],
+            ]),
+            Some("Walk"),
+        ),
     ]);
     let back = gpx::parse(gpx::write(&fc).as_bytes()).unwrap();
     assert_eq!(back.features[0].geometry, fc.features[0].geometry);
@@ -260,5 +285,8 @@ fn gpx_write_then_read_keeps_points_and_tracks() {
 
 #[test]
 fn gpx_point_without_numeric_position_is_an_error() {
-    assert!(matches!(gpx::parse(br#"<gpx><wpt lat="north" lon="1"/></gpx>"#), Err(GeoError::Core(_))));
+    assert!(matches!(
+        gpx::parse(br#"<gpx><wpt lat="north" lon="1"/></gpx>"#),
+        Err(GeoError::Core(_))
+    ));
 }

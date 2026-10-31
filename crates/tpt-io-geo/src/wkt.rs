@@ -111,7 +111,9 @@ fn enum_geometry(c: &mut Cursor<'_>) -> Result<GeometryEnum, GeoError> {
         "" => (false, false),
         "Z" => (true, false),
         "EMPTY" => (false, true),
-        "M" | "ZM" => return Err(GeoError::Unsupported("WKT M and ZM coordinates are not supported")),
+        "M" | "ZM" => {
+            return Err(GeoError::Unsupported("WKT M and ZM coordinates are not supported"))
+        }
         _ => return Err(GeoError::custom(c.pos, "malformed WKT: unknown dimension tag")),
     };
     if empty {

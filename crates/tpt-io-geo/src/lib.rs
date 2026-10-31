@@ -43,14 +43,17 @@ compile_error!(
 
 pub mod crs;
 pub mod error;
+pub mod flatgeobuf;
 pub mod geojson;
+pub mod geopackage;
 pub mod geotiff;
+pub mod gpx;
 pub mod json;
+pub mod kml;
 pub mod shapefile;
 pub mod spatial_index;
+pub mod sqlite;
 pub mod stream;
-pub mod gpx;
-pub mod kml;
 pub mod wkb;
 pub mod wkt;
 
