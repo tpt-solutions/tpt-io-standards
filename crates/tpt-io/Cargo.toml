@@ -44,6 +44,7 @@ tpt-io-ome = { workspace = true, optional = true }
 tpt-io-tiff = { workspace = true, optional = true }
 tpt-io-pointcloud = { workspace = true, optional = true }
 tpt-io-segy = { workspace = true, optional = true }
+tpt-io-s57 = { workspace = true, optional = true }
 tpt-io-gds = { workspace = true, optional = true }
 tpt-io-edf = { workspace = true, optional = true }
 tpt-io-openehr = { workspace = true, optional = true }
@@ -120,6 +121,7 @@ ome = ["tpt-io-ome", "tpt-io-ome/std"]
 tiff = ["tpt-io-tiff", "tpt-io-tiff/std"]
 pointcloud = ["tpt-io-pointcloud", "tpt-io-pointcloud/std"]
 segy = ["tpt-io-segy", "tpt-io-segy/std"]
+s57 = ["tpt-io-s57", "tpt-io-s57/std"]
 gds = ["tpt-io-gds", "tpt-io-gds/std"]
 edf = ["tpt-io-edf", "tpt-io-edf/std"]
 openehr = ["tpt-io-openehr", "tpt-io-openehr/std"]

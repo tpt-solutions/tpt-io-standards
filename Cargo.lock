@@ -565,6 +565,7 @@ dependencies = [
  "tpt-io-plcopen",
  "tpt-io-pointcloud",
  "tpt-io-rosbag",
+ "tpt-io-s57",
  "tpt-io-sbml",
  "tpt-io-segy",
  "tpt-io-spice",

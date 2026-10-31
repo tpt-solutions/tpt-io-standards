@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added the `s57` feature: re-exports `tpt-io-s57` (IHO S-57 ENC reader) and adds
+  `IoError::S57`.
+
 ## [0.1.0] - 2026-08-31
 
 Initial release.

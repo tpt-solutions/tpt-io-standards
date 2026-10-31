@@ -87,6 +87,8 @@ pub enum IoError {
     PointCloud(tpt_io_pointcloud::LasError),
     #[cfg(feature = "segy")]
     Segy(tpt_io_segy::SegyError),
+    #[cfg(feature = "s57")]
+    S57(tpt_io_s57::S57Error),
     #[cfg(feature = "gds")]
     Gds(tpt_io_gds::GdsError),
     #[cfg(feature = "edf")]
@@ -236,6 +238,8 @@ impl core::fmt::Display for IoError {
             IoError::PointCloud(e) => write!(f, "LAS point cloud: {e}"),
             #[cfg(feature = "segy")]
             IoError::Segy(e) => write!(f, "SEG-Y: {e}"),
+            #[cfg(feature = "s57")]
+            IoError::S57(e) => write!(f, "S-57 ENC: {e}"),
             #[cfg(feature = "gds")]
             IoError::Gds(e) => write!(f, "GDSII: {e}"),
             #[cfg(feature = "edf")]
@@ -448,6 +452,8 @@ pub use tpt_io_plcopen as plcopen;
 pub use tpt_io_pointcloud as pointcloud;
 #[cfg(feature = "rosbag")]
 pub use tpt_io_rosbag as rosbag;
+#[cfg(feature = "s57")]
+pub use tpt_io_s57 as s57;
 #[cfg(feature = "sbml")]
 pub use tpt_io_sbml as sbml;
 #[cfg(feature = "segy")]
