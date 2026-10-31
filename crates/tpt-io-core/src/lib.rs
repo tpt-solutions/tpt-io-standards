@@ -18,6 +18,8 @@ pub mod checksum;
 pub mod encoding;
 #[cfg(feature = "alloc")]
 pub mod error;
+#[cfg(all(feature = "zip", any(feature = "alloc", feature = "std")))]
+pub mod inflate;
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub mod json;
 #[cfg(any(feature = "alloc", feature = "std"))]
@@ -27,8 +29,6 @@ pub mod step;
 pub mod traits;
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub mod xml;
-#[cfg(all(feature = "zip", any(feature = "alloc", feature = "std")))]
-pub mod inflate;
 #[cfg(all(feature = "zip", any(feature = "alloc", feature = "std")))]
 pub mod zip;
 

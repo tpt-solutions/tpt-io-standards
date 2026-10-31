@@ -8,14 +8,19 @@ use alloc::vec::Vec;
 use crate::error::{ParseError, Result};
 
 const LEN_BASE: [u16; 29] = [
-    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258,
+    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131,
+    163, 195, 227, 258,
 ];
-const LEN_EXTRA: [u8; 29] = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
+const LEN_EXTRA: [u8; 29] =
+    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
 const DIST_BASE: [u16; 30] = [
-    1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145,
-    8193, 12289, 16385, 24577,
+    1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537,
+    2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
 ];
-const DIST_EXTRA: [u8; 30] = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13];
+const DIST_EXTRA: [u8; 30] = [
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13,
+    13,
+];
 const CODE_ORDER: [usize; 19] = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
 
 struct Bits<'a> {
@@ -133,9 +138,9 @@ fn dynamic_tables(bits: &mut Bits<'_>) -> Result<(Huffman, Huffman)> {
         match sym {
             0..=15 => lengths.push(sym as u8),
             16 => {
-                let prev = *lengths
-                    .last()
-                    .ok_or_else(|| ParseError::custom(bits.pos, "repeat with no previous length"))?;
+                let prev = *lengths.last().ok_or_else(|| {
+                    ParseError::custom(bits.pos, "repeat with no previous length")
+                })?;
                 for _ in 0..3 + bits.bits(2)? {
                     lengths.push(prev);
                 }
@@ -203,9 +208,8 @@ pub fn inflate(data: &[u8]) -> Result<Vec<u8>> {
                     return Err(ParseError::custom(bits.pos, "stored block length check failed"));
                 }
                 bits.pos += 4;
-                let chunk = data
-                    .get(bits.pos..bits.pos + len)
-                    .ok_or_else(|| ParseError::eof(bits.pos))?;
+                let chunk =
+                    data.get(bits.pos..bits.pos + len).ok_or_else(|| ParseError::eof(bits.pos))?;
                 out.extend_from_slice(chunk);
                 bits.pos += len;
             }

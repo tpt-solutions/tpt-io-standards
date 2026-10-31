@@ -37,10 +37,7 @@ impl Element {
 
     /// The value of the attribute whose local name is `name`.
     pub fn attr(&self, name: &str) -> Option<&str> {
-        self.attributes
-            .iter()
-            .find(|(k, _)| local(k) == name)
-            .map(|(_, v)| v.as_str())
+        self.attributes.iter().find(|(k, _)| local(k) == name).map(|(_, v)| v.as_str())
     }
 
     /// The first child element whose local name is `name`.
@@ -227,7 +224,10 @@ impl<'a> Parser<'a> {
             }
         }
         if self.pos == start {
-            return Err(ParseError::invalid_byte(start, self.input.get(start).copied().unwrap_or(0)));
+            return Err(ParseError::invalid_byte(
+                start,
+                self.input.get(start).copied().unwrap_or(0),
+            ));
         }
         core::str::from_utf8(&self.input[start..self.pos])
             .map(|s| s.to_string())
@@ -266,7 +266,10 @@ impl<'a> Parser<'a> {
                     let key = self.name()?;
                     self.skip_ws();
                     if self.input.get(self.pos) != Some(&b'=') {
-                        return Err(ParseError::custom(self.pos, "expected '=' after attribute name"));
+                        return Err(ParseError::custom(
+                            self.pos,
+                            "expected '=' after attribute name",
+                        ));
                     }
                     self.pos += 1;
                     self.skip_ws();

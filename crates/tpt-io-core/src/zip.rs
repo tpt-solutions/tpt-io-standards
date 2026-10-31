@@ -53,9 +53,8 @@ pub fn entries(input: &[u8]) -> Result<Vec<Entry>> {
         let extra_len = u16_at(input, pos + 30)? as usize;
         let comment_len = u16_at(input, pos + 32)? as usize;
         let local = u32_at(input, pos + 42)? as usize;
-        let name_bytes = input
-            .get(pos + 46..pos + 46 + name_len)
-            .ok_or_else(|| ParseError::eof(pos))?;
+        let name_bytes =
+            input.get(pos + 46..pos + 46 + name_len).ok_or_else(|| ParseError::eof(pos))?;
         let name = core::str::from_utf8(name_bytes)
             .map_err(|_| ParseError::custom(pos, "member name is not UTF-8"))?
             .to_string();
@@ -71,7 +70,12 @@ pub fn entries(input: &[u8]) -> Result<Vec<Entry>> {
         let data = match method {
             0 => raw.to_vec(),
             8 => inflate(raw)?,
-            _ => return Err(ParseError::unsupported(pos, "ZIP compression method other than stored or deflate")),
+            _ => {
+                return Err(ParseError::unsupported(
+                    pos,
+                    "ZIP compression method other than stored or deflate",
+                ))
+            }
         };
         out.push(Entry { name, data });
         pos += 46 + name_len + extra_len + comment_len;
