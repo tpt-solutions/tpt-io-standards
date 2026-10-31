@@ -15,8 +15,8 @@
 //! assert_eq!(doc.footprints[0].reference.as_deref(), Some("R1"));
 //! ```
 //!
-//! Not yet read: KiCad 5 files, zone fills, tracks and vias, pads, and project
-//! files. See the crate README.
+//! KiCad 5 PCB `module` footprints are read too. Not yet read: zone fills,
+//! schematic labels, and project files. See the crate README.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]

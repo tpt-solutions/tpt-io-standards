@@ -107,3 +107,25 @@ fn truncated_file_reports_an_error_without_panicking() {
         assert!(parse(&PCB[..cut]).is_err(), "cut at {cut} should fail");
     }
 }
+
+#[test]
+fn kicad5_modules_and_unquoted_pad_numbers() {
+    let doc = parse(include_bytes!("samples/legacy_v5.kicad_pcb")).unwrap();
+    assert_eq!(doc.kind, DocKind::Pcb);
+    assert_eq!(doc.version, Some(4));
+    assert_eq!(doc.generator.as_deref(), Some("pcbnew"));
+    assert_eq!(doc.nets[1].name, "GND");
+
+    assert_eq!(doc.footprints.len(), 1);
+    let r1 = &doc.footprints[0];
+    assert_eq!(r1.lib_id, "R_0603");
+    assert_eq!(r1.reference.as_deref(), Some("R1"));
+    assert_eq!(r1.value.as_deref(), Some("10k"));
+    let numbers: Vec<&str> = r1.pads.iter().map(|p| p.number.as_str()).collect();
+    assert_eq!(numbers, ["1", "2"]);
+    assert_eq!(r1.pads[0].net, Some(1));
+    assert_eq!(r1.pads[1].net, None);
+
+    assert_eq!(doc.tracks.len(), 1);
+    assert_eq!(doc.tracks[0].net, Some(1));
+}

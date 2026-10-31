@@ -175,7 +175,12 @@ pub fn parse(input: &[u8]) -> Result<KicadDocument, KicadError> {
     };
 
     let version = root.find("version").and_then(|n| n.arg_f64(0)).map(|v| v as u32);
-    let generator = root.find("generator").and_then(|n| n.arg_str(0)).map(Into::into);
+    // KiCad 5 writes `(host pcbnew …)` where KiCad 6 writes `(generator pcbnew)`.
+    let generator = root
+        .find("generator")
+        .or_else(|| root.find("host"))
+        .and_then(|n| n.arg_str(0))
+        .map(Into::into);
 
     let mut doc = KicadDocument {
         kind,
@@ -197,7 +202,8 @@ pub fn parse(input: &[u8]) -> Result<KicadDocument, KicadError> {
                 let name = n.arg_str(1).unwrap_or("").into();
                 doc.nets.push(Net { id, name });
             }
-            for n in root.children("footprint") {
+            // KiCad 5 calls footprints `module`; the body is otherwise the same.
+            for n in root.children("footprint").chain(root.children("module")) {
                 doc.footprints.push(footprint(n));
             }
             for n in root.children("segment") {
@@ -236,6 +242,14 @@ fn property(node: &Node, name: &str) -> Option<String> {
         .map(Into::into)
 }
 
+/// The text of a KiCad 5 `(fp_text kind "text" …)` child, e.g. `reference` or `value`.
+fn fp_text(node: &Node, kind: &str) -> Option<String> {
+    node.children("fp_text")
+        .find(|t| t.arg_str(0) == Some(kind))
+        .and_then(|t| t.arg_str(1))
+        .map(Into::into)
+}
+
 /// The `(x y)` pair at the start of a node's arguments, e.g. from `(start x y)`.
 fn point(node: Option<&Node>) -> (f64, f64) {
     match node {
@@ -264,8 +278,8 @@ fn footprint(node: &Node) -> Footprint {
         x,
         y,
         rotation,
-        reference: property(node, "Reference"),
-        value: property(node, "Value"),
+        reference: property(node, "Reference").or_else(|| fp_text(node, "reference")),
+        value: property(node, "Value").or_else(|| fp_text(node, "value")),
         pads: node.children("pad").map(pad).collect(),
     }
 }
@@ -273,8 +287,13 @@ fn footprint(node: &Node) -> Footprint {
 fn pad(node: &Node) -> Pad {
     let (x, y) = point(node.find("at"));
     let (width, height) = point(node.find("size"));
+    // KiCad 5 writes pad numbers unquoted (`(pad 1 smd …)`), so accept numbers too.
+    let number = match node.arg(0) {
+        Some(Node::Number(n)) => format!("{}", n),
+        _ => node.arg_str(0).unwrap_or("").into(),
+    };
     Pad {
-        number: node.arg_str(0).unwrap_or("").into(),
+        number,
         kind: node.arg_str(1).unwrap_or("").into(),
         shape: node.arg_str(2).unwrap_or("").into(),
         x,

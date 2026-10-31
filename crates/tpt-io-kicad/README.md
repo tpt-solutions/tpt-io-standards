@@ -4,11 +4,13 @@ A reader for KiCad PCB layouts (`.kicad_pcb`), schematics (`.kicad_sch`) and
 symbol libraries (`.kicad_sym`), built on the shared S-expression tokenizer in
 `tpt-io-core`. It has no dependencies beyond that crate.
 
-## What it reads (KiCad 6 and later)
+## What it reads (KiCad 5 PCB, KiCad 6 and later)
 
-- The format `version` and the `generator` that wrote the file.
+- The format `version` and the `generator` (KiCad 6 `generator`, KiCad 5 `host`).
 - PCB: nets (`(net id "name")`), footprints with their pads (number, type,
-  shape, position, size, net), copper track segments, and vias.
+  shape, position, size, net), copper track segments, and vias. KiCad 5 files
+  use `module` footprints with `fp_text` reference and value; those are read
+  too.
 - Schematic: placed symbols (library id, position, rotation, `Reference` and
   `Value`) and wires (their points).
 - Symbol libraries: the symbols they define, with default `Reference` and
@@ -20,7 +22,7 @@ documents (for example a `.kicad_pro` project file) returns
 
 ## What it does not read yet
 
-- KiCad 5 files (`module` footprints and `fp_text` properties).
+- KiCad 5 schematics. They use the legacy `.sch` text format, not S-expressions.
 - Zones and their fills, footprint graphics, and schematic labels and junctions.
 - Symbol graphics and pin definitions in libraries.
 - Project files and library tables.
@@ -44,5 +46,5 @@ for t in &doc.tracks {
 ## Testing
 
 The fixtures in `tests/samples/` were written by hand to match the KiCad 6
-layout. They are not output from KiCad itself, so they check this reader's
+layout, and `legacy_v5.kicad_pcb` to match the KiCad 5 PCB layout. They are not output from KiCad itself, so they check this reader's
 reading of the format, not compatibility with a specific KiCad release.
