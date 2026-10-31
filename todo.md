@@ -284,43 +284,43 @@ Each must also be added to the publish order, umbrella features, root README tab
 - [x] `tpt-io-geo`: GPX
 - [x] `tpt-io-geo`: GeoPackage
 - [x] `tpt-io-geo`: FlatGeobuf (read)
-- [ ] `tpt-io-segy` — SEG-Y rev 0/1/2 (seismic; pairs with `tpt-io-welllog`)
-- [ ] `tpt-io-pointcloud` — LAS/LAZ point clouds (separate from well-log LAS)
+- [~] `tpt-io-segy` — SEG-Y rev 0/1/2 (seismic; pairs with `tpt-io-welllog`) — *reader and writer present; revision-specific header fields not checked against rev 1/2*
+- [~] `tpt-io-pointcloud` — LAS/LAZ point clouds (separate from well-log LAS) — *uncompressed LAS only; LAZ not read*
 - [x] `tpt-io-grib` — GRIB2 (meteorology/oceanography; companion to NetCDF)
-- [ ] `tpt-io-witsml` — WITSML / RESQML (oil & gas data exchange)
+- [~] `tpt-io-witsml` — WITSML / RESQML (oil & gas data exchange) — *WITSML trajectories only; WITSML 2.0 and RESQML not read*
 
 ### CAD, Mesh & Civil
-- [ ] `tpt-io-dxf` — DXF (ASCII + binary)
-- [ ] `tpt-io-mesh` — STL, OBJ, PLY
+- [~] `tpt-io-dxf` — DXF (ASCII + binary) — *ASCII only; binary DXF not read*
+- [x] `tpt-io-mesh` — STL, OBJ, PLY
 - [x] `tpt-io-mesh`: glTF 2.0 / GLB
 - [x] `tpt-io-mesh`: 3MF
-- [ ] `tpt-io-landxml` — LandXML
-- [ ] `tpt-io-gbxml` — gbXML (building energy)
+- [x] `tpt-io-landxml` — LandXML
+- [x] `tpt-io-gbxml` — gbXML (building energy)
 - [x] `tpt-io-bcf` — BCF (BIM Collaboration Format)
 
 ### Electronics
 - [~] `tpt-io-kicad` — `.kicad_pcb` / `.kicad_sch` / `.kicad_sym` — *KiCad 6 PCB nets, footprints, pads, tracks and vias; schematic symbols and wires; symbol libraries; KiCad 5 PCB `module` footprints; umbrella, README and CI wired. Zone fills (`Zone`), schematic labels (`Label`) and junctions (`Junction`) are now read too. Still open: KiCad 5 `.sch` schematics (legacy text format, out of scope so far), and the publish dry-run (blocked on crates.io)*
-- [ ] `tpt-io-ipc2581` — IPC-2581
-- [ ] `tpt-io-gds` — GDSII
-- [ ] `tpt-io-touchstone` — Touchstone `.sNp`
+- [x] `tpt-io-ipc2581` — IPC-2581
+- [x] `tpt-io-gds` — GDSII
+- [x] `tpt-io-touchstone` — Touchstone `.sNp`
 - [x] `tpt-io-spice`: SPICE `.raw` simulation output
-- [ ] `tpt-io-verilog` — structural Verilog netlists
+- [x] `tpt-io-verilog` — structural Verilog netlists
 
 ### Medical & Healthcare
-- [ ] `tpt-io-hl7v2` — HL7 v2.x (pipe-delimited messages)
-- [ ] `tpt-io-edf` — EDF / EDF+ / BDF (EEG, ECG)
-- [ ] `tpt-io-fhir` / new crate: C-CDA / CDA
-- [ ] `tpt-io-openehr` — openEHR archetypes + compositions
-- [ ] `tpt-io-nifti` / new crate: NRRD and MINC
+- [x] `tpt-io-hl7v2` — HL7 v2.x (pipe-delimited messages)
+- [x] `tpt-io-edf` — EDF / EDF+ / BDF (EEG, ECG)
+- [x] `tpt-io-fhir` / new crate: C-CDA / CDA (`tpt-io-cda`)
+- [x] `tpt-io-openehr` — openEHR archetypes + compositions
+- [~] `tpt-io-nifti` / new crate: NRRD and MINC — *NRRD done (`tpt-io-nrrd`); MINC not started*
 
 ### Process Engineering & Science
-- [ ] `tpt-io-dexpi` — DEXPI (P&ID exchange)
-- [ ] `tpt-io-automationml` — AutomationML (CAEX)
+- [x] `tpt-io-dexpi` — DEXPI (P&ID exchange)
+- [x] `tpt-io-automationml` — AutomationML (CAEX)
 - [x] `tpt-io-sbml` / new crate: CellML, SED-ML, COMBINE/OMEX archives
-- [ ] `tpt-io-pdb` — PDB / mmCIF
-- [ ] `tpt-io-chem` — MOL / SDF
-- [ ] `tpt-io-jcamp` — JCAMP-DX (spectroscopy)
-- [ ] `tpt-io-mzml` — mzML (mass spectrometry)
+- [x] `tpt-io-pdb` — PDB / mmCIF
+- [x] `tpt-io-chem` — MOL / SDF
+- [x] `tpt-io-jcamp` — JCAMP-DX (spectroscopy)
+- [x] `tpt-io-mzml` — mzML (mass spectrometry)
 
 
 ## 2c. Next-up fields (priority over §2b backlog)
@@ -332,57 +332,58 @@ the publish order, umbrella features, root README table and CI feature matrix.
 Tags: `[free]` open spec · `[free, licence terms]` free but the publisher's licence/trademark terms apply.
 
 ### Power & Energy (open-source formats only)
-- [ ] `tpt-io-matpower` — MATPOWER case files `[free]`
-- [ ] `tpt-io-opendss` — OpenDSS scripts (EPRI, BSD) `[free]`
-- [ ] `tpt-io-gridlabd` — GridLAB-D GLM `[free]`
+- [x] `tpt-io-matpower` — MATPOWER case files `[free]`
+- [x] `tpt-io-opendss` — OpenDSS scripts (EPRI, BSD) `[free]`
+- [x] `tpt-io-gridlabd` — GridLAB-D GLM `[free]`
 - Excluded: CIM / IEC 61850 SCL / COMTRADE (paid IEC/IEEE specs), PSS/E RAW (proprietary)
 
 ### Automotive, Robotics & Autonomous Driving
-- [ ] `tpt-io-mcap` — MCAP `[free]`
-- [ ] `tpt-io-rosbag` — ROS bag 1/2 `[free]`
-- [ ] `tpt-io-urdf` — URDF + SDFormat `[free]`
-- [ ] `tpt-io-opendrive` — ASAM OpenDRIVE `[free, licence terms]`
-- [ ] `tpt-io-openscenario` — ASAM OpenSCENARIO `[free, licence terms]`
-- [ ] `tpt-io-arxml` — AUTOSAR ARXML `[free, licence terms]`
-- [x] `tpt-io-mdf` — ASAM MDF4 `[free, licence terms]`- Excluded: DBC (proprietary, no official spec)
+- [x] `tpt-io-mcap` — MCAP `[free]`
+- [~] `tpt-io-rosbag` — ROS bag 1/2 `[free]` — *ROS 1 bag format 2.0 only; older bag versions and ROS 2 bags not read*
+- [x] `tpt-io-urdf` — URDF + SDFormat `[free]`
+- [x] `tpt-io-opendrive` — ASAM OpenDRIVE `[free, licence terms]`
+- [x] `tpt-io-openscenario` — ASAM OpenSCENARIO `[free, licence terms]`
+- [x] `tpt-io-arxml` — AUTOSAR ARXML `[free, licence terms]`
+- [x] `tpt-io-mdf` — ASAM MDF4 `[free, licence terms]`
+- Excluded: DBC (proprietary, no official spec)
 
 ### Aerospace, Astronomy & Geodesy
-- [ ] `tpt-io-fits` — FITS `[free]`
-- [ ] `tpt-io-ccsds` — CCSDS OEM / OPM / TDM `[free]`
-- [ ] `tpt-io-gnss` — RINEX + SP3 `[free]`
-- [ ] `tpt-io-tle` — TLE / orbital elements `[free]`
+- [x] `tpt-io-fits` — FITS `[free]`
+- [x] `tpt-io-ccsds` — CCSDS OEM / OPM / TDM `[free]`
+- [x] `tpt-io-gnss` — RINEX + SP3 `[free]`
+- [x] `tpt-io-tle` — TLE / orbital elements `[free]`
 - [x] `tpt-io-naif` — NAIF SPICE kernels (named to avoid clash with circuit `tpt-io-spice`) `[free]`
 - Excluded: RTCM, NMEA 0183, AIS/IEC 61162 (paid specs)
 
 ### Industrial Automation (Industry 4.0)
-- [ ] `tpt-io-opcua` — OPC UA NodeSet XML `[free]`
-- [ ] `tpt-io-aas` — Asset Administration Shell (IDTA) `[free]`
-- [ ] `tpt-io-plcopen` — PLCopen XML (IEC 61131-3 exchange) `[free]`
-- [ ] `tpt-io-mtconnect` — MTConnect `[free]`
-- [ ] `tpt-io-gcode` — G-code, LinuxCNC / RepRap dialects only `[free]`
+- [x] `tpt-io-opcua` — OPC UA NodeSet XML `[free]`
+- [x] `tpt-io-aas` — Asset Administration Shell (IDTA) `[free]`
+- [x] `tpt-io-plcopen` — PLCopen XML (IEC 61131-3 exchange) `[free]`
+- [x] `tpt-io-mtconnect` — MTConnect `[free]`
+- [x] `tpt-io-gcode` — G-code, LinuxCNC / RepRap dialects only `[free]`
 - Related: AutomationML, DEXPI in §2b
 - Excluded: ISO 6983 (paid)
 
 ### Water & Civil Hydraulics
-- [ ] `tpt-io-epanet` — EPANET / SWMM `.inp` `[free]` (US EPA, public domain)
-- [ ] `tpt-io-waterml` — WaterML 2.0 `[free]`
-- [ ] `tpt-io-hecras` — HEC-RAS text geometry/flow files `[free]`
+- [x] `tpt-io-epanet` — EPANET / SWMM `.inp` `[free]` (US EPA, public domain)
+- [x] `tpt-io-waterml` — WaterML 2.0 `[free]`
+- [~] `tpt-io-hecras` — HEC-RAS text geometry/flow files `[free]` — *geometry files only; flow and plan files not read*
 
 ### Digital Pathology & Microscopy
-- [ ] `tpt-io-ome` — OME-TIFF + OME-Zarr `[free]`
-- [ ] `tpt-io-tiff` — generic tiled/pyramidal TIFF + BigTIFF `[free]`
+- [x] `tpt-io-ome` — OME-TIFF + OME-Zarr `[free]`
+- [~] `tpt-io-tiff` — generic tiled/pyramidal TIFF + BigTIFF `[free]` — *baseline strips only; tiled, pyramidal and BigTIFF not read*
 - [x] `tpt-io-dicom`: DICOM-WSI (whole-slide imaging) `[free]`
 - Excluded: vendor formats (SVS, NDPI, CZI)
 
 ### Computational Chemistry & Materials
-- [ ] `tpt-io-cif` — CIF `[free]`
-- [ ] `tpt-io-chemfile` — Gaussian cube, POSCAR, LAMMPS data, XYZ `[free]`
+- [x] `tpt-io-cif` — CIF `[free]`
+- [x] `tpt-io-chemfile` — Gaussian cube, POSCAR, LAMMPS data, XYZ `[free]`
 - Related: PDB/mmCIF, MOL/SDF in §2b
 
 ### Maritime & Aviation Navigation
-- [ ] `tpt-io-s57` — IHO S-57 / S-101 `[free]` (ENC chart *data* may be separately licensed)
-- [ ] `tpt-io-aixm` — AIXM `[free]`
-- [ ] `tpt-io-asterix` — ASTERIX (Eurocontrol) `[free]`
+- [~] `tpt-io-s57` — IHO S-57 / S-101 `[free]` (ENC chart *data* may be separately licensed) — *S-57 read only (`tpt-io-s57`); S-101 not started*
+- [x] `tpt-io-aixm` — AIXM `[free]`
+- [~] `tpt-io-asterix` — ASTERIX (Eurocontrol) `[free]` — *framing, FSPEC and a CAT048 subset only*
 - Excluded: ARINC 424 (paid spec, licensed navdata)
 
 ## 3. `tpt-io` (umbrella — last, depends on all domain crates)
